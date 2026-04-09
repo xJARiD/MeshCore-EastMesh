@@ -2,6 +2,9 @@
 
 #include <Arduino.h> // needed for PlatformIO
 #include <Mesh.h>
+#if defined(ESP32)
+  #include <WiFi.h>
+#endif
 
 #define CMD_APP_START                 1
 #define CMD_SEND_TXT_MSG              2
@@ -140,6 +143,49 @@
 #define AUTO_ADD_REPEATER         (1 << 2)  // 0x04 - auto-add Repeater (ADV_TYPE_REPEATER)
 #define AUTO_ADD_ROOM_SERVER      (1 << 3)  // 0x08 - auto-add Room Server (ADV_TYPE_ROOM)
 #define AUTO_ADD_SENSOR           (1 << 4)  // 0x10 - auto-add Sensor (ADV_TYPE_SENSOR)
+
+#if defined(ESP32)
+static wifi_ps_type_t toEspPowerSave(uint8_t mode) {
+  switch (mode) {
+    case 1:
+      return WIFI_PS_MIN_MODEM;
+    case 2:
+      return WIFI_PS_MAX_MODEM;
+    default:
+      return WIFI_PS_NONE;
+  }
+}
+
+static const char* getPowerSaveLabel(uint8_t mode) {
+  switch (mode) {
+    case 1:
+      return "min";
+    case 2:
+      return "max";
+    default:
+      return "none";
+  }
+}
+
+static const char* getWifiStateLabel(wl_status_t status) {
+  switch (status) {
+    case WL_CONNECTED:
+      return "connected";
+    case WL_NO_SSID_AVAIL:
+      return "no_ssid";
+    case WL_CONNECT_FAILED:
+      return "connect_failed";
+    case WL_CONNECTION_LOST:
+      return "connection_lost";
+    case WL_DISCONNECTED:
+      return "disconnected";
+    case WL_IDLE_STATUS:
+      return "idle";
+    default:
+      return "unknown";
+  }
+}
+#endif
 
 void MyMesh::writeOKFrame() {
   uint8_t buf[1];
@@ -867,6 +913,17 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
 #else
   _prefs.rx_boosted_gain = 1; // enabled by default
 #endif
+#endif
+#if defined(ESP32)
+  _prefs.wifi_powersave = 0;
+  _prefs.wifi_ssid[0] = 0;
+  _prefs.wifi_pwd[0] = 0;
+  #ifdef WIFI_SSID
+    StrHelper::strncpy(_prefs.wifi_ssid, WIFI_SSID, sizeof(_prefs.wifi_ssid));
+  #endif
+  #ifdef WIFI_PWD
+    StrHelper::strncpy(_prefs.wifi_pwd, WIFI_PWD, sizeof(_prefs.wifi_pwd));
+  #endif
 #endif
 }
 
@@ -1934,9 +1991,74 @@ void MyMesh::checkCLIRescueCmd() {
         _prefs.ble_pin = atoi(&config[4]);
         savePrefs();
         Serial.printf("  > pin is now %06d\n", _prefs.ble_pin);
+#if defined(ESP32)
+      } else if (memcmp(config, "wifi.ssid ", 10) == 0) {
+        StrHelper::strncpy(_prefs.wifi_ssid, &config[10], sizeof(_prefs.wifi_ssid));
+        savePrefs();
+        if (_prefs.wifi_ssid[0]) {
+          WiFi.mode(WIFI_STA);
+          WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
+          WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd);
+        }
+        Serial.printf("  > wifi.ssid is now: %s\n", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-");
+      } else if (memcmp(config, "wifi.pwd ", 9) == 0) {
+        StrHelper::strncpy(_prefs.wifi_pwd, &config[9], sizeof(_prefs.wifi_pwd));
+        savePrefs();
+        if (_prefs.wifi_ssid[0]) {
+          WiFi.mode(WIFI_STA);
+          WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
+          WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd);
+        }
+        Serial.println("  > wifi.pwd updated");
+      } else if (memcmp(config, "wifi.powersaving ", 17) == 0) {
+        uint8_t next_mode = 0xFF;
+        if (strcmp(&config[17], "none") == 0) {
+          next_mode = 0;
+        } else if (strcmp(&config[17], "min") == 0) {
+          next_mode = 1;
+        } else if (strcmp(&config[17], "max") == 0) {
+          next_mode = 2;
+        }
+        if (next_mode <= 2) {
+          _prefs.wifi_powersave = next_mode;
+          savePrefs();
+          WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
+          Serial.printf("  > wifi.powersaving is now: %s\n", getPowerSaveLabel(_prefs.wifi_powersave));
+        } else {
+          Serial.println("  Error: bad wifi.powersaving");
+        }
+#endif
       } else {
         Serial.printf("  Error: unknown config: %s\n", config);
       }
+    } else if (strcmp(cli_command, "get wifi.ssid") == 0) {
+#if defined(ESP32)
+      Serial.printf("  > %s\n", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-");
+#else
+      Serial.println("  Error: wifi unsupported");
+#endif
+    } else if (strcmp(cli_command, "get wifi.powersaving") == 0) {
+#if defined(ESP32)
+      Serial.printf("  > %s\n", getPowerSaveLabel(_prefs.wifi_powersave));
+#else
+      Serial.println("  Error: wifi unsupported");
+#endif
+    } else if (strcmp(cli_command, "get wifi.status") == 0) {
+#if defined(ESP32)
+      wl_status_t status = WiFi.status();
+      if (_prefs.wifi_ssid[0] == 0) {
+        Serial.println("  > ssid:- status:off code:255 state:unconfigured");
+      } else if (status == WL_CONNECTED) {
+        Serial.printf("  > ssid:%s status:connected code:%d state:%s ip:%s\n", _prefs.wifi_ssid,
+                      static_cast<int>(status), getWifiStateLabel(status), WiFi.localIP().toString().c_str());
+      } else {
+        const char* overall = (status == WL_IDLE_STATUS) ? "connecting" : "disconnected";
+        Serial.printf("  > ssid:%s status:%s code:%d state:%s\n", _prefs.wifi_ssid, overall,
+                      static_cast<int>(status), getWifiStateLabel(status));
+      }
+#else
+      Serial.println("  Error: wifi unsupported");
+#endif
     } else if (strcmp(cli_command, "rebuild") == 0) {
       bool success = _store->formatFileSystem();
       if (success) {

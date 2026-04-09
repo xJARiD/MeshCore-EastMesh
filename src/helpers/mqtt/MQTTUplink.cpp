@@ -88,41 +88,41 @@ const char kWebPanelHtml[] PROGMEM = R"HTML(
   <style>
     :root {
       color-scheme: light;
-      --accent:#1f9d5c;
-      --accent-hover:#27b86d;
-      --background:#f2f7f3;
-      --text:#163222;
-      --text-muted:#5f7d69;
-      --border:#d6e6db;
+      --accent:#2f8f4e;
+      --accent-hover:#3fae61;
+      --background:#f4f6f9;
+      --text:#1f2937;
+      --text-muted:#4b5563;
+      --border:rgba(0, 0, 0, 0.08);
       --surface1:#ffffff;
-      --surface2:#f8fcf9;
+      --surface2:#f0f3f7;
       --card-bg:#ffffff;
       --input-bg:#ffffff;
-      --terminal-bg:#f8fcf9;
-      --terminal-border:#d6e6db;
-      --terminal-cmd:#1f9d5c;
+      --terminal-bg:#f0f3f7;
+      --terminal-border:rgba(0, 0, 0, 0.08);
+      --terminal-cmd:#2f8f4e;
       --status-red:#c94a4a;
       --button-text:#ffffff;
-      --button-secondary-text:#163222;
+      --button-secondary-text:#1f2937;
     }
     :root[data-theme="dark"] {
       color-scheme: dark;
-      --accent:#1fb874;
-      --accent-hover:#2edc8f;
-      --background:#080b09;
-      --text:#c6e3d2;
-      --text-muted:#789a88;
-      --border:#1c2a22;
-      --surface1:#0d120f;
-      --surface2:#131914;
-      --card-bg:#0d120f;
-      --input-bg:#101612;
-      --terminal-bg:#080b09;
-      --terminal-border:#1c2a22;
+      --accent:#36a167;
+      --accent-hover:#49c27d;
+      --background:#222222;
+      --text:#e6eaf0;
+      --text-muted:#9aa4b2;
+      --border:rgba(255, 255, 255, 0.08);
+      --surface1:#303030;
+      --surface2:#343434;
+      --card-bg:#303030;
+      --input-bg:#343434;
+      --terminal-bg:#222222;
+      --terminal-border:rgba(255, 255, 255, 0.08);
       --terminal-cmd:#8fd3ff;
       --status-red:#d45a5a;
-      --button-text:#08110b;
-      --button-secondary-text:#c6e3d2;
+      --button-text:#ffffff;
+      --button-secondary-text:#e6eaf0;
     }
     html { min-height:100%; background:linear-gradient(180deg,var(--background),var(--surface2)); background-repeat:no-repeat; background-attachment:fixed; }
     body { min-height:100vh; margin:0; font:16px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; background:transparent; color:var(--text); transition:background .2s ease,color .2s ease; }
