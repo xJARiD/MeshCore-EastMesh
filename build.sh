@@ -9,6 +9,7 @@ require_uv() {
 
 sync_python_tooling() {
   uv sync --locked --no-group docs >/dev/null
+  uv venv --allow-existing --seed >/dev/null
 }
 
 run_python() {
