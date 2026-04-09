@@ -94,6 +94,11 @@ public:
   const char *getNodeName();
   NodePrefs *getNodePrefs();
   uint32_t getBLEPin();
+#if defined(ESP32)
+  const char* getWifiSSID() const { return _prefs.wifi_ssid; }
+  const char* getWifiPassword() const { return _prefs.wifi_pwd; }
+  uint8_t getWifiPowerSaveMode() const { return _prefs.wifi_powersave; }
+#endif
 
   void loop();
   void handleCmdFrame(size_t len);
