@@ -1,15 +1,20 @@
-# Introduction
+# MeshCore EastMesh Docs
 
-Welcome to the MeshCore documentation.
+MeshCore-EastMesh keeps the upstream MeshCore firmware intact and adds an EastMesh layer on top for:
 
-Below are a few quick start guides.
+- `repeater_mqtt` builds with native WiFi, MQTT, and the optional local web panel
+- `companion_radio_wifi` builds for WiFi-connected companion devices
+- EastMesh-specific release automation and versioning on top of upstream MeshCore releases
 
-- [Frequently Asked Questions](./faq.md)
-- [CLI Commands](./cli_commands.md)
-- [Companion Protocol](./companion_protocol.md)
-- [Packet Format](./packet_format.md)
-- [QR Codes](./qr_codes.md)
+## Start Here
 
-If you find a mistake in any of our documentation, or find something is missing, please feel free to open a pull request for us to review.
+- [Download and Flash Releases](./releases.md)
+- [Build Locally With uv](./local-builds.md)
 
-- [Documentation Source](https://github.com/meshcore-dev/MeshCore/tree/main/docs)
+## Current Scope
+
+This docs site only covers the EastMesh-specific pieces in this repository.
+
+For general MeshCore behavior, radio operation, and upstream firmware concepts, refer to the upstream project:
+
+- [meshcore-dev/MeshCore](https://github.com/meshcore-dev/MeshCore)
