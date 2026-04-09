@@ -10,7 +10,7 @@ on:
       - "platformio.ini"
       - ".github/workflows/pr-build-check.yml"
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths:
       - "src/**"
       - "examples/**"
