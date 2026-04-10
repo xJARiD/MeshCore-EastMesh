@@ -61,9 +61,11 @@ Recommended usage:
 
 Typical first steps after flashing:
 
-- set radio parameters
-- set WiFi credentials
+- set `wifi.ssid`
+- set `wifi.pwd`
+- set `mqtt.iata`
 - confirm `get mqtt.status`
+- optionally set `mqtt.owner` and `mqtt.email`
 - optionally enable `letsmesh-eu` or `letsmesh-us`
 
 ## Companion WiFi Notes

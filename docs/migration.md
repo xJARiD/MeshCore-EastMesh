@@ -54,7 +54,6 @@ Confirm the repeater is up and connected with:
 
 - `get wifi.status`
 - `get mqtt.status`
-- `get mqtt.statuscfg`
 
 ## Validate In The Web Console
 
@@ -79,7 +78,7 @@ Notes:
 
 Some MQTT CLI commands from the previous firmware do not apply in EastMesh and should not be migrated.
 
-The previous firmware stored its MQTT bridge settings in a different place and shape than EastMesh does now. In the old firmware, `MQTTBridge` used legacy node preferences for items such as broker host, port, analyzers, TX enable, owner key, email, and IATA. In EastMesh, the current Wi-Fi and MQTT uplink settings are stored separately in `/mqtt_prefs`.
+EastMesh stores its current Wi-Fi and MQTT uplink settings separately from the older firmware, so older broker and analyzer settings do not carry forward in a useful way. After flashing, re-enter the settings you still use now, rather than expecting the old MQTT bridge configuration to map across.
 
 These previous MQTT CLI commands no longer apply in EastMesh:
 
@@ -90,7 +89,7 @@ These previous MQTT CLI commands no longer apply in EastMesh:
 - `get mqtt.analyzer.eu`
 - `get mqtt.config.valid`
 
-If you flash without erase first, older legacy values may still remain in flash in the background. The important point is that EastMesh does not use those old MQTT bridge values for its current uplink configuration, so users should not expect them to carry forward or have any effect.
+If you flash without erase first, some old values may still remain in flash in the background. The important point is that EastMesh does not use those old MQTT bridge values for its current uplink configuration, so users should not expect them to carry forward or have any effect.
 
 ## Recommended Migration Flow
 
@@ -100,7 +99,7 @@ If you flash without erase first, older legacy values may still remain in flash 
 4. Optionally set `mqtt.owner` and `mqtt.email`.
 5. If you previously had TX publishing disabled, set `mqtt.tx off`.
 6. Reboot the repeater.
-7. Verify with `get wifi.status`, `get mqtt.status`, and `get mqtt.statuscfg`.
+7. Verify with `get wifi.status` and `get mqtt.status`.
 8. Optionally confirm local web access with `set web on`, `get web.status`, and `https://<IP_ADDRESS>/`.
 
 ## Related Docs

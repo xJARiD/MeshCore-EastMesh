@@ -125,8 +125,18 @@ This section includes:
   - owner public key
 - `mqtt.email`
   - owner contact email
+- MQTT server toggles
+  - `eastmesh-au`
+  - `letsmesh-eu`
+  - `letsmesh-us`
 
 `MEL` is used as the default dropdown option until the repeater's saved value is loaded.
+
+Notes:
+
+- the current MQTT server states are loaded when the page opens
+- you can toggle each MQTT server on or off from this panel
+- if all three servers are enabled at once, the panel shows a warning recommending two at most
 
 ## Stats
 
