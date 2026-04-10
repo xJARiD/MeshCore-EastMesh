@@ -3,16 +3,19 @@
 MeshCore-EastMesh keeps the upstream MeshCore firmware intact and adds an EastMesh layer on top for:
 
 - `repeater_mqtt` builds with native WiFi, MQTT, and the optional local web panel
-- `companion_radio_wifi` builds for WiFi-connected companion devices
+- `companion_radio_wifi` builds for Wi-Fi-connected companion devices
 - EastMesh-specific release automation and versioning on top of upstream MeshCore releases
 
-## Start Here
+## End User Guides
 
 - [Download and Flash Releases](./releases.md)
 - [Migration From xJARiD/MeshCore](./migration.md)
 - [Use the Repeater Web Panel](./web-panel.md)
-- [Build Locally With uv](./local-builds.md)
 - [Custom CLI Commands](./custom-cli.md)
+
+## Developer Notes
+
+- [Build Locally With uv](./local-builds.md)
 
 ## Current Scope
 

@@ -13,7 +13,8 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 - `get mqtt.status`
   - shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state
 - `get mqtt.statuscfg`
-  - shows whether periodic status messages are enabled
+  - shows whether periodic status messages are enabled as a simple `on` or `off` value
+  - most users can just use `get mqtt.status`
 - `get mqtt.iata`
   - shows the IATA/location code used in MQTT topics
 - `set mqtt.iata <code>`
