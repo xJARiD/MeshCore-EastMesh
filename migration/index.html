@@ -773,7 +773,6 @@
 <ul>
 <li><code>get wifi.status</code></li>
 <li><code>get mqtt.status</code></li>
-<li><code>get mqtt.statuscfg</code></li>
 </ul>
 <h2 id="validate-in-the-web-console">Validate In The Web Console<a class="headerlink" href="#validate-in-the-web-console" title="Permanent link">&para;</a></h2>
 <p>If the web panel is enabled on your board, you can also verify through the local HTTPS admin page.</p>
@@ -794,7 +793,7 @@
 </ul>
 <h2 id="legacy-mqtt-commands">Legacy MQTT Commands<a class="headerlink" href="#legacy-mqtt-commands" title="Permanent link">&para;</a></h2>
 <p>Some MQTT CLI commands from the previous firmware do not apply in EastMesh and should not be migrated.</p>
-<p>The previous firmware stored its MQTT bridge settings in a different place and shape than EastMesh does now. In the old firmware, <code>MQTTBridge</code> used legacy node preferences for items such as broker host, port, analyzers, TX enable, owner key, email, and IATA. In EastMesh, the current Wi-Fi and MQTT uplink settings are stored separately in <code>/mqtt_prefs</code>.</p>
+<p>EastMesh stores its current Wi-Fi and MQTT uplink settings separately from the older firmware, so older broker and analyzer settings do not carry forward in a useful way. After flashing, re-enter the settings you still use now, rather than expecting the old MQTT bridge configuration to map across.</p>
 <p>These previous MQTT CLI commands no longer apply in EastMesh:</p>
 <ul>
 <li><code>get mqtt.server</code></li>
@@ -804,7 +803,7 @@
 <li><code>get mqtt.analyzer.eu</code></li>
 <li><code>get mqtt.config.valid</code></li>
 </ul>
-<p>If you flash without erase first, older legacy values may still remain in flash in the background. The important point is that EastMesh does not use those old MQTT bridge values for its current uplink configuration, so users should not expect them to carry forward or have any effect.</p>
+<p>If you flash without erase first, some old values may still remain in flash in the background. The important point is that EastMesh does not use those old MQTT bridge values for its current uplink configuration, so users should not expect them to carry forward or have any effect.</p>
 <h2 id="recommended-migration-flow">Recommended Migration Flow<a class="headerlink" href="#recommended-migration-flow" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Flash the new EastMesh firmware without erasing.</li>
@@ -813,7 +812,7 @@
 <li>Optionally set <code>mqtt.owner</code> and <code>mqtt.email</code>.</li>
 <li>If you previously had TX publishing disabled, set <code>mqtt.tx off</code>.</li>
 <li>Reboot the repeater.</li>
-<li>Verify with <code>get wifi.status</code>, <code>get mqtt.status</code>, and <code>get mqtt.statuscfg</code>.</li>
+<li>Verify with <code>get wifi.status</code> and <code>get mqtt.status</code>.</li>
 <li>Optionally confirm local web access with <code>set web on</code>, <code>get web.status</code>, and <code>https://&lt;IP_ADDRESS&gt;/</code>.</li>
 </ol>
 <h2 id="related-docs">Related Docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>

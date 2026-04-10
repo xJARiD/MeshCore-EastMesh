@@ -690,9 +690,11 @@
 <p><code>repeater_mqtt</code> builds include the EastMesh MQTT additions. Depending on the board, they may also include the local web panel.</p>
 <p>Typical first steps after flashing:</p>
 <ul>
-<li>set radio parameters</li>
-<li>set WiFi credentials</li>
+<li>set <code>wifi.ssid</code></li>
+<li>set <code>wifi.pwd</code></li>
+<li>set <code>mqtt.iata</code></li>
 <li>confirm <code>get mqtt.status</code></li>
+<li>optionally set <code>mqtt.owner</code> and <code>mqtt.email</code></li>
 <li>optionally enable <code>letsmesh-eu</code> or <code>letsmesh-us</code></li>
 </ul>
 <h2 id="companion-wifi-notes">Companion WiFi Notes<a class="headerlink" href="#companion-wifi-notes" title="Permanent link">&para;</a></h2>
