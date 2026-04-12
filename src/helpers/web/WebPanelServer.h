@@ -47,7 +47,6 @@ private:
   static esp_err_t handleApp(httpd_req_t* req);
   static esp_err_t handleLogin(httpd_req_t* req);
   static esp_err_t handleCommand(httpd_req_t* req);
-  static esp_err_t handleBootstrap(httpd_req_t* req);
   static esp_err_t handleStats(httpd_req_t* req);
 
   bool readRequestBody(httpd_req_t* req, char* buffer, size_t buffer_size) const;

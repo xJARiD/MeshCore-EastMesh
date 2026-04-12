@@ -98,6 +98,7 @@ private:
     bool reconnect_pending;
     unsigned long last_connect_attempt;
     unsigned long next_connect_attempt;
+    unsigned long connected_since_ms;
     time_t token_expires_at;
     uint8_t reconnect_failures;
     char username[70];
@@ -144,7 +145,7 @@ private:
   void refreshIdentityStrings();
   void refreshBrokerIdentity(BrokerState& broker);
   void refreshBrokerState(BrokerState& broker);
-  void ensureBroker(BrokerState& broker);
+  void ensureBroker(BrokerState& broker, bool allow_new_connect);
   void destroyBroker(BrokerState& broker, bool reset_retry_state = true);
   bool refreshToken(BrokerState& broker);
   void publishStatus(bool online);

@@ -17,6 +17,12 @@ It gives you:
 - editable MQTT settings
 - a stats dashboard with Wi-Fi, core, radio, memory, and packet views
 
+Operational guidance:
+
+- use it for initial setup, occasional configuration changes, and troubleshooting
+- when you are finished, prefer `set web off` on MQTT repeaters that need maximum headroom
+- this leaves more internal heap available for MQTT/WSS activity, especially on dual-broker setups
+
 ## Screenshot Overview
 
 The layout below reflects the current panel structure for the repeater web UI.
@@ -61,6 +67,18 @@ Example:
 - the panel only exposes an allowlisted subset of CLI commands
 
 This is intended for local admin use on a trusted network, not for open internet exposure.
+
+## Performance Notes
+
+The panel is designed to load more gently than earlier versions. On login it now fetches sections in sequence instead of requesting one large bootstrap payload up front.
+
+Even with that change, the panel still uses HTTPS and internal heap. On boards running one or two WSS MQTT brokers, opening the panel reduces MQTT headroom while the session is active.
+
+Recommended practice for repeater deployments:
+
+- enable the panel for initial configuration
+- use it again for occasional checks or troubleshooting
+- disable it with `set web off` when finished so MQTT has the most headroom available
 
 ## Actions
 
@@ -209,6 +227,18 @@ Check:
 ### The panel opens but login fails
 
 Use the repeater admin password, not the guest password.
+
+### MQTT becomes unstable when I log in
+
+The web panel now loads settings section-by-section to reduce startup pressure, but HTTPS still consumes internal heap.
+
+Check:
+
+- whether one or two MQTT brokers are enabled
+- `memory` before and after login
+- whether stability improves after `set web off`
+
+For fixed installations where MQTT uptime matters more than browser access, use the panel briefly and then disable it again.
 
 ### A command says it is not allowlisted
 

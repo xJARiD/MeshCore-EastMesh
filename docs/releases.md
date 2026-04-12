@@ -93,7 +93,7 @@ It is the traditional way to configure a repeater after flashing, including:
 - flood max
 - some advanced repeater settings
 
-As of `v1.2.1`, the local repeater web panel also includes the same common repeater settings, so many users can continue day-to-day configuration there after initial setup.
+As of `v1.2.1`, the local repeater web panel also includes the same common repeater settings, so users can complete initial setup there and return for occasional troubleshooting or configuration changes. On MQTT repeaters that need maximum headroom, it is still best to disable the panel again when you are finished.
 
 ### Console
 
