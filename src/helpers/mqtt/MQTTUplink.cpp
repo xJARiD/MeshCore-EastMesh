@@ -120,6 +120,25 @@ const char* getWifiStateLabel(const MQTTPrefs& prefs, bool wifi_started) {
   return "down";
 }
 
+#if MQTT_DEBUG
+void logMqttMemorySnapshot(const char* phase, const char* broker_label = nullptr) {
+  MQTT_LOG("mem phase=%s broker=%s uptime_ms=%lu heap_free=%u heap_min=%u heap_max=%u psram_free=%u psram_min=%u "
+           "psram_max=%u",
+           phase != nullptr ? phase : "-",
+           broker_label != nullptr ? broker_label : "-",
+           millis(),
+           ESP.getFreeHeap(),
+           ESP.getMinFreeHeap(),
+           ESP.getMaxAllocHeap(),
+           ESP.getFreePsram(),
+           ESP.getMinFreePsram(),
+           ESP.getMaxAllocPsram());
+}
+#else
+void logMqttMemorySnapshot(const char*, const char* = nullptr) {
+}
+#endif
+
 }
 
 const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[3] = {
@@ -398,6 +417,14 @@ bool MQTTUplink::refreshToken(BrokerState& broker) {
 }
 
 void MQTTUplink::destroyBroker(BrokerState& broker, bool reset_retry_state) {
+  bool had_runtime_state = broker.client != nullptr || broker.token != nullptr || broker.connected ||
+                           broker.connect_announced || broker.reconnect_pending || broker.next_connect_attempt != 0 ||
+                           broker.last_connect_attempt != 0 || broker.reconnect_failures != 0 ||
+                           broker.token_expires_at != 0;
+  if (!had_runtime_state) {
+    return;
+  }
+  logMqttMemorySnapshot("destroy-pre", broker.spec != nullptr ? broker.spec->label : nullptr);
   if (broker.client != nullptr) {
     MQTT_LOG("%s destroy broker client", broker.spec->label);
     esp_mqtt_client_stop(broker.client);
@@ -408,6 +435,7 @@ void MQTTUplink::destroyBroker(BrokerState& broker, bool reset_retry_state) {
   broker.token = nullptr;
   broker.connected = false;
   broker.connect_announced = false;
+  broker.connected_since_ms = 0;
   broker.token_expires_at = 0;
   if (reset_retry_state) {
     broker.reconnect_pending = false;
@@ -415,6 +443,7 @@ void MQTTUplink::destroyBroker(BrokerState& broker, bool reset_retry_state) {
     broker.reconnect_failures = 0;
     broker.last_connect_attempt = 0;
   }
+  logMqttMemorySnapshot("destroy-post", broker.spec != nullptr ? broker.spec->label : nullptr);
 }
 
 void MQTTUplink::queuePublish(BrokerState& broker, const char* topic, const char* payload, bool retain) {
@@ -423,7 +452,8 @@ void MQTTUplink::queuePublish(BrokerState& broker, const char* topic, const char
   }
   MQTT_LOG("%s publish topic=%s retain=%d bytes=%u", broker.spec->label, topic, retain ? 1 : 0,
            static_cast<unsigned>(strlen(payload)));
-  esp_mqtt_client_enqueue(broker.client, topic, payload, 0, 1, retain, true);
+  int enqueue_rc = esp_mqtt_client_enqueue(broker.client, topic, payload, 0, 1, retain, true);
+  MQTT_LOG("%s enqueue topic=%s rc=%d connected=%d", broker.spec->label, topic, enqueue_rc, broker.connected ? 1 : 0);
 }
 
 int MQTTUplink::buildStatusJson(char* buffer, size_t buffer_size, bool online) const {
@@ -565,6 +595,7 @@ void MQTTUplink::publishOnlineStatus(BrokerState& broker) {
 }
 
 void MQTTUplink::publishStatus(bool online) {
+  logMqttMemorySnapshot(online ? "status-pre" : "status-offline-pre");
   char* payload = allocScratchBuffer(768);
   if (payload == nullptr) {
     return;
@@ -580,6 +611,7 @@ void MQTTUplink::publishStatus(bool online) {
     }
   }
   freeScratchBuffer(payload);
+  logMqttMemorySnapshot(online ? "status-post" : "status-offline-post");
 }
 
 void MQTTUplink::handleMqttEvent(void* handler_args, esp_event_base_t, int32_t event_id, void* event_data) {
@@ -588,6 +620,8 @@ void MQTTUplink::handleMqttEvent(void* handler_args, esp_event_base_t, int32_t e
     return;
   }
   auto* event = static_cast<esp_mqtt_event_handle_t>(event_data);
+  unsigned long now_ms = millis();
+  unsigned long connected_for_ms = broker->connected_since_ms != 0 ? (now_ms - broker->connected_since_ms) : 0;
 
   switch (event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -595,33 +629,56 @@ void MQTTUplink::handleMqttEvent(void* handler_args, esp_event_base_t, int32_t e
       broker->reconnect_pending = false;
       broker->next_connect_attempt = 0;
       broker->reconnect_failures = 0;
+      broker->connected_since_ms = now_ms;
       MQTT_LOG("%s connected", broker->spec->label);
+      logMqttMemorySnapshot("connected", broker->spec->label);
       break;
     case MQTT_EVENT_DISCONNECTED:
-      MQTT_LOG("%s disconnected", broker->spec->label);
+      broker->connected = false;
+      broker->connected_since_ms = 0;
+      MQTT_LOG("%s disconnected wifi_status=%d rssi=%d connected_for_ms=%lu", broker->spec->label,
+               static_cast<int>(WiFi.status()), WiFi.RSSI(), connected_for_ms);
+      logMqttMemorySnapshot("disconnected", broker->spec->label);
+      if (!broker->reconnect_pending) {
+        if (broker->reconnect_failures < 10) {
+          broker->reconnect_failures++;
+        }
+        broker->reconnect_pending = true;
+        broker->next_connect_attempt = now_ms + getBrokerRetryDelayMillis(broker->reconnect_failures);
+        MQTT_LOG("%s reconnect in %lu ms (failures=%u)", broker->spec->label,
+                 getBrokerRetryDelayMillis(broker->reconnect_failures),
+                 static_cast<unsigned>(broker->reconnect_failures));
+      }
+      break;
     case MQTT_EVENT_ERROR:
       broker->connected = false;
-      if (broker->reconnect_failures < 10) {
-        broker->reconnect_failures++;
+      broker->connected_since_ms = 0;
+      if (event != nullptr && event->error_handle != nullptr) {
+        MQTT_LOG("%s error type=%d tls_esp=0x%x tls_stack=0x%x cert_flags=0x%x sock_errno=%d conn_refused=%d "
+                 "connected_for_ms=%lu",
+                 broker->spec->label, event->error_handle->error_type, event->error_handle->esp_tls_last_esp_err,
+                 event->error_handle->esp_tls_stack_err, event->error_handle->esp_tls_cert_verify_flags,
+                 event->error_handle->esp_transport_sock_errno, event->error_handle->connect_return_code,
+                 connected_for_ms);
+      } else {
+        MQTT_LOG("%s error event connected_for_ms=%lu", broker->spec->label, connected_for_ms);
       }
-      broker->reconnect_pending = true;
-      broker->next_connect_attempt = millis() + getBrokerRetryDelayMillis(broker->reconnect_failures);
-      if (event_id == MQTT_EVENT_ERROR) {
-        if (event != nullptr && event->error_handle != nullptr) {
-          MQTT_LOG("%s error type=%d tls_esp=0x%x tls_stack=0x%x cert_flags=0x%x sock_errno=%d conn_refused=%d",
-                   broker->spec->label, event->error_handle->error_type, event->error_handle->esp_tls_last_esp_err,
-                   event->error_handle->esp_tls_stack_err, event->error_handle->esp_tls_cert_verify_flags,
-                   event->error_handle->esp_transport_sock_errno, event->error_handle->connect_return_code);
-        } else {
-          MQTT_LOG("%s error event", broker->spec->label);
+      MQTT_LOG("%s wifi_status=%d rssi=%d", broker->spec->label, static_cast<int>(WiFi.status()), WiFi.RSSI());
+      logMqttMemorySnapshot("error", broker->spec->label);
+      if (!broker->reconnect_pending) {
+        if (broker->reconnect_failures < 10) {
+          broker->reconnect_failures++;
         }
+        broker->reconnect_pending = true;
+        broker->next_connect_attempt = now_ms + getBrokerRetryDelayMillis(broker->reconnect_failures);
+        MQTT_LOG("%s reconnect in %lu ms (failures=%u)", broker->spec->label,
+                 getBrokerRetryDelayMillis(broker->reconnect_failures),
+                 static_cast<unsigned>(broker->reconnect_failures));
       }
-      MQTT_LOG("%s reconnect in %lu ms (failures=%u)", broker->spec->label,
-               getBrokerRetryDelayMillis(broker->reconnect_failures),
-               static_cast<unsigned>(broker->reconnect_failures));
       break;
     case MQTT_EVENT_BEFORE_CONNECT:
       MQTT_LOG("%s before connect", broker->spec->label);
+      logMqttMemorySnapshot("before-connect", broker->spec->label);
       break;
     default:
       break;
@@ -716,13 +773,17 @@ void MQTTUplink::updateTimeSync() {
   }
 }
 
-void MQTTUplink::ensureBroker(BrokerState& broker) {
+void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   if (broker.spec == nullptr) {
     return;
   }
   bool enabled = (_prefs.enabled_mask & broker.spec->bit) != 0;
   if (!enabled) {
-    destroyBroker(broker);
+    if (broker.client != nullptr || broker.token != nullptr || broker.connected || broker.connect_announced ||
+        broker.reconnect_pending || broker.next_connect_attempt != 0 || broker.last_connect_attempt != 0 ||
+        broker.reconnect_failures != 0 || broker.token_expires_at != 0) {
+      destroyBroker(broker);
+    }
     return;
   }
 
@@ -749,6 +810,9 @@ void MQTTUplink::ensureBroker(BrokerState& broker) {
   if (broker.next_connect_attempt != 0 && now_ms < broker.next_connect_attempt) {
     return;
   }
+  if (!allow_new_connect) {
+    return;
+  }
   broker.last_connect_attempt = now_ms;
   broker.reconnect_pending = false;
 
@@ -759,8 +823,9 @@ void MQTTUplink::ensureBroker(BrokerState& broker) {
   }
 
   refreshBrokerState(broker);
-  MQTT_LOG("%s mqtt init host=%s port=%d path=%s client_id=%s heap_free=%u heap_max=%u", broker.spec->label,
-           broker.spec->host, 443, "/mqtt", broker.client_id, ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+  MQTT_LOG("%s mqtt init host=%s port=%d path=%s client_id=%s", broker.spec->label, broker.spec->host, 443, "/mqtt",
+           broker.client_id);
+  logMqttMemorySnapshot("init-pre", broker.spec->label);
   esp_mqtt_client_config_t cfg = {};
 #if ESP_IDF_VERSION_MAJOR >= 5
   cfg.broker.address.hostname = broker.spec->host;
@@ -805,17 +870,21 @@ void MQTTUplink::ensureBroker(BrokerState& broker) {
   broker.client = esp_mqtt_client_init(&cfg);
   if (broker.client == nullptr) {
     MQTT_LOG("%s mqtt init failed", broker.spec->label);
+    logMqttMemorySnapshot("init-failed", broker.spec->label);
     return;
   }
+  logMqttMemorySnapshot("init-post", broker.spec->label);
 
   esp_mqtt_client_register_event(broker.client, MQTT_EVENT_ANY, &MQTTUplink::handleMqttEvent, &broker);
   if (esp_mqtt_client_start(broker.client) != ESP_OK) {
     MQTT_LOG("%s mqtt start failed", broker.spec->label);
+    logMqttMemorySnapshot("start-failed", broker.spec->label);
     broker.reconnect_pending = true;
     broker.next_connect_attempt = now_ms + kBrokerRetryBaseMillis;
     destroyBroker(broker, false);
   } else {
     MQTT_LOG("%s mqtt start requested", broker.spec->label);
+    logMqttMemorySnapshot("start-requested", broker.spec->label);
   }
 }
 
@@ -865,8 +934,21 @@ void MQTTUplink::loop(const MQTTStatusSnapshot& snapshot) {
     _web_panel.lockSession();
   }
 
+  BrokerState* active_connecting_broker = nullptr;
   for (BrokerState& broker : _brokers) {
-    ensureBroker(broker);
+    if (broker.client != nullptr && !broker.connected && !broker.reconnect_pending) {
+      active_connecting_broker = &broker;
+      break;
+    }
+  }
+
+  bool connect_started = false;
+  for (BrokerState& broker : _brokers) {
+    bool allow_new_connect = active_connecting_broker == nullptr && !connect_started;
+    ensureBroker(broker, allow_new_connect);
+    if (active_connecting_broker == nullptr && broker.client != nullptr && !broker.connected && !broker.reconnect_pending) {
+      connect_started = true;
+    }
     if (broker.connected && !broker.connect_announced) {
       publishOnlineStatus(broker);
       broker.connect_announced = true;
@@ -1041,8 +1123,6 @@ bool MQTTUplink::setWebEnabled(bool enabled) {
   bool ok = savePrefs();
   if (_prefs.web_enabled != 0) {
     ensureWebServer();
-  } else {
-    stopWebServer();
   }
   return ok;
 #else

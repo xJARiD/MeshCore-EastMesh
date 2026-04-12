@@ -1219,8 +1219,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const value = document.getElementById(inputId).value;
       runCommand(prefix + value);
     }
-    async function loadField(cmd, inputId, format) {
-      const result = await runCommand(cmd);
+    async function loadField(cmd, inputId, format, options = {}) {
+      const result = await runCommand(cmd, options);
       if (!result.ok) return;
       let value = parseReplyValue(result.text);
       if (format === "multiline") {
@@ -1285,27 +1285,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         }
         return JSON.parse(text);
       });
-    }
-    function applyBootstrapData(data) {
-      if (!data) return;
-	      if (typeof data.name === "string") document.getElementById("nodeName").value = data.name;
-	      if (typeof data.mqtt_iata === "string" && data.mqtt_iata.length) document.getElementById("mqttIata").value = data.mqtt_iata;
-	      if (typeof data.mqtt_owner === "string") document.getElementById("mqttOwner").value = data.mqtt_owner;
-	      if (typeof data.mqtt_email === "string") document.getElementById("mqttEmail").value = data.mqtt_email;
-	      if (typeof data.advert_interval === "string") document.getElementById("advertInterval").value = data.advert_interval;
-	      if (typeof data.flood_interval === "string") document.getElementById("floodInterval").value = data.flood_interval;
-	      if (typeof data.flood_max === "string") document.getElementById("floodMax").value = data.flood_max;
-	      if (typeof data.path_hash_mode === "string") document.getElementById("pathHashMode").value = data.path_hash_mode;
-	      if (typeof data.private_key === "string") document.getElementById("privateKey").value = data.private_key.toUpperCase();
-	      if (typeof data.radio === "string") currentRadioConfig = parseRadioValue(data.radio);
-	      if (typeof data.role === "string") document.getElementById("roleValue").value = data.role;
-	      if (typeof data.clock === "string") document.getElementById("clockUtc").value = data.clock;
-	      if (typeof data.public_key === "string") document.getElementById("publicKey").value = data.public_key.toUpperCase();
-      if (typeof data.mqtt_eastmesh_au === "string") setBrokerToggle("mqttEastmeshAu", data.mqtt_eastmesh_au);
-      if (typeof data.mqtt_letsmesh_eu === "string") setBrokerToggle("mqttLetsmeshEu", data.mqtt_letsmesh_eu);
-      if (typeof data.mqtt_letsmesh_us === "string") setBrokerToggle("mqttLetsmeshUs", data.mqtt_letsmesh_us);
-      syncRadioPresetUi();
-      updateBrokerWarning();
     }
 	    function getLetsmeshMode() {
 	      const eu = document.getElementById("mqttLetsmeshEu");
@@ -1376,17 +1355,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        refreshLetsmeshModeUi();
 	      }
 	    }
-	    function updateBrokerWarning() {
-	      document.getElementById("mqttBrokerWarning").textContent = "";
-	    }
-    async function loadBrokerState(cmd, inputId) {
-      const result = await runCommand(cmd);
+    async function loadBrokerState(cmd, inputId, options = {}) {
+      const result = await runCommand(cmd, options);
       if (!result.ok) return;
       setBrokerToggle(inputId, parseReplyValue(result.text));
-      updateBrokerWarning();
     }
-    async function loadRadioConfig() {
-      const result = await runCommand("get radio");
+    async function loadRadioConfig(options = {}) {
+      const result = await runCommand("get radio", options);
       if (!result.ok) {
         setRadioPresetStatus("Unable to load current radio config.", true);
         return;
@@ -1399,6 +1374,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       currentRadioConfig = parsed;
       setRadioPresetStatus("");
       syncRadioPresetUi();
+    }
+    function pause(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+    async function loadSection(title, tasks) {
+      statusEl.textContent = title;
+      for (const task of tasks) {
+        await task();
+      }
+      await pause(40);
     }
     async function loadRadioPresets() {
       const selectEl = document.getElementById("radioPreset");
@@ -1493,13 +1478,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (!result.ok) {
 	        refreshEastmeshModeUi();
 	        refreshLetsmeshModeUi();
-	        updateBrokerWarning();
 	        return;
 	      }
 	      setBrokerToggle("mqttEastmeshAu", enabled ? "on" : "off");
 	      refreshEastmeshModeUi();
 	      refreshLetsmeshModeUi();
-	      updateBrokerWarning();
 	    }
 	    const eastmeshModeSlider = document.getElementById("mqttEastmeshMode");
 	    if (eastmeshModeSlider) {
@@ -1513,7 +1496,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    async function setLetsmeshMode(mode) {
 	      const eastmesh = document.getElementById("mqttEastmeshAu");
 	      if (mode === "both" && eastmesh && eastmesh.checked) {
-	        updateBrokerWarning();
 	        refreshLetsmeshModeUi();
 	        return;
 	      }
@@ -1532,13 +1514,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        const result = await runCommand(command);
 	        if (!result.ok) {
 	          refreshLetsmeshModeUi();
-	          updateBrokerWarning();
 	          return;
 	        }
 	        setBrokerToggle(inputId, nextState);
 	      }
 	      refreshLetsmeshModeUi();
-	      updateBrokerWarning();
 	    }
 	    const letsmeshModeSlider = document.getElementById("mqttLetsmeshMode");
 	    if (letsmeshModeSlider) {
@@ -1615,30 +1595,43 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return;
       }
       showAuthedUi(true);
+      const quiet = { recordHistory:false, updateInput:false };
       try {
-        applyBootstrapData(await fetchJson("/api/bootstrap"));
-      } catch (_) {
+        await loadSection("Loading info...", [
+          () => loadField("get role", "roleValue", null, quiet),
+          () => loadField("clock", "clockUtc", null, quiet),
+          () => loadField("get public.key", "publicKey", "uppercase", quiet)
+        ]);
+        await loadSection("Loading repeater settings...", [
+          () => loadField("get name", "nodeName", null, quiet),
+          () => loadField("get lat", "nodeLat", null, quiet),
+          () => loadField("get lon", "nodeLon", null, quiet),
+          () => loadField("get prv.key", "privateKey", "uppercase", quiet),
+          () => loadField("get owner.info", "ownerInfo", "multiline", quiet)
+        ]);
+        await loadSection("Loading radio settings...", [
+          () => loadRadioConfig(quiet),
+          () => loadField("get path.hash.mode", "pathHashMode", null, quiet)
+        ]);
+        await loadSection("Loading advertising...", [
+          () => loadField("get advert.interval", "advertInterval", null, quiet),
+          () => loadField("get flood.advert.interval", "floodInterval", null, quiet),
+          () => loadField("get flood.max", "floodMax", null, quiet)
+        ]);
+        await loadSection("Loading MQTT settings...", [
+          () => loadField("get mqtt.iata", "mqttIata", null, quiet),
+          () => loadField("get mqtt.owner", "mqttOwner", null, quiet),
+          () => loadField("get mqtt.email", "mqttEmail", null, quiet),
+          () => loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu", quiet),
+          () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
+          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet)
+        ]);
+        statusEl.textContent = "Ready";
+      } catch (error) {
         if (!token) {
           return;
         }
-        await Promise.all([
-          loadField("get name", "nodeName"),
-          loadField("get mqtt.iata", "mqttIata"),
-          loadField("get mqtt.owner", "mqttOwner"),
-          loadField("get mqtt.email", "mqttEmail"),
-          loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu"),
-          loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu"),
-          loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs"),
-          loadField("get advert.interval", "advertInterval"),
-          loadField("get flood.advert.interval", "floodInterval"),
-          loadField("get flood.max", "floodMax"),
-          loadField("get path.hash.mode", "pathHashMode"),
-          loadField("get prv.key", "privateKey", "uppercase"),
-          loadField("get role", "roleValue"),
-          loadField("clock", "clockUtc"),
-          loadField("get public.key", "publicKey", "uppercase"),
-          loadRadioConfig()
-        ]);
+        statusEl.textContent = error && error.message ? error.message : "Unable to load repeater settings.";
       }
       loadRadioPresets();
 	    }
@@ -1697,13 +1690,11 @@ bool WebPanelServer::start() {
   httpd_uri_t app_uri = {.uri = "/app", .method = HTTP_GET, .handler = &WebPanelServer::handleApp, .user_ctx = &_route_context};
   httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &WebPanelServer::handleLogin, .user_ctx = &_route_context};
   httpd_uri_t command_uri = {.uri = "/api/command", .method = HTTP_POST, .handler = &WebPanelServer::handleCommand, .user_ctx = &_route_context};
-  httpd_uri_t bootstrap_uri = {.uri = "/api/bootstrap", .method = HTTP_GET, .handler = &WebPanelServer::handleBootstrap, .user_ctx = &_route_context};
   httpd_uri_t stats_uri = {.uri = "/api/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStats, .user_ctx = &_route_context};
   httpd_register_uri_handler(_server, &index_uri);
   httpd_register_uri_handler(_server, &app_uri);
   httpd_register_uri_handler(_server, &login_uri);
   httpd_register_uri_handler(_server, &command_uri);
-  httpd_register_uri_handler(_server, &bootstrap_uri);
   httpd_register_uri_handler(_server, &stats_uri);
   WEB_PANEL_LOG("server started on https://%s/", WiFi.localIP().toString().c_str());
   return true;
@@ -1822,77 +1813,6 @@ esp_err_t WebPanelServer::handleCommand(httpd_req_t* req) {
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   esp_err_t rc = httpd_resp_send(req, reply[0] ? reply : "OK", HTTPD_RESP_USE_STRLEN);
   freeScratchBuffer(command);
-  freeScratchBuffer(reply);
-  return rc;
-}
-
-esp_err_t WebPanelServer::handleBootstrap(httpd_req_t* req) {
-  auto* ctx = static_cast<RouteContext*>(req->user_ctx);
-  if (ctx == nullptr || ctx->self == nullptr || ctx->self->_runner == nullptr) {
-    return httpd_resp_send_500(req);
-  }
-  if (!ctx->self->isAuthorized(req)) {
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
-  }
-
-  ctx->self->noteActivity();
-  char* reply = allocScratchBuffer(kWebReplyBufferSize);
-  if (reply == nullptr) {
-    freeScratchBuffer(reply);
-    return httpd_resp_send_500(req);
-  }
-
-  const struct {
-    const char* key;
-    const char* command;
-	  } fields[] = {
-	      {"name", "get name"},
-	      {"mqtt_iata", "get mqtt.iata"},
-	      {"mqtt_owner", "get mqtt.owner"},
-	      {"mqtt_email", "get mqtt.email"},
-	      {"mqtt_eastmesh_au", "get mqtt.eastmesh-au"},
-	      {"mqtt_letsmesh_eu", "get mqtt.letsmesh-eu"},
-	      {"mqtt_letsmesh_us", "get mqtt.letsmesh-us"},
-	      {"advert_interval", "get advert.interval"},
-	      {"flood_interval", "get flood.advert.interval"},
-	      {"flood_max", "get flood.max"},
-        {"path_hash_mode", "get path.hash.mode"},
-        {"private_key", "get prv.key"},
-        {"role", "get role"},
-        {"clock", "clock"},
-        {"public_key", "get public.key"},
-        {"radio", "get radio"},
-	  };
-
-  httpd_resp_set_type(req, "application/json; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  if (sendChunk(req, "{") != ESP_OK) {
-    freeScratchBuffer(reply);
-    httpd_resp_sendstr_chunk(req, nullptr);
-    return ESP_FAIL;
-  }
-  for (size_t i = 0; i < (sizeof(fields) / sizeof(fields[0])); ++i) {
-    memset(reply, 0, kWebReplyBufferSize);
-    ctx->self->_runner->runWebCommand(fields[i].command, reply, kWebReplyBufferSize);
-    const char* value = reply;
-    if (value[0] == '>' && value[1] == ' ') {
-      value += 2;
-    }
-    if (strcmp(value, "-") == 0) {
-      value = "";
-    }
-    if (sendJsonFieldChunk(req, fields[i].key, value, i != 0) != ESP_OK) {
-      freeScratchBuffer(reply);
-      httpd_resp_sendstr_chunk(req, nullptr);
-      return ESP_FAIL;
-    }
-  }
-  esp_err_t rc = sendChunk(req, "}");
-  if (rc == ESP_OK) {
-    rc = httpd_resp_sendstr_chunk(req, nullptr);
-  } else {
-    httpd_resp_sendstr_chunk(req, nullptr);
-  }
   freeScratchBuffer(reply);
   return rc;
 }
