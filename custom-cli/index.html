@@ -790,47 +790,29 @@
 <p>These commands are available on <code>*_repeater_mqtt</code> firmware targets.</p>
 <h3 id="mqtt-status-and-routing">MQTT Status And Routing<a class="headerlink" href="#mqtt-status-and-routing" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get mqtt.status</code></li>
-<li>shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state</li>
-<li><code>get mqtt.statuscfg</code></li>
-<li>shows whether periodic status messages are enabled as a simple <code>on</code> or <code>off</code> value</li>
-<li>most users can just use <code>get mqtt.status</code></li>
-<li><code>get mqtt.iata</code></li>
-<li>shows the IATA/location code used in MQTT topics</li>
-<li><code>set mqtt.iata &lt;code&gt;</code></li>
-<li>sets the IATA/location code, for example <code>MEL</code></li>
+<li><code>get mqtt.status</code>: shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state.</li>
+<li><code>get mqtt.statuscfg</code>: shows whether periodic status messages are enabled as a simple <code>on</code> or <code>off</code> value. Most users can just use <code>get mqtt.status</code>.</li>
+<li><code>get mqtt.iata</code>: shows the IATA/location code used in MQTT topics.</li>
+<li><code>set mqtt.iata &lt;code&gt;</code>: sets the IATA/location code, for example <code>MEL</code>.</li>
 </ul>
 <h3 id="mqtt-identity">MQTT Identity<a class="headerlink" href="#mqtt-identity" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get mqtt.owner</code></li>
-<li>shows the configured owner public key</li>
-<li><code>set mqtt.owner &lt;64-hex-char-public-key&gt;</code></li>
-<li>sets the owner public key used in JWT metadata</li>
-<li><code>mqtt.owner &lt;64-hex-char-public-key&gt;</code></li>
-<li>shorthand for setting the owner public key</li>
-<li><code>get mqtt.email</code></li>
-<li>shows the configured owner email</li>
-<li><code>set mqtt.email &lt;email&gt;</code></li>
-<li>sets the owner email used in JWT metadata</li>
-<li><code>mqtt.email &lt;email&gt;</code></li>
-<li>shorthand for setting the owner email</li>
+<li><code>get mqtt.owner</code>: shows the configured owner public key.</li>
+<li><code>set mqtt.owner &lt;64-hex-char-public-key&gt;</code>: sets the owner public key used in JWT metadata.</li>
+<li><code>mqtt.owner &lt;64-hex-char-public-key&gt;</code>: shorthand for setting the owner public key.</li>
+<li><code>get mqtt.email</code>: shows the configured owner email.</li>
+<li><code>set mqtt.email &lt;email&gt;</code>: sets the owner email used in JWT metadata.</li>
+<li><code>mqtt.email &lt;email&gt;</code>: shorthand for setting the owner email.</li>
 </ul>
 <h3 id="mqtt-message-controls">MQTT Message Controls<a class="headerlink" href="#mqtt-message-controls" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get mqtt.packets</code></li>
-<li>shows whether packet messages are published</li>
-<li><code>set mqtt.packets on|off</code></li>
-<li>enables or disables packet publishing</li>
-<li><code>get mqtt.raw</code></li>
-<li>shows whether raw packet payloads are published</li>
-<li><code>set mqtt.raw on|off</code></li>
-<li>enables or disables the separate <code>raw</code> MQTT topic</li>
-<li><code>set mqtt.status on|off</code></li>
-<li>enables or disables periodic MQTT status publishing</li>
-<li><code>get mqtt.tx</code></li>
-<li>shows whether TX packets are included</li>
-<li><code>set mqtt.tx on|off</code></li>
-<li>enables or disables TX packet publishing</li>
+<li><code>get mqtt.packets</code>: shows whether packet messages are published.</li>
+<li><code>set mqtt.packets on|off</code>: enables or disables packet publishing.</li>
+<li><code>get mqtt.raw</code>: shows whether raw packet payloads are published.</li>
+<li><code>set mqtt.raw on|off</code>: enables or disables the separate <code>raw</code> MQTT topic.</li>
+<li><code>set mqtt.status on|off</code>: enables or disables periodic MQTT status publishing.</li>
+<li><code>get mqtt.tx</code>: shows whether TX packets are included.</li>
+<li><code>set mqtt.tx on|off</code>: enables or disables TX packet publishing.</li>
 </ul>
 <h3 id="mqtt-endpoints">MQTT Endpoints<a class="headerlink" href="#mqtt-endpoints" title="Permanent link">&para;</a></h3>
 <ul>
@@ -849,48 +831,31 @@
 </ul>
 <h3 id="wifi-settings-for-mqtt-repeaters">WiFi Settings For MQTT Repeaters<a class="headerlink" href="#wifi-settings-for-mqtt-repeaters" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get wifi.status</code></li>
-<li>shows SSID, connection state, raw WiFi status code, and IP when connected</li>
-<li><code>get wifi.ssid</code></li>
-<li>shows the configured WiFi SSID</li>
-<li><code>set wifi.ssid &lt;ssid&gt;</code></li>
-<li>sets the WiFi SSID</li>
-<li><code>set wifi.pwd &lt;password&gt;</code></li>
-<li>sets the WiFi password</li>
-<li><code>get wifi.powersaving</code></li>
-<li>shows the current WiFi power save mode</li>
-<li><code>set wifi.powersaving none|min|max</code></li>
-<li>sets WiFi power saving mode</li>
+<li><code>get wifi.status</code>: shows SSID, connection state, raw WiFi status code, and IP when connected.</li>
+<li><code>get wifi.ssid</code>: shows the configured WiFi SSID.</li>
+<li><code>set wifi.ssid &lt;ssid&gt;</code>: sets the WiFi SSID.</li>
+<li><code>set wifi.pwd &lt;password&gt;</code>: sets the WiFi password.</li>
+<li><code>get wifi.powersaving</code>: shows the current WiFi power save mode.</li>
+<li><code>set wifi.powersaving none|min|max</code>: sets WiFi power saving mode.</li>
 </ul>
 <h3 id="web-panel-controls">Web Panel Controls<a class="headerlink" href="#web-panel-controls" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get web</code></li>
-<li><code>get web.status</code></li>
-<li>shows whether the local HTTPS panel is available</li>
+<li><code>get web.status</code>: shows whether the local HTTPS panel is available.</li>
 <li><code>set web on|off</code></li>
-<li><code>set.web on|off</code></li>
-<li>enables or disables the local HTTPS panel</li>
+<li><code>set.web on|off</code>: enables or disables the local HTTPS panel.</li>
 </ul>
 <h3 id="runtime-diagnostics">Runtime Diagnostics<a class="headerlink" href="#runtime-diagnostics" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>memory</code></li>
-<li>shows current heap and PSRAM usage</li>
-<li><code>stats-core</code></li>
-<li>shows battery, uptime, sticky error count, and outbound queue depth</li>
-<li><code>stats-radio</code></li>
-<li>shows radio noise floor, last RSSI, last SNR, and TX/RX airtime</li>
-<li><code>stats-packets</code></li>
-<li>shows packet receive/send totals, flood/direct breakdown, and receive errors</li>
+<li><code>memory</code>: shows current heap and PSRAM usage.</li>
+<li><code>stats-core</code>: shows battery, uptime, sticky error count, and outbound queue depth.</li>
+<li><code>stats-radio</code>: shows radio noise floor, last RSSI, last SNR, and TX/RX airtime.</li>
+<li><code>stats-packets</code>: shows packet receive/send totals, flood/direct breakdown, and receive errors.</li>
 </ul>
 <h3 id="board-battery-reporting">Board Battery Reporting<a class="headerlink" href="#board-battery-reporting" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get battery.reporting</code></li>
-<li>shows whether board battery reporting is enabled</li>
-<li>support is board-dependent</li>
-<li><code>set battery.reporting on|off</code></li>
-<li>enables or disables battery voltage reporting on supported boards</li>
-<li>currently useful for Heltec V3 boards where USB-only power can produce misleading battery readings</li>
-<li>if your board needs this too, open an issue and support can be added board-by-board</li>
+<li><code>get battery.reporting</code>: shows whether board battery reporting is enabled. Support is board-dependent.</li>
+<li><code>set battery.reporting on|off</code>: enables or disables battery voltage reporting on supported boards. This is currently useful for Heltec V3 boards where USB-only power can produce misleading battery readings. If your board needs this too, open an issue and support can be added board-by-board.</li>
 </ul>
 <h2 id="web-panel-allowlisted-commands">Web Panel Allowlisted Commands<a class="headerlink" href="#web-panel-allowlisted-commands" title="Permanent link">&para;</a></h2>
 <p>When the repeater web panel is enabled, it only allows a limited command set.</p>
@@ -959,19 +924,13 @@
 <p>wait for <code>========= CLI Rescue =========</code></p>
 </li>
 <li>
-<p><code>get wifi.status</code></p>
+<p><code>get wifi.status</code>: shows configured SSID, connection status, raw WiFi status code, and IP when connected.</p>
 </li>
-<li>shows configured SSID, connection status, raw WiFi status code, and IP when connected</li>
-<li><code>get wifi.ssid</code></li>
-<li>shows the configured WiFi SSID</li>
-<li><code>get wifi.powersaving</code></li>
-<li>shows the current WiFi power saving mode</li>
-<li><code>set wifi.ssid &lt;ssid&gt;</code></li>
-<li>saves a WiFi SSID and immediately retries connection</li>
-<li><code>set wifi.pwd &lt;password&gt;</code></li>
-<li>saves a WiFi password and immediately retries connection</li>
-<li><code>set wifi.powersaving none|min|max</code></li>
-<li>changes the WiFi power save mode</li>
+<li><code>get wifi.ssid</code>: shows the configured WiFi SSID.</li>
+<li><code>get wifi.powersaving</code>: shows the current WiFi power saving mode.</li>
+<li><code>set wifi.ssid &lt;ssid&gt;</code>: saves a WiFi SSID and immediately retries connection.</li>
+<li><code>set wifi.pwd &lt;password&gt;</code>: saves a WiFi password and immediately retries connection.</li>
+<li><code>set wifi.powersaving none|min|max</code>: changes the WiFi power save mode.</li>
 </ul>
 <p>Companion WiFi builds also still support the existing rescue commands such as:</p>
 <ul>
