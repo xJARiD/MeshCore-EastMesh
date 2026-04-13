@@ -50,10 +50,8 @@ Some constrained targets disable the web panel to stay within flash limits. If y
 
 Useful CLI commands:
 
-- `get wifi.status`
-  - shows WiFi state and IP address when connected
-- `get web.status`
-  - shows whether the web panel is up and which URL to use
+- `get wifi.status`: shows WiFi state and IP address when connected.
+- `get web.status`: shows whether the web panel is up and which URL to use.
 
 Example:
 
@@ -137,16 +135,10 @@ Notes:
 
 This section includes:
 
-- `mqtt.iata`
-  - selected from a curated east-coast/south-east list
-- `mqtt.owner`
-  - owner public key
-- `mqtt.email`
-  - owner contact email
-- MQTT server toggles
-  - `eastmesh-au`
-  - `letsmesh-eu`
-  - `letsmesh-us`
+- `mqtt.iata`: selected from a curated east-coast/south-east list.
+- `mqtt.owner`: owner public key.
+- `mqtt.email`: owner contact email.
+- MQTT server toggles: `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us`.
 
 `MEL` is used as the default dropdown option until the repeater's saved value is loaded.
 

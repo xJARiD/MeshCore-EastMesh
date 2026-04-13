@@ -10,47 +10,29 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 
 ### MQTT Status And Routing
 
-- `get mqtt.status`
-  - shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state
-- `get mqtt.statuscfg`
-  - shows whether periodic status messages are enabled as a simple `on` or `off` value
-  - most users can just use `get mqtt.status`
-- `get mqtt.iata`
-  - shows the IATA/location code used in MQTT topics
-- `set mqtt.iata <code>`
-  - sets the IATA/location code, for example `MEL`
+- `get mqtt.status`: shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state.
+- `get mqtt.statuscfg`: shows whether periodic status messages are enabled as a simple `on` or `off` value. Most users can just use `get mqtt.status`.
+- `get mqtt.iata`: shows the IATA/location code used in MQTT topics.
+- `set mqtt.iata <code>`: sets the IATA/location code, for example `MEL`.
 
 ### MQTT Identity
 
-- `get mqtt.owner`
-  - shows the configured owner public key
-- `set mqtt.owner <64-hex-char-public-key>`
-  - sets the owner public key used in JWT metadata
-- `mqtt.owner <64-hex-char-public-key>`
-  - shorthand for setting the owner public key
-- `get mqtt.email`
-  - shows the configured owner email
-- `set mqtt.email <email>`
-  - sets the owner email used in JWT metadata
-- `mqtt.email <email>`
-  - shorthand for setting the owner email
+- `get mqtt.owner`: shows the configured owner public key.
+- `set mqtt.owner <64-hex-char-public-key>`: sets the owner public key used in JWT metadata.
+- `mqtt.owner <64-hex-char-public-key>`: shorthand for setting the owner public key.
+- `get mqtt.email`: shows the configured owner email.
+- `set mqtt.email <email>`: sets the owner email used in JWT metadata.
+- `mqtt.email <email>`: shorthand for setting the owner email.
 
 ### MQTT Message Controls
 
-- `get mqtt.packets`
-  - shows whether packet messages are published
-- `set mqtt.packets on|off`
-  - enables or disables packet publishing
-- `get mqtt.raw`
-  - shows whether raw packet payloads are published
-- `set mqtt.raw on|off`
-  - enables or disables the separate `raw` MQTT topic
-- `set mqtt.status on|off`
-  - enables or disables periodic MQTT status publishing
-- `get mqtt.tx`
-  - shows whether TX packets are included
-- `set mqtt.tx on|off`
-  - enables or disables TX packet publishing
+- `get mqtt.packets`: shows whether packet messages are published.
+- `set mqtt.packets on|off`: enables or disables packet publishing.
+- `get mqtt.raw`: shows whether raw packet payloads are published.
+- `set mqtt.raw on|off`: enables or disables the separate `raw` MQTT topic.
+- `set mqtt.status on|off`: enables or disables periodic MQTT status publishing.
+- `get mqtt.tx`: shows whether TX packets are included.
+- `set mqtt.tx on|off`: enables or disables TX packet publishing.
 
 ### MQTT Endpoints
 
@@ -69,48 +51,31 @@ Legacy dotted aliases are also accepted:
 
 ### WiFi Settings For MQTT Repeaters
 
-- `get wifi.status`
-  - shows SSID, connection state, raw WiFi status code, and IP when connected
-- `get wifi.ssid`
-  - shows the configured WiFi SSID
-- `set wifi.ssid <ssid>`
-  - sets the WiFi SSID
-- `set wifi.pwd <password>`
-  - sets the WiFi password
-- `get wifi.powersaving`
-  - shows the current WiFi power save mode
-- `set wifi.powersaving none|min|max`
-  - sets WiFi power saving mode
+- `get wifi.status`: shows SSID, connection state, raw WiFi status code, and IP when connected.
+- `get wifi.ssid`: shows the configured WiFi SSID.
+- `set wifi.ssid <ssid>`: sets the WiFi SSID.
+- `set wifi.pwd <password>`: sets the WiFi password.
+- `get wifi.powersaving`: shows the current WiFi power save mode.
+- `set wifi.powersaving none|min|max`: sets WiFi power saving mode.
 
 ### Web Panel Controls
 
 - `get web`
-- `get web.status`
-  - shows whether the local HTTPS panel is available
+- `get web.status`: shows whether the local HTTPS panel is available.
 - `set web on|off`
-- `set.web on|off`
-  - enables or disables the local HTTPS panel
+- `set.web on|off`: enables or disables the local HTTPS panel.
 
 ### Runtime Diagnostics
 
-- `memory`
-  - shows current heap and PSRAM usage
-- `stats-core`
-  - shows battery, uptime, sticky error count, and outbound queue depth
-- `stats-radio`
-  - shows radio noise floor, last RSSI, last SNR, and TX/RX airtime
-- `stats-packets`
-  - shows packet receive/send totals, flood/direct breakdown, and receive errors
+- `memory`: shows current heap and PSRAM usage.
+- `stats-core`: shows battery, uptime, sticky error count, and outbound queue depth.
+- `stats-radio`: shows radio noise floor, last RSSI, last SNR, and TX/RX airtime.
+- `stats-packets`: shows packet receive/send totals, flood/direct breakdown, and receive errors.
 
 ### Board Battery Reporting
 
-- `get battery.reporting`
-  - shows whether board battery reporting is enabled
-  - support is board-dependent
-- `set battery.reporting on|off`
-  - enables or disables battery voltage reporting on supported boards
-  - currently useful for Heltec V3 boards where USB-only power can produce misleading battery readings
-  - if your board needs this too, open an issue and support can be added board-by-board
+- `get battery.reporting`: shows whether board battery reporting is enabled. Support is board-dependent.
+- `set battery.reporting on|off`: enables or disables battery voltage reporting on supported boards. This is currently useful for Heltec V3 boards where USB-only power can produce misleading battery readings. If your board needs this too, open an issue and support can be added board-by-board.
 
 ## Web Panel Allowlisted Commands
 
@@ -181,18 +146,12 @@ To enter `CLI Rescue`:
 - long-press the user button within the first 8 seconds after boot
 - wait for `========= CLI Rescue =========`
 
-- `get wifi.status`
-  - shows configured SSID, connection status, raw WiFi status code, and IP when connected
-- `get wifi.ssid`
-  - shows the configured WiFi SSID
-- `get wifi.powersaving`
-  - shows the current WiFi power saving mode
-- `set wifi.ssid <ssid>`
-  - saves a WiFi SSID and immediately retries connection
-- `set wifi.pwd <password>`
-  - saves a WiFi password and immediately retries connection
-- `set wifi.powersaving none|min|max`
-  - changes the WiFi power save mode
+- `get wifi.status`: shows configured SSID, connection status, raw WiFi status code, and IP when connected.
+- `get wifi.ssid`: shows the configured WiFi SSID.
+- `get wifi.powersaving`: shows the current WiFi power saving mode.
+- `set wifi.ssid <ssid>`: saves a WiFi SSID and immediately retries connection.
+- `set wifi.pwd <password>`: saves a WiFi password and immediately retries connection.
+- `set wifi.powersaving none|min|max`: changes the WiFi power save mode.
 
 Companion WiFi builds also still support the existing rescue commands such as:
 

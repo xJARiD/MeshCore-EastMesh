@@ -39,9 +39,7 @@ Practical rule:
 
 1. Open the release page and download the file for your board.
 2. Confirm the board name in the filename matches your hardware.
-3. Choose one of the following:
-   - update existing firmware with the normal `.bin`
-   - erase the device first, then flash the `-merged.bin`
+3. Choose one of the following: update existing firmware with the normal `.bin`, or erase the device first and flash the `-merged.bin`.
 4. Reboot the device and complete any post-flash setup such as WiFi, MQTT, or radio settings.
 
 ## Recommended Flasher
@@ -66,10 +64,7 @@ Recommended usage:
 If this is your first time flashing EastMesh firmware, the easiest path is:
 
 1. Open <https://flasher.eastmesh.au/>.
-2. Select the firmware type you want:
-   - `Companion WiFi`
-   - `Repeater MQTT`
-   - or `Custom`
+2. Select the firmware type you want: `Companion WiFi`, `Repeater MQTT`, or `Custom`.
 3. Flash the correct firmware for your board.
 4. Use the built-in setup tools in the flasher site to finish first-time configuration.
 
