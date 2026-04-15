@@ -2132,35 +2132,96 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
 #else
   char wifi_ssid[48];
   char wifi_status[20];
+  char wifi_state[24];
   char wifi_ip[20];
+  char wifi_signal[16];
   char wifi_powersave[12];
   escapeJsonString(network.getWifiSSID()[0] ? network.getWifiSSID() : "-", wifi_ssid, sizeof(wifi_ssid));
   escapeJsonString(network.getWifiPowerSave(), wifi_powersave, sizeof(wifi_powersave));
   int wifi_rssi = 0;
+  int wifi_quality = 0;
+  int wifi_code = 0;
 
 #if defined(ESP32)
   if (network.getWifiSSID()[0] == 0) {
     strncpy(wifi_status, "unconfigured", sizeof(wifi_status) - 1);
     wifi_status[sizeof(wifi_status) - 1] = 0;
+    strncpy(wifi_state, "unconfigured", sizeof(wifi_state) - 1);
+    wifi_state[sizeof(wifi_state) - 1] = 0;
     strncpy(wifi_ip, "--", sizeof(wifi_ip) - 1);
     wifi_ip[sizeof(wifi_ip) - 1] = 0;
+    strncpy(wifi_signal, "--", sizeof(wifi_signal) - 1);
+    wifi_signal[sizeof(wifi_signal) - 1] = 0;
   } else if (network.isWifiConnected()) {
     strncpy(wifi_status, "connected", sizeof(wifi_status) - 1);
     wifi_status[sizeof(wifi_status) - 1] = 0;
+    strncpy(wifi_state, "connected", sizeof(wifi_state) - 1);
+    wifi_state[sizeof(wifi_state) - 1] = 0;
     String ip = WiFi.localIP().toString();
     escapeJsonString(ip.c_str(), wifi_ip, sizeof(wifi_ip));
     wifi_rssi = WiFi.RSSI();
+    wifi_code = static_cast<int>(WiFi.status());
+    if (wifi_rssi <= -100) {
+      wifi_quality = 0;
+      strncpy(wifi_signal, "poor", sizeof(wifi_signal) - 1);
+    } else if (wifi_rssi >= -50) {
+      wifi_quality = 100;
+      strncpy(wifi_signal, "excellent", sizeof(wifi_signal) - 1);
+    } else {
+      wifi_quality = 2 * (wifi_rssi + 100);
+      if (wifi_rssi >= -60) {
+        strncpy(wifi_signal, "excellent", sizeof(wifi_signal) - 1);
+      } else if (wifi_rssi >= -67) {
+        strncpy(wifi_signal, "good", sizeof(wifi_signal) - 1);
+      } else if (wifi_rssi >= -75) {
+        strncpy(wifi_signal, "fair", sizeof(wifi_signal) - 1);
+      } else {
+        strncpy(wifi_signal, "poor", sizeof(wifi_signal) - 1);
+      }
+    }
+    wifi_signal[sizeof(wifi_signal) - 1] = 0;
   } else {
     strncpy(wifi_status, "connecting", sizeof(wifi_status) - 1);
     wifi_status[sizeof(wifi_status) - 1] = 0;
+    wifi_code = static_cast<int>(WiFi.status());
+    switch (WiFi.status()) {
+      case WL_IDLE_STATUS:
+        strncpy(wifi_state, "idle", sizeof(wifi_state) - 1);
+        break;
+      case WL_NO_SSID_AVAIL:
+        strncpy(wifi_state, "no_ssid", sizeof(wifi_state) - 1);
+        break;
+      case WL_SCAN_COMPLETED:
+        strncpy(wifi_state, "scan_completed", sizeof(wifi_state) - 1);
+        break;
+      case WL_CONNECT_FAILED:
+        strncpy(wifi_state, "connect_failed", sizeof(wifi_state) - 1);
+        break;
+      case WL_CONNECTION_LOST:
+        strncpy(wifi_state, "connection_lost", sizeof(wifi_state) - 1);
+        break;
+      case WL_DISCONNECTED:
+        strncpy(wifi_state, "disconnected", sizeof(wifi_state) - 1);
+        break;
+      default:
+        strncpy(wifi_state, "unknown", sizeof(wifi_state) - 1);
+        break;
+    }
+    wifi_state[sizeof(wifi_state) - 1] = 0;
     strncpy(wifi_ip, "--", sizeof(wifi_ip) - 1);
     wifi_ip[sizeof(wifi_ip) - 1] = 0;
+    strncpy(wifi_signal, "--", sizeof(wifi_signal) - 1);
+    wifi_signal[sizeof(wifi_signal) - 1] = 0;
   }
 #else
   strncpy(wifi_status, "unsupported", sizeof(wifi_status) - 1);
   wifi_status[sizeof(wifi_status) - 1] = 0;
+  strncpy(wifi_state, "unsupported", sizeof(wifi_state) - 1);
+  wifi_state[sizeof(wifi_state) - 1] = 0;
   strncpy(wifi_ip, "--", sizeof(wifi_ip) - 1);
   wifi_ip[sizeof(wifi_ip) - 1] = 0;
+  strncpy(wifi_signal, "--", sizeof(wifi_signal) - 1);
+  wifi_signal[sizeof(wifi_signal) - 1] = 0;
 #endif
 
   const int battery_pct = board.getBatteryPercent();
@@ -2189,7 +2250,7 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      "\"packets\":{\"recv\":%u,\"sent\":%u,\"flood_tx\":%u,\"direct_tx\":%u,\"flood_rx\":%u,\"direct_rx\":%u,"
                      "\"recv_errors\":%u,\"direct_dups\":%u,\"flood_dups\":%u,\"neighbors\":%u},"
                      "\"memory\":{\"heap_free\":%u,\"heap_min\":%u,\"heap_max\":%u,\"psram_free\":%u,\"psram_min\":%u,\"psram_max\":%u},"
-                     "\"wifi\":{\"ssid\":\"%s\",\"status\":\"%s\",\"connected\":%s,\"ip\":\"%s\",\"rssi\":%d,\"powersave\":\"%s\"},"
+                     "\"wifi\":{\"ssid\":\"%s\",\"status\":\"%s\",\"connected\":%s,\"state\":\"%s\",\"code\":%d,\"ip\":\"%s\",\"rssi\":%d,\"quality\":%d,\"signal\":\"%s\",\"powersave\":\"%s\"},"
                      "\"services\":{\"mqtt_connected\":%s,\"web_enabled\":%s,\"web_panel_up\":%s,\"web_auth\":\"%s\","
                      "\"archive_available\":%s}",
                      (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "true" : "false",
@@ -2241,8 +2302,12 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      wifi_ssid,
                      wifi_status,
                      network.isWifiConnected() ? "true" : "false",
+                     wifi_state,
+                     wifi_code,
                      wifi_ip,
                      wifi_rssi,
+                     wifi_quality,
+                     wifi_signal,
                      wifi_powersave,
                      mqtt_connected ? "true" : "false",
                      web.isWebEnabled() ? "true" : "false",

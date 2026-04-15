@@ -26,9 +26,15 @@ Operational guidance:
 
 ## Screenshot Overview
 
-The layout below reflects the current panel structure for the repeater web UI.
+The screenshots below show the current split between the lighter `/app` admin page and the dedicated `/stats` status page.
 
-![Repeater web panel overview](./_assets/repeater_web_panel_overview.png)
+### `/app`
+
+![Repeater web panel `/app` overview](./_assets/repeater_web_panel_app.png)
+
+### `/stats`
+
+![Repeater web panel `/stats` overview](./_assets/repeater_web_panel_stats.png)
 
 ## Requirements
 
