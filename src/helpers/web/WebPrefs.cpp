@@ -2,11 +2,27 @@
 
 #include <string.h>
 
+namespace {
+
+bool defaultWebEnabled() {
+  return true;
+}
+
+bool defaultWebStatsEnabled() {
+#if !defined(BOARD_HAS_PSRAM)
+  return false;
+#else
+  return true;
+#endif
+}
+
+}  // namespace
+
 void WebPrefsStore::setDefaults(WebPrefs& prefs) {
   memset(&prefs, 0, sizeof(prefs));
   prefs.magic = kMagic;
-  prefs.web_enabled = 1;
-  prefs.web_stats_enabled = 1;
+  prefs.web_enabled = defaultWebEnabled() ? 1 : 0;
+  prefs.web_stats_enabled = defaultWebStatsEnabled() ? 1 : 0;
 }
 
 bool WebPrefsStore::load(FILESYSTEM* fs, WebPrefs& prefs) {

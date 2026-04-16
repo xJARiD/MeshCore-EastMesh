@@ -80,6 +80,9 @@ void WebService::ensureWebServer() {
     _panel.stop();
     return;
   }
+  if (_panel.isRunning()) {
+    return;
+  }
   _panel.start();
 }
 #endif
