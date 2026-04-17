@@ -1473,9 +1473,9 @@
 <p>The stats page is loaded separately from <code>/app</code> and is intended to keep the main admin page lighter.</p>
 <p>The <code>/stats</code> page currently shows:</p>
 <ul>
-<li><code>Services</code>: MQTT, web, archive, card, neighbour count, and archive capacity</li>
-<li><code>Trends</code>: battery, heap free, packet activity, and signal</li>
-<li><code>Neighbours</code>: current neighbour table</li>
+<li><code>Services</code>: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity</li>
+<li><code>Trends</code>: battery, heap free, packet activity, signal, and noise floor</li>
+<li><code>Neighbours</code>: current neighbour table with ID, SNR, heard age, and advert age</li>
 <li><code>Events</code>: current boot/session events</li>
 </ul>
 <p>The trend graphs load sequentially rather than as one large payload:</p>
