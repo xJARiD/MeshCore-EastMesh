@@ -103,7 +103,6 @@ This table includes all repeater MQTT targets currently defined in `variants/eas
 | LilyGo_TBeam_1W          | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  | ✅  |
 | LilyGo_TDeck             | ESP32S3 | 512 KB | No    | 16 MB | SX1262 | TFT (ST7789)    | ✅  | 🧪  |
 | LilyGo_Tlora_C6          | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
-| LilyGo_TLora_V2_1_1_6    | ESP32   | 520 KB | No    | 4 MB  | SX1276 | OLED (SSD1306)  | ✅  |     |
 | M5Stack_Unit_C6L         | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            | ✅  |     |
 | Meshadventurer_sx1262    | ESP32   | 520 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  | ✅  |     |
 | Meshadventurer_sx1268    | ESP32   | 520 KB | No    | 4 MB  | SX1268 | OLED (SSD1306)  | ✅  |     |
