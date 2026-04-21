@@ -191,9 +191,14 @@ The stats page is loaded separately from `/app` and is intended to keep the main
 The `/stats` page currently shows:
 
 - `Services`: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity
-- `Trends`: battery, heap free, packet activity, signal, and noise floor
+- optional full-width `Environment` summary card on boards that report GPS or environmental telemetry
+- `Trends`: battery, heap free, packet activity, signal, noise floor, and supported environment history such as voltage, temperatures, humidity, barometer, altitude, and, when GPS is enabled, satellites
 - `Neighbours`: current neighbour table with ID, SNR, heard age, and advert age
 - `Events`: current boot/session events
+
+For boards that expose extra telemetry, the optional `Environment` summary card can show current values such as GPS fix state, latitude, longitude, GPS altitude, voltage, sensor temperature, humidity, barometer, pressure-derived altitude, and MCU temperature.
+
+Metrics with no current value are hidden rather than showing placeholder rows, so the cards vary by board and by current sensor state.
 
 The trend graphs load sequentially rather than as one large payload:
 
@@ -202,10 +207,11 @@ The trend graphs load sequentially rather than as one large payload:
 3. memory
 4. packet activity
 5. signal
+6. remaining supported environment series
 
 This keeps browser-side and device-side memory use lower than the previous in-page stats view.
 
-If `web.stats` is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history.
+If `web.stats` is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history. This now includes the supported environment series as well as the original core/radio stats.
 
 ### Stats History Capacity
 

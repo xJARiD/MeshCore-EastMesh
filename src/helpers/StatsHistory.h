@@ -24,9 +24,20 @@ struct HistorySample {
   int16_t last_rssi_x4;
   int16_t last_snr_x4;
   int16_t noise_floor;
+  uint16_t supply_voltage_centi_v;
+  int16_t sensor_temp_deci_c;
+  int16_t mcu_temp_deci_c;
+  uint16_t humidity_deci_pct;
+  uint16_t pressure_deci_hpa;
+  int16_t pressure_altitude_m;
+  int16_t gps_altitude_m;
+  int32_t gps_lat_e6;
+  int32_t gps_lon_e6;
+  uint16_t sensor_flags;
+  uint8_t gps_satellites;
   uint8_t flags;
   int8_t battery_pct;
-  uint16_t reserved;
+  uint8_t reserved;
 };
 
 struct HistoryEvent {
@@ -46,6 +57,22 @@ enum HistorySampleFlags : uint8_t {
   HISTORY_FLAG_WEB_ENABLED = 1 << 5,
   HISTORY_FLAG_WEB_PANEL_UP = 1 << 6,
   HISTORY_FLAG_ARCHIVE_MOUNTED = 1 << 7,
+};
+
+enum HistorySampleSensorFlags : uint16_t {
+  HISTORY_SENSOR_SUPPLY_VOLTAGE = 1 << 0,
+  HISTORY_SENSOR_TEMP = 1 << 1,
+  HISTORY_SENSOR_MCU_TEMP = 1 << 2,
+  HISTORY_SENSOR_HUMIDITY = 1 << 3,
+  HISTORY_SENSOR_PRESSURE = 1 << 4,
+  HISTORY_SENSOR_PRESSURE_ALTITUDE = 1 << 5,
+  HISTORY_SENSOR_GPS_PRESENT = 1 << 6,
+  HISTORY_SENSOR_GPS_ENABLED = 1 << 7,
+  HISTORY_SENSOR_GPS_FIX = 1 << 8,
+  HISTORY_SENSOR_GPS_LAT = 1 << 9,
+  HISTORY_SENSOR_GPS_LON = 1 << 10,
+  HISTORY_SENSOR_GPS_ALTITUDE = 1 << 11,
+  HISTORY_SENSOR_GPS_SATELLITES = 1 << 12,
 };
 
 enum HistoryEventType : uint8_t {

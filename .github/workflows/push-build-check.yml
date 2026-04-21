@@ -2,7 +2,7 @@ name: PUSH Build Check
 
 on:
   push:
-    branches: [develop]
+    branches: [ develop ]
     paths:
       - "src/**"
       - "examples/**"
@@ -22,6 +22,7 @@ jobs:
         environment:
           # ESP32-S3 / core EastMesh targets
           - heltec_v4_repeater_mqtt
+          - LilyGo_TBeam_1W_repeater_mqtt
           - T_Beam_S3_Supreme_SX1262_repeater_mqtt
           # ESP32-C6
           - LilyGo_Tlora_C6_repeater_mqtt

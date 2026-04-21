@@ -37,6 +37,9 @@ const char* cardTypeName(uint8_t type) {
 
 #if defined(ESP32)
 SPIClass* getBoardSharedArchiveSPI() __attribute__((weak));
+SPIClass* getBoardSharedArchiveSPI() {
+  return nullptr;
+}
 #endif
 
 ArchiveStorage::ArchiveStorage()

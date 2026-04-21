@@ -484,6 +484,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .meter-fill.warn { background:linear-gradient(90deg,#d7a531,#e9bf52); }
     .meter-fill.bad { background:linear-gradient(90deg,#bf4b4b,#dd6a6a); }
     .metric-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .metric-grid-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
     .core-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
     .core-grid .hud-row { align-content:start; }
     .core-metrics { grid-template-columns:repeat(4,minmax(0,1fr)); }
@@ -1389,6 +1390,18 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         <div class="metric-value">${escapeHtml(value)}</div>
       </div>`;
     }
+    function hasMetricValue(value) {
+      if (value == null) return false;
+      if (typeof value === "number") return Number.isFinite(value);
+      return String(value).trim() !== "";
+    }
+    function renderMetricList(metrics, gridClass = "") {
+      const items = (Array.isArray(metrics) ? metrics : []).filter((item) => item && hasMetricValue(item.value));
+      if (!items.length) return "";
+      const classes = ["metric-grid"];
+      if (gridClass) classes.push(gridClass);
+      return `<div class="${classes.join(" ")}">${items.map((item) => renderMetric(item.label, item.value)).join("")}</div>`;
+    }
     function renderMissingCard(title, message) {
       return `<section class="hud-card">
         <h3>${escapeHtml(title)}</h3>
@@ -1575,20 +1588,44 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const archiveUsed = archive.used_bytes || 0;
       const archiveFree = Math.max(0, archiveTotal - archiveUsed);
       const archiveFreePct = archiveTotal > 0 ? Math.round((archiveFree / archiveTotal) * 100) : 0;
-      const archiveMetrics = archive.available ? `
-          ${renderMetric("Card", archive.type || "--")}
-          ${renderMetric("Archive Total", formatArchiveGigabytes(archiveTotal))}
-          ${renderMetric("Archive Used", formatArchiveUsed(archiveUsed))}
-          ${renderMetric("Archive Free", archiveTotal > 0 ? (formatArchiveGigabytes(archiveFree) + " (" + archiveFreePct + "%)") : "--")}` : "";
+      const metrics = [
+        { label:"MQTT", value:services.mqtt_state || (services.mqtt_connected ? "up" : "down") },
+        { label:"Web", value:services.web_panel_up ? services.web_auth || "up" : "down" },
+        { label:"Archive", value:archive.available ? archive.logical || "archive" : "unavailable" },
+        { label:"Neighbours", value:packets.neighbors || 0 }
+      ];
+      if (archive.available) {
+        metrics.push(
+          { label:"Card", value:archive.type || "--" },
+          { label:"Archive Total", value:formatArchiveGigabytes(archiveTotal) },
+          { label:"Archive Used", value:formatArchiveUsed(archiveUsed) },
+          { label:"Archive Free", value:archiveTotal > 0 ? (formatArchiveGigabytes(archiveFree) + " (" + archiveFreePct + "%)") : "--" }
+        );
+      }
       return `<section class="hud-card">
         <h3>Services</h3>
-        <div class="metric-grid">
-          ${renderMetric("MQTT", services.mqtt_state || (services.mqtt_connected ? "up" : "down"))}
-          ${renderMetric("Web", services.web_panel_up ? services.web_auth || "up" : "down")}
-          ${renderMetric("Archive", archive.available ? archive.logical || "archive" : "unavailable")}
-          ${renderMetric("Neighbours", packets.neighbors || 0)}
-          ${archiveMetrics}
-        </div>
+        ${renderMetricList(metrics, "metric-grid-4")}
+      </section>`;
+    }
+    function renderSensorsCard(sensorSummary) {
+      const sensors = sensorSummary && typeof sensorSummary === "object" ? sensorSummary : {};
+      const metrics = [
+        Number.isFinite(sensors.supply_voltage_v) ? { label:"Voltage", value:sensors.supply_voltage_v.toFixed(2) + " V" } : null,
+        Number.isFinite(sensors.sensor_temp_c) ? { label:"Sensor Temp", value:sensors.sensor_temp_c.toFixed(1) + " C" } : null,
+        Number.isFinite(sensors.humidity_pct) ? { label:"Humidity", value:Math.round(sensors.humidity_pct) + " %" } : null,
+        Number.isFinite(sensors.pressure_hpa) ? { label:"Barometer", value:sensors.pressure_hpa.toFixed(1) + " hPa" } : null,
+        Number.isFinite(sensors.pressure_altitude_m) ? { label:"Pressure Altitude", value:Math.round(sensors.pressure_altitude_m) + " m" } : null,
+        Number.isFinite(sensors.mcu_temp_c) ? { label:"MCU Temp", value:sensors.mcu_temp_c.toFixed(1) + " C" } : null,
+        typeof sensors.gps_enabled === "boolean" ? { label:"GPS", value:sensors.gps_fix ? "Fix" : (sensors.gps_enabled ? "Searching" : "Off") } : null,
+        Number.isFinite(sensors.satellites) ? { label:"Satellites", value:String(Math.round(sensors.satellites)) } : null,
+        Number.isFinite(sensors.gps_lat) ? { label:"Latitude", value:sensors.gps_lat.toFixed(6) } : null,
+        Number.isFinite(sensors.gps_lon) ? { label:"Longitude", value:sensors.gps_lon.toFixed(6) } : null,
+        Number.isFinite(sensors.gps_altitude_m) ? { label:"GPS Altitude", value:Math.round(sensors.gps_altitude_m) + " m" } : null
+      ];
+      if (!renderMetricList(metrics)) return "";
+      return `<section class="hud-card">
+        <h3>Environment</h3>
+        ${renderMetricList(metrics, "metric-grid-4")}
       </section>`;
     }
     function renderEventsSection(events) {
@@ -1668,6 +1705,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       renderStatsDashboard(results, [], "statsSummary");
       const summaryEl = document.getElementById("statsSummary");
       if (!summaryEl) return;
+      const sensorCards = [
+        renderSensorsCard(payload && payload.sensors ? payload.sensors : null)
+      ].filter((card) => card);
+      if (sensorCards.length > 0) {
+        sensorCards.forEach((card) => {
+          summaryEl.innerHTML += `<div class="hud-grid-1">${card}</div>`;
+        });
+      }
       summaryEl.innerHTML += `<div class="hud-grid-1">${renderServicesCard(payload)}</div>`;
       const introEl = document.getElementById("statsTrendIntro");
       if (introEl) {
@@ -1705,10 +1750,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function formatTrendValue(key, value) {
       if (!Number.isFinite(value)) return "--";
       if (key === "battery") return Math.round(value) + " mV";
+      if (key === "voltage") return (value / 100).toFixed(2) + " V";
       if (key === "memory") return formatBytes(value);
       if (key === "packets") return Math.round(value) + " pkts";
       if (key === "signal") return (value / 4).toFixed(1) + " dBm";
       if (key === "noise_floor") return (value / 4).toFixed(1) + " dBm";
+      if (key === "sensor_temp" || key === "mcu_temp") return (value / 10).toFixed(1) + " C";
+      if (key === "humidity") return (value / 10).toFixed(1) + " %";
+      if (key === "pressure") return (value / 10).toFixed(1) + " hPa";
+      if (key === "pressure_altitude" || key === "gps_altitude") return Math.round(value) + " m";
+      if (key === "gps_satellites") return Math.round(value) + " sats";
       return String(value);
     }
     function formatArchiveGigabytes(value) {
@@ -1935,10 +1986,20 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         axisRightEl.style.color = "var(--status-red)";
       }
     }
-    function initTrendCards() {
+    function getTrendSeriesOrder(summaryPayload) {
+      const sensors = summaryPayload && summaryPayload.sensors ? summaryPayload.sensors : null;
+      const gpsEnabled = !!(sensors && sensors.gps_enabled === true);
+      const order = ["battery", "memory", "signal", "noise_floor", "packets"];
+      if (gpsEnabled) {
+        order.push("gps_satellites");
+      }
+      return order.concat(["voltage", "sensor_temp", "humidity", "pressure", "pressure_altitude", "mcu_temp", "gps_altitude"]);
+    }
+    function initTrendCards(seriesOrder) {
       const trendsEl = document.getElementById("statsTrends");
       if (!trendsEl) return;
-      trendsEl.innerHTML = ["battery", "memory", "signal", "noise_floor", "packets"].map((key) =>
+      const order = Array.isArray(seriesOrder) && seriesOrder.length ? seriesOrder : getTrendSeriesOrder(null);
+      trendsEl.innerHTML = order.map((key) =>
         `<section class="trend-card" id="trend-${key}">
           <div class="trend-title">${escapeHtml(key)}</div>
           <div class="spark-axis"><span></span><span>Loading...</span></div>
@@ -2248,17 +2309,18 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const summaryEl = document.getElementById("statsSummary");
       if (!summaryEl) return;
       summaryEl.innerHTML = '<div class="stats-empty">Loading summary...</div>';
-      initTrendCards();
+      let summaryPayload = null;
       try {
-        const payload = await fetchJson("/api/stats?view=summary");
-        if (!payload) throw new Error("no summary payload");
-        renderStatsSummary(payload);
+        summaryPayload = await fetchJson("/api/stats?view=summary");
+        if (!summaryPayload) throw new Error("no summary payload");
+        renderStatsSummary(summaryPayload);
+        initTrendCards(getTrendSeriesOrder(summaryPayload));
       } catch (error) {
         summaryEl.innerHTML = `<div class="stats-error">${escapeHtml(error && error.message ? error.message : "summary unavailable")}</div>`;
         return;
       }
 
-      const seriesOrder = ["battery", "memory", "signal", "noise_floor", "packets"];
+      const seriesOrder = getTrendSeriesOrder(summaryPayload);
       for (const key of seriesOrder) {
         try {
           const payload = await fetchJson("/api/stats?series=" + encodeURIComponent(key));
@@ -2577,10 +2639,7 @@ bool WebPanelServer::start() {
 }
 
 void WebPanelServer::stop() {
-  if (_redirect_server != nullptr) {
-    httpd_stop(_redirect_server);
-    _redirect_server = nullptr;
-  }
+  stopRedirectServer();
   if (_server != nullptr) {
     WEB_PANEL_LOG("server stopped");
     httpd_ssl_stop(_server);
@@ -2596,6 +2655,14 @@ bool WebPanelServer::isRunning() const {
 
 bool WebPanelServer::hasSessionToken() const {
   return _token[0] != 0;
+}
+
+void WebPanelServer::stopRedirectServer() {
+  if (_redirect_server != nullptr) {
+    WEB_PANEL_LOG("redirect server stopped");
+    httpd_stop(_redirect_server);
+    _redirect_server = nullptr;
+  }
 }
 
 bool WebPanelServer::shouldAutoLock(unsigned long now_ms) const {
@@ -2717,6 +2784,11 @@ esp_err_t WebPanelServer::handleCommand(httpd_req_t* req) {
 
   ctx->self->noteActivity();
   memset(reply, 0, kWebReplyBufferSize);
+  if (strcmp(command, "start ota") == 0) {
+    // OTA serves its own HTTP listener on port 80, so release the
+    // web-panel redirect listener first or it will keep owning that port.
+    ctx->self->stopRedirectServer();
+  }
   ctx->self->_runner->runWebCommand(command, reply, kWebReplyBufferSize);
   httpd_resp_set_type(req, "text/plain; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");

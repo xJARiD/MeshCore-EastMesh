@@ -152,6 +152,7 @@ Notes:
 
 - this summary view is also what the repo's web panel requests first before loading trend series
 - if `web.stats` is disabled, the endpoint returns `503 Service Unavailable`
+- supported boards may also include an optional `sensors` object in the summary payload for current GPS and environmental telemetry
 
 ### `GET /api/stats?series=<name>`
 
@@ -164,6 +165,14 @@ Supported series:
 - `signal`
 - `noise_floor`
 - `packets`
+- `voltage`
+- `sensor_temp`
+- `humidity`
+- `pressure`
+- `pressure_altitude`
+- `mcu_temp`
+- `gps_altitude`
+- `gps_satellites`
 
 Example:
 
@@ -176,6 +185,7 @@ Notes:
 
 - use `?series=battery`, not just `?series`
 - the built-in web panel loads these series sequentially rather than all at once to keep board memory pressure lower
+- environment series are included only when the board reports those readings; if a series has no captured points yet, it returns an empty `points` array and `current:null`
 
 ### `GET /api/stats?view=legacy`
 

@@ -26,7 +26,7 @@ namespace {
 constexpr uint32_t kSummaryFlushIntervalMs = 5UL * 60UL * 1000UL;
 constexpr uint32_t kEventFlushIntervalMs = 60UL * 1000UL;
 constexpr size_t kMaxSeriesPoints = 64;
-constexpr size_t kSummaryRestoreWindowBytes = 16384;
+constexpr size_t kSummaryRestoreWindowBytes = 32768;
 constexpr size_t kEventsRestoreWindowBytes = 4096;
 constexpr uint32_t kBootAutoCapturePsramMinBytes = 2000000UL;
 constexpr size_t kLiveOnlySampleCapacity = 24;
@@ -187,28 +187,90 @@ File openArchiveWriteWithRecovery(ArchiveStorage* archive, const char* filename)
   return fs != nullptr ? openArchiveWrite(fs, filename) : File();
 }
 
-int buildPointValue(const HistorySample& sample, const HistorySample* previous, const char* series) {
+bool buildPointValue(const HistorySample& sample, const HistorySample* previous, const char* series, int& value) {
   if (strcmp(series, "battery") == 0) {
-    return static_cast<int>(sample.battery_mv);
+    value = static_cast<int>(sample.battery_mv);
+    return true;
   }
   if (strcmp(series, "memory") == 0) {
-    return static_cast<int>(sample.heap_free);
+    value = static_cast<int>(sample.heap_free);
+    return true;
   }
   if (strcmp(series, "signal") == 0) {
-    return static_cast<int>(sample.last_rssi_x4);
+    value = static_cast<int>(sample.last_rssi_x4);
+    return true;
   }
   if (strcmp(series, "noise_floor") == 0) {
-    return static_cast<int>(sample.noise_floor * 4);
+    value = static_cast<int>(sample.noise_floor * 4);
+    return true;
   }
   if (strcmp(series, "packets") == 0) {
     if (previous == nullptr) {
-      return 0;
+      value = 0;
+      return true;
     }
     const uint32_t curr_total = sample.packets_sent + sample.packets_recv;
     const uint32_t prev_total = previous->packets_sent + previous->packets_recv;
-    return static_cast<int>(curr_total >= prev_total ? (curr_total - prev_total) : 0);
+    value = static_cast<int>(curr_total >= prev_total ? (curr_total - prev_total) : 0);
+    return true;
   }
-  return 0;
+  if (strcmp(series, "voltage") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_SUPPLY_VOLTAGE) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.supply_voltage_centi_v);
+    return true;
+  }
+  if (strcmp(series, "sensor_temp") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_TEMP) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.sensor_temp_deci_c);
+    return true;
+  }
+  if (strcmp(series, "humidity") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_HUMIDITY) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.humidity_deci_pct);
+    return true;
+  }
+  if (strcmp(series, "pressure") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_PRESSURE) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.pressure_deci_hpa);
+    return true;
+  }
+  if (strcmp(series, "pressure_altitude") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_PRESSURE_ALTITUDE) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.pressure_altitude_m);
+    return true;
+  }
+  if (strcmp(series, "mcu_temp") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_MCU_TEMP) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.mcu_temp_deci_c);
+    return true;
+  }
+  if (strcmp(series, "gps_altitude") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_GPS_ALTITUDE) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.gps_altitude_m);
+    return true;
+  }
+  if (strcmp(series, "gps_satellites") == 0) {
+    if ((sample.sensor_flags & HISTORY_SENSOR_GPS_SATELLITES) == 0) {
+      return false;
+    }
+    value = static_cast<int>(sample.gps_satellites);
+    return true;
+  }
+  return false;
 }
 
 const char* seriesTitle(const char* series) {
@@ -226,6 +288,30 @@ const char* seriesTitle(const char* series) {
   }
   if (strcmp(series, "noise_floor") == 0) {
     return "Noise Floor";
+  }
+  if (strcmp(series, "voltage") == 0) {
+    return "Voltage";
+  }
+  if (strcmp(series, "sensor_temp") == 0) {
+    return "Sensor Temp";
+  }
+  if (strcmp(series, "humidity") == 0) {
+    return "Humidity";
+  }
+  if (strcmp(series, "pressure") == 0) {
+    return "Barometer";
+  }
+  if (strcmp(series, "pressure_altitude") == 0) {
+    return "Pressure Altitude";
+  }
+  if (strcmp(series, "mcu_temp") == 0) {
+    return "MCU Temp";
+  }
+  if (strcmp(series, "gps_altitude") == 0) {
+    return "GPS Altitude";
+  }
+  if (strcmp(series, "gps_satellites") == 0) {
+    return "Satellites";
   }
   return "";
 }
@@ -245,6 +331,24 @@ const char* seriesUnit(const char* series) {
   }
   if (strcmp(series, "noise_floor") == 0) {
     return "noise_floor_x4";
+  }
+  if (strcmp(series, "voltage") == 0) {
+    return "centi_v";
+  }
+  if (strcmp(series, "sensor_temp") == 0 || strcmp(series, "mcu_temp") == 0) {
+    return "deci_c";
+  }
+  if (strcmp(series, "humidity") == 0) {
+    return "deci_pct";
+  }
+  if (strcmp(series, "pressure") == 0) {
+    return "deci_hpa";
+  }
+  if (strcmp(series, "pressure_altitude") == 0 || strcmp(series, "gps_altitude") == 0) {
+    return "m";
+  }
+  if (strcmp(series, "gps_satellites") == 0) {
+    return "count";
   }
   return "";
 }
@@ -486,8 +590,85 @@ bool StatsHistory::parseSummaryLine(const char* line, HistorySample& sample) con
   unsigned direct_dups = 0;
   unsigned flood_dups = 0;
   unsigned flags = 0;
+  unsigned supply_voltage_centi_v = 0;
+  int sensor_temp_deci_c = 0;
+  int mcu_temp_deci_c = 0;
+  unsigned humidity_deci_pct = 0;
+  unsigned pressure_deci_hpa = 0;
+  int pressure_altitude_m = 0;
+  int gps_altitude_m = 0;
+  long gps_lat_e6 = 0;
+  long gps_lon_e6 = 0;
+  unsigned sensor_flags = 0;
+  unsigned gps_satellites = 0;
 
   int parsed = sscanf(line,
+                      "%lu,%lu,%u,%u,%d,%d,%d,%lu,%lu,%lu,%lu,%u,%u,%u,%u,%u,%u,%u,%d,%d,%u,%u,%d,%d,%ld,%ld,%u,%u",
+                      &epoch_secs,
+                      &uptime_secs,
+                      &battery_mv,
+                      &queue_len,
+                      &last_rssi_x4,
+                      &last_snr_x4,
+                      &noise_floor,
+                      &packets_sent,
+                      &packets_recv,
+                      &heap_free,
+                      &psram_free,
+                      &error_flags,
+                      &recv_errors,
+                      &neighbour_count,
+                      &direct_dups,
+                      &flood_dups,
+                      &flags,
+                      &supply_voltage_centi_v,
+                      &sensor_temp_deci_c,
+                      &mcu_temp_deci_c,
+                      &humidity_deci_pct,
+                      &pressure_deci_hpa,
+                      &pressure_altitude_m,
+                      &gps_altitude_m,
+                      &gps_lat_e6,
+                      &gps_lon_e6,
+                      &sensor_flags,
+                      &gps_satellites);
+  if (parsed == 28) {
+    memset(&sample, 0, sizeof(sample));
+    sample.epoch_secs = static_cast<uint32_t>(epoch_secs);
+    sample.uptime_secs = static_cast<uint32_t>(uptime_secs);
+    sample.packets_sent = static_cast<uint32_t>(packets_sent);
+    sample.packets_recv = static_cast<uint32_t>(packets_recv);
+    sample.heap_free = static_cast<uint32_t>(heap_free);
+    sample.heap_min = static_cast<uint32_t>(heap_free);
+    sample.psram_free = static_cast<uint32_t>(psram_free);
+    sample.psram_min = static_cast<uint32_t>(psram_free);
+    sample.battery_mv = static_cast<uint16_t>(battery_mv);
+    sample.queue_len = static_cast<uint16_t>(queue_len);
+    sample.error_flags = static_cast<uint16_t>(error_flags);
+    sample.recv_errors = static_cast<uint16_t>(recv_errors);
+    sample.neighbour_count = static_cast<uint16_t>(neighbour_count);
+    sample.direct_dups = static_cast<uint16_t>(direct_dups);
+    sample.flood_dups = static_cast<uint16_t>(flood_dups);
+    sample.last_rssi_x4 = static_cast<int16_t>(last_rssi_x4);
+    sample.last_snr_x4 = static_cast<int16_t>(last_snr_x4);
+    sample.noise_floor = static_cast<int16_t>(noise_floor);
+    sample.supply_voltage_centi_v = static_cast<uint16_t>(supply_voltage_centi_v);
+    sample.sensor_temp_deci_c = static_cast<int16_t>(sensor_temp_deci_c);
+    sample.mcu_temp_deci_c = static_cast<int16_t>(mcu_temp_deci_c);
+    sample.humidity_deci_pct = static_cast<uint16_t>(humidity_deci_pct);
+    sample.pressure_deci_hpa = static_cast<uint16_t>(pressure_deci_hpa);
+    sample.pressure_altitude_m = static_cast<int16_t>(pressure_altitude_m);
+    sample.gps_altitude_m = static_cast<int16_t>(gps_altitude_m);
+    sample.gps_lat_e6 = static_cast<int32_t>(gps_lat_e6);
+    sample.gps_lon_e6 = static_cast<int32_t>(gps_lon_e6);
+    sample.sensor_flags = static_cast<uint16_t>(sensor_flags);
+    sample.gps_satellites = static_cast<uint8_t>(gps_satellites);
+    sample.flags = static_cast<uint8_t>(flags);
+    sample.battery_pct = -1;
+    return true;
+  }
+
+  parsed = sscanf(line,
                       "%lu,%lu,%u,%u,%d,%d,%d,%lu,%lu,%lu,%lu,%u,%u,%u,%u,%u,%u",
                       &epoch_secs,
                       &uptime_secs,
@@ -589,7 +770,7 @@ bool StatsHistory::restoreSummaryLog() {
     return false;
   }
 
-  char line[192];
+  char line[384];
   size_t line_len = 0;
   bool skip_partial = (start > 0);
   while (file.available()) {
@@ -819,9 +1000,9 @@ void StatsHistory::flushSummaryLog() {
     return;
   }
 
-  char line[256];
+  char line[384];
   snprintf(line, sizeof(line),
-           "%lu,%lu,%u,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+           "%lu,%lu,%u,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%d,%d,%u,%u,%d,%d,%ld,%ld,%u,%u\n",
            static_cast<unsigned long>(latest.epoch_secs),
            static_cast<unsigned long>(latest.uptime_secs),
            static_cast<unsigned>(latest.battery_mv),
@@ -838,7 +1019,18 @@ void StatsHistory::flushSummaryLog() {
            static_cast<unsigned>(latest.neighbour_count),
            static_cast<unsigned>(latest.direct_dups),
            static_cast<unsigned>(latest.flood_dups),
-           static_cast<unsigned>(latest.flags));
+           static_cast<unsigned>(latest.flags),
+           static_cast<unsigned>(latest.supply_voltage_centi_v),
+           static_cast<int>(latest.sensor_temp_deci_c),
+           static_cast<int>(latest.mcu_temp_deci_c),
+           static_cast<unsigned>(latest.humidity_deci_pct),
+           static_cast<unsigned>(latest.pressure_deci_hpa),
+           static_cast<int>(latest.pressure_altitude_m),
+           static_cast<int>(latest.gps_altitude_m),
+           static_cast<long>(latest.gps_lat_e6),
+           static_cast<long>(latest.gps_lon_e6),
+           static_cast<unsigned>(latest.sensor_flags),
+           static_cast<unsigned>(latest.gps_satellites));
   const size_t written = file.print(line);
   file.flush();
   file.close();
@@ -943,7 +1135,7 @@ bool StatsHistory::buildSeriesJson(const char* series, char* buffer, size_t buff
 
   if (_sample_count == 0) {
     snprintf(buffer, buffer_size,
-             "{\"series\":\"%s\",\"title\":\"%s\",\"unit\":\"%s\",\"interval_secs\":%lu,\"current\":0,\"oldest_age_secs\":0,\"latest_age_secs\":0,\"points\":[]}",
+             "{\"series\":\"%s\",\"title\":\"%s\",\"unit\":\"%s\",\"interval_secs\":%lu,\"current\":null,\"oldest_age_secs\":0,\"latest_age_secs\":0,\"points\":[]}",
              series,
              seriesTitle(series),
              seriesUnit(series),
@@ -959,55 +1151,83 @@ bool StatsHistory::buildSeriesJson(const char* series, char* buffer, size_t buff
   HistorySample previous{};
   bool have_previous = false;
   int current_value = 0;
-
-  offset += snprintf(&buffer[offset], buffer_size - offset,
-                     "{\"series\":\"%s\",\"title\":\"%s\",\"unit\":\"%s\",\"interval_secs\":%lu,\"current\":",
-                     series,
-                     seriesTitle(series),
-                     seriesUnit(series),
-                     static_cast<unsigned long>(kSampleIntervalSecs));
+  bool have_current_value = false;
 
   getSampleFromOldest(_sample_count - 1, sample);
   if (strcmp(series, "packets") == 0 && _sample_count >= 2) {
     getSampleFromOldest(_sample_count - 2, previous);
-    current_value = buildPointValue(sample, &previous, series);
+    have_current_value = buildPointValue(sample, &previous, series, current_value);
   } else {
-    current_value = buildPointValue(sample, nullptr, series);
+    have_current_value = buildPointValue(sample, nullptr, series, current_value);
   }
 
-  size_t last_index = 0;
-  for (size_t i = 0, emitted = 0; i < _sample_count && emitted < points; i += step, ++emitted) {
-    last_index = i;
-  }
   HistorySample oldest_sample{};
   HistorySample latest_emitted_sample{};
-  const bool have_oldest_sample = getSampleFromOldest(0, oldest_sample);
-  const bool have_latest_emitted_sample = getSampleFromOldest(last_index, latest_emitted_sample);
-  const uint32_t oldest_age_secs = have_oldest_sample ? sampleAgeSecs(oldest_sample, now_epoch_secs, now_uptime_secs) : 0;
-  const uint32_t latest_age_secs = have_latest_emitted_sample ? sampleAgeSecs(latest_emitted_sample, now_epoch_secs, now_uptime_secs) : 0;
-
-  offset += snprintf(&buffer[offset], buffer_size - offset,
-                     "%d,\"oldest_age_secs\":%lu,\"latest_age_secs\":%lu,\"points\":[",
-                     current_value,
-                     static_cast<unsigned long>(oldest_age_secs),
-                     static_cast<unsigned long>(latest_age_secs));
+  bool have_oldest_sample = false;
+  bool have_latest_emitted_sample = false;
 
   size_t emitted = 0;
   for (size_t i = 0; i < _sample_count && emitted < points; i += step, ++emitted) {
     if (!getSampleFromOldest(i, sample)) {
       break;
     }
-    int value = buildPointValue(sample, have_previous ? &previous : nullptr, series);
-    offset += snprintf(&buffer[offset], buffer_size - offset,
-                       "%s[%lu,%d]",
-                       emitted == 0 ? "" : ",",
-                       static_cast<unsigned long>(sample.uptime_secs),
-                       value);
+    int value = 0;
+    const bool have_value = buildPointValue(sample, have_previous ? &previous : nullptr, series, value);
+    if (have_value) {
+      if (!have_oldest_sample) {
+        oldest_sample = sample;
+        have_oldest_sample = true;
+      }
+      latest_emitted_sample = sample;
+      have_latest_emitted_sample = true;
+    }
     previous = sample;
     have_previous = true;
-    if (offset + 24 >= buffer_size) {
+  }
+
+  const uint32_t oldest_age_secs = have_oldest_sample ? sampleAgeSecs(oldest_sample, now_epoch_secs, now_uptime_secs) : 0;
+  const uint32_t latest_age_secs = have_latest_emitted_sample ? sampleAgeSecs(latest_emitted_sample, now_epoch_secs, now_uptime_secs) : 0;
+  char current_value_buf[24];
+  const char* current_json = "null";
+  if (have_current_value) {
+    snprintf(current_value_buf, sizeof(current_value_buf), "%d", current_value);
+    current_json = current_value_buf;
+  }
+  const int header_written = snprintf(buffer, buffer_size,
+                                      "{\"series\":\"%s\",\"title\":\"%s\",\"unit\":\"%s\",\"interval_secs\":%lu,\"current\":%s,\"oldest_age_secs\":%lu,\"latest_age_secs\":%lu,\"points\":[",
+                                      series,
+                                      seriesTitle(series),
+                                      seriesUnit(series),
+                                      static_cast<unsigned long>(kSampleIntervalSecs),
+                                      current_json,
+                                      static_cast<unsigned long>(oldest_age_secs),
+                                      static_cast<unsigned long>(latest_age_secs));
+  if (header_written < 0 || static_cast<size_t>(header_written) >= buffer_size) {
+    return false;
+  }
+  offset = static_cast<size_t>(header_written);
+  emitted = 0;
+  size_t valid_emitted = 0;
+  have_previous = false;
+  for (size_t i = 0; i < _sample_count && emitted < points; i += step, ++emitted) {
+    if (!getSampleFromOldest(i, sample)) {
       break;
     }
+    int value = 0;
+    const bool have_value = buildPointValue(sample, have_previous ? &previous : nullptr, series, value);
+    if (have_value) {
+      offset += snprintf(&buffer[offset], buffer_size - offset,
+                         "%s[%lu,%d]",
+                         valid_emitted == 0 ? "" : ",",
+                         static_cast<unsigned long>(sample.uptime_secs),
+                         value);
+      valid_emitted++;
+      if (offset + 24 >= buffer_size) {
+        break;
+      }
+    }
+    previous = sample;
+    have_previous = true;
   }
 
   snprintf(&buffer[offset], buffer_size - offset, "]}");

@@ -1,6 +1,8 @@
 #include "MyMesh.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
+#include <helpers/sensors/LPPDataHelpers.h>
 
 #if defined(TBEAM_1W)
   #include <TBeam1WBoard.h>
@@ -25,6 +27,183 @@
 #endif
 
 namespace {
+
+struct WebSensorSnapshot {
+  bool has_supply_voltage = false;
+  float supply_voltage_v = NAN;
+
+  bool has_sensor_temp = false;
+  float sensor_temp_c = NAN;
+
+  bool has_mcu_temp = false;
+  float mcu_temp_c = NAN;
+
+  bool has_humidity = false;
+  float humidity_pct = NAN;
+
+  bool has_pressure = false;
+  float pressure_hpa = NAN;
+
+  bool has_pressure_altitude = false;
+  float pressure_altitude_m = NAN;
+
+  bool has_gps = false;
+  bool gps_enabled = false;
+  bool gps_fix = false;
+  bool has_gps_lat = false;
+  float gps_lat = NAN;
+  bool has_gps_lon = false;
+  float gps_lon = NAN;
+  bool has_gps_altitude = false;
+  float gps_altitude_m = NAN;
+  bool has_satellites = false;
+  long satellites = 0;
+};
+
+WebSensorSnapshot collectWebSensorSnapshot(mesh::MainBoard& board, SensorManager& sensors) {
+  WebSensorSnapshot snapshot;
+
+  CayenneLPP sensor_telemetry(200);
+  sensor_telemetry.reset();
+  sensor_telemetry.addVoltage(TELEM_CHANNEL_SELF, static_cast<float>(board.getBattMilliVolts()) / 1000.0f);
+  sensors.querySensors(0xFF, sensor_telemetry);
+
+  const float board_temp_c = board.getMCUTemperature();
+  if (!isnan(board_temp_c)) {
+    sensor_telemetry.addTemperature(TELEM_CHANNEL_SELF, board_temp_c);
+  }
+
+  LocationProvider* location = sensors.getLocationProvider();
+  if (location != nullptr) {
+    snapshot.has_gps = true;
+    snapshot.gps_enabled = location->isEnabled();
+    snapshot.gps_fix = location->isValid();
+    const long satellites = location->satellitesCount();
+    if (satellites > 0) {
+      snapshot.has_satellites = true;
+      snapshot.satellites = satellites;
+    }
+    if (snapshot.gps_fix) {
+      snapshot.has_gps_lat = true;
+      snapshot.gps_lat = static_cast<float>(location->getLatitude()) / 1000000.0f;
+      snapshot.has_gps_lon = true;
+      snapshot.gps_lon = static_cast<float>(location->getLongitude()) / 1000000.0f;
+      snapshot.has_gps_altitude = true;
+      snapshot.gps_altitude_m = static_cast<float>(location->getAltitude()) / 1000.0f;
+    }
+  }
+
+  float temperatures[4] = {NAN, NAN, NAN, NAN};
+  size_t temperature_count = 0;
+
+  LPPReader reader(sensor_telemetry.getBuffer(), sensor_telemetry.getSize());
+  uint8_t channel = 0;
+  uint8_t type = 0;
+  while (reader.readHeader(channel, type)) {
+    float value = NAN;
+    switch (type) {
+      case LPP_GPS: {
+        float lat = NAN;
+        float lon = NAN;
+        float alt = NAN;
+        if (reader.readGPS(lat, lon, alt) && !snapshot.has_gps && std::isfinite(lat) && std::isfinite(lon) && std::isfinite(alt)) {
+          snapshot.has_gps = true;
+          snapshot.gps_enabled = true;
+          snapshot.gps_fix = true;
+          snapshot.has_gps_lat = true;
+          snapshot.gps_lat = lat;
+          snapshot.has_gps_lon = true;
+          snapshot.gps_lon = lon;
+          snapshot.has_gps_altitude = true;
+          snapshot.gps_altitude_m = alt;
+        }
+        break;
+      }
+      case LPP_VOLTAGE:
+        if (reader.readVoltage(value) && channel == TELEM_CHANNEL_SELF && !snapshot.has_supply_voltage) {
+          snapshot.has_supply_voltage = std::isfinite(value);
+          snapshot.supply_voltage_v = value;
+        }
+        break;
+      case LPP_TEMPERATURE:
+        if (reader.readTemperature(value) && temperature_count < 4 && std::isfinite(value)) {
+          temperatures[temperature_count++] = value;
+        }
+        break;
+      case LPP_RELATIVE_HUMIDITY:
+        if (reader.readRelativeHumidity(value) && !snapshot.has_humidity) {
+          snapshot.has_humidity = std::isfinite(value);
+          snapshot.humidity_pct = value;
+        }
+        break;
+      case LPP_BAROMETRIC_PRESSURE:
+        if (reader.readPressure(value) && !snapshot.has_pressure) {
+          snapshot.has_pressure = std::isfinite(value);
+          snapshot.pressure_hpa = value;
+        }
+        break;
+      case LPP_ALTITUDE:
+        if (reader.readAltitude(value) && !snapshot.has_pressure_altitude) {
+          snapshot.has_pressure_altitude = std::isfinite(value);
+          snapshot.pressure_altitude_m = value;
+        }
+        break;
+      default:
+        reader.skipData(type);
+        break;
+    }
+  }
+
+  if (temperature_count >= 2) {
+    snapshot.has_sensor_temp = true;
+    snapshot.sensor_temp_c = temperatures[0];
+    snapshot.has_mcu_temp = true;
+    snapshot.mcu_temp_c = temperatures[temperature_count - 1];
+  } else if (temperature_count == 1) {
+    if (snapshot.has_humidity || snapshot.has_pressure || snapshot.has_pressure_altitude) {
+      snapshot.has_sensor_temp = true;
+      snapshot.sensor_temp_c = temperatures[0];
+    } else {
+      snapshot.has_mcu_temp = true;
+      snapshot.mcu_temp_c = temperatures[0];
+    }
+  }
+
+  return snapshot;
+}
+
+bool appendJsonBoolField(char* reply, size_t reply_size, size_t& offset, bool& needs_comma, const char* key, bool value) {
+  const int written = snprintf(&reply[offset], reply_size - offset, "%s\"%s\":%s", needs_comma ? "," : "", key, value ? "true" : "false");
+  if (written < 0 || static_cast<size_t>(written) >= (reply_size - offset)) {
+    return false;
+  }
+  offset += static_cast<size_t>(written);
+  needs_comma = true;
+  return true;
+}
+
+bool appendJsonLongField(char* reply, size_t reply_size, size_t& offset, bool& needs_comma, const char* key, long value) {
+  const int written = snprintf(&reply[offset], reply_size - offset, "%s\"%s\":%ld", needs_comma ? "," : "", key, value);
+  if (written < 0 || static_cast<size_t>(written) >= (reply_size - offset)) {
+    return false;
+  }
+  offset += static_cast<size_t>(written);
+  needs_comma = true;
+  return true;
+}
+
+bool appendJsonFloatField(char* reply, size_t reply_size, size_t& offset, bool& needs_comma, const char* key, float value, int precision) {
+  if (!std::isfinite(value)) {
+    return true;
+  }
+  const int written = snprintf(&reply[offset], reply_size - offset, "%s\"%s\":%.*f", needs_comma ? "," : "", key, precision, value);
+  if (written < 0 || static_cast<size_t>(written) >= (reply_size - offset)) {
+    return false;
+  }
+  offset += static_cast<size_t>(written);
+  needs_comma = true;
+  return true;
+}
 
 constexpr unsigned long kArchiveNeighboursFlushIntervalMs = 60UL * 1000UL;
 constexpr const char* kArchiveNeighboursSnapshotPath = "/stats/neighbours.snapshot";
@@ -1602,6 +1781,7 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
 #endif
   if (next_history_sample_ms == 0 || millisHasNowPassed(next_history_sample_ms)) {
     if (!live_stats_headroom_low) {
+      WebSensorSnapshot sensor_snapshot = collectWebSensorSnapshot(board, sensors);
       HistorySample sample{};
       sample.epoch_secs = getRTCClock()->getCurrentTime();
       sample.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
@@ -1620,6 +1800,56 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
       sample.last_snr_x4 = static_cast<int16_t>(radio_driver.getLastSNR() * 4.0f);
       sample.noise_floor = static_cast<int16_t>(_radio->getNoiseFloor());
       sample.battery_pct = static_cast<int8_t>(board.getBatteryPercent());
+      if (sensor_snapshot.has_supply_voltage && std::isfinite(sensor_snapshot.supply_voltage_v)) {
+        sample.sensor_flags |= HISTORY_SENSOR_SUPPLY_VOLTAGE;
+        sample.supply_voltage_centi_v =
+            static_cast<uint16_t>(min<int>(lroundf(sensor_snapshot.supply_voltage_v * 100.0f), 0xFFFF));
+      }
+      if (sensor_snapshot.has_sensor_temp && std::isfinite(sensor_snapshot.sensor_temp_c)) {
+        sample.sensor_flags |= HISTORY_SENSOR_TEMP;
+        sample.sensor_temp_deci_c =
+            static_cast<int16_t>(max<long>(-32768L, min<long>(32767L, lroundf(sensor_snapshot.sensor_temp_c * 10.0f))));
+      }
+      if (sensor_snapshot.has_mcu_temp && std::isfinite(sensor_snapshot.mcu_temp_c)) {
+        sample.sensor_flags |= HISTORY_SENSOR_MCU_TEMP;
+        sample.mcu_temp_deci_c =
+            static_cast<int16_t>(max<long>(-32768L, min<long>(32767L, lroundf(sensor_snapshot.mcu_temp_c * 10.0f))));
+      }
+      if (sensor_snapshot.has_humidity && std::isfinite(sensor_snapshot.humidity_pct)) {
+        sample.sensor_flags |= HISTORY_SENSOR_HUMIDITY;
+        sample.humidity_deci_pct =
+            static_cast<uint16_t>(min<int>(lroundf(sensor_snapshot.humidity_pct * 10.0f), 0xFFFF));
+      }
+      if (sensor_snapshot.has_pressure && std::isfinite(sensor_snapshot.pressure_hpa)) {
+        sample.sensor_flags |= HISTORY_SENSOR_PRESSURE;
+        sample.pressure_deci_hpa =
+            static_cast<uint16_t>(min<int>(lroundf(sensor_snapshot.pressure_hpa * 10.0f), 0xFFFF));
+      }
+      if (sensor_snapshot.has_pressure_altitude && std::isfinite(sensor_snapshot.pressure_altitude_m)) {
+        sample.sensor_flags |= HISTORY_SENSOR_PRESSURE_ALTITUDE;
+        sample.pressure_altitude_m =
+            static_cast<int16_t>(max<long>(-32768L, min<long>(32767L, lroundf(sensor_snapshot.pressure_altitude_m))));
+      }
+      if (sensor_snapshot.has_gps) sample.sensor_flags |= HISTORY_SENSOR_GPS_PRESENT;
+      if (sensor_snapshot.gps_enabled) sample.sensor_flags |= HISTORY_SENSOR_GPS_ENABLED;
+      if (sensor_snapshot.gps_fix) sample.sensor_flags |= HISTORY_SENSOR_GPS_FIX;
+      if (sensor_snapshot.has_gps_lat && std::isfinite(sensor_snapshot.gps_lat)) {
+        sample.sensor_flags |= HISTORY_SENSOR_GPS_LAT;
+        sample.gps_lat_e6 = static_cast<int32_t>(lroundf(sensor_snapshot.gps_lat * 1000000.0f));
+      }
+      if (sensor_snapshot.has_gps_lon && std::isfinite(sensor_snapshot.gps_lon)) {
+        sample.sensor_flags |= HISTORY_SENSOR_GPS_LON;
+        sample.gps_lon_e6 = static_cast<int32_t>(lroundf(sensor_snapshot.gps_lon * 1000000.0f));
+      }
+      if (sensor_snapshot.has_gps_altitude && std::isfinite(sensor_snapshot.gps_altitude_m)) {
+        sample.sensor_flags |= HISTORY_SENSOR_GPS_ALTITUDE;
+        sample.gps_altitude_m =
+            static_cast<int16_t>(max<long>(-32768L, min<long>(32767L, lroundf(sensor_snapshot.gps_altitude_m))));
+      }
+      if (sensor_snapshot.has_satellites) {
+        sample.sensor_flags |= HISTORY_SENSOR_GPS_SATELLITES;
+        sample.gps_satellites = static_cast<uint8_t>(min<long>(sensor_snapshot.satellites, 255));
+      }
 #if defined(ESP32)
       sample.heap_free = free_heap;
       sample.heap_min = ESP.getMinFreeHeap();
@@ -2276,6 +2506,10 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   }
 
   offset += snprintf(&reply[offset], reply_size - offset, ",");
+  if (!appendJsonSensors(reply, reply_size, offset)) {
+    return false;
+  }
+  offset += snprintf(&reply[offset], reply_size - offset, ",");
   if (!appendJsonEvents(reply, reply_size, offset)) {
     return false;
   }
@@ -2308,6 +2542,90 @@ bool MyMesh::formatWebStatsSeriesJson(const char* series, char* reply, size_t re
   if (reply != nullptr && reply_size > 0) {
     reply[0] = 0;
   }
+  return false;
+#endif
+}
+
+bool MyMesh::appendJsonSensors(char* reply, size_t reply_size, size_t& offset) const {
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  WebSensorSnapshot snapshot = collectWebSensorSnapshot(board, sensors);
+
+  bool needs_comma = false;
+  const int open_written = snprintf(&reply[offset], reply_size - offset, "\"sensors\":{");
+  if (open_written < 0 || static_cast<size_t>(open_written) >= (reply_size - offset)) {
+    return false;
+  }
+  offset += static_cast<size_t>(open_written);
+
+  if (snapshot.has_gps) {
+    if (!appendJsonBoolField(reply, reply_size, offset, needs_comma, "gps_enabled", snapshot.gps_enabled)) {
+      return false;
+    }
+    if (!appendJsonBoolField(reply, reply_size, offset, needs_comma, "gps_fix", snapshot.gps_fix)) {
+      return false;
+    }
+  }
+  if (snapshot.has_satellites) {
+    if (!appendJsonLongField(reply, reply_size, offset, needs_comma, "satellites", snapshot.satellites)) {
+      return false;
+    }
+  }
+  if (snapshot.has_gps_lat) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "gps_lat", snapshot.gps_lat, 6)) {
+      return false;
+    }
+  }
+  if (snapshot.has_gps_lon) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "gps_lon", snapshot.gps_lon, 6)) {
+      return false;
+    }
+  }
+  if (snapshot.has_gps_altitude) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "gps_altitude_m", snapshot.gps_altitude_m, 0)) {
+      return false;
+    }
+  }
+  if (snapshot.has_supply_voltage) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "supply_voltage_v", snapshot.supply_voltage_v, 2)) {
+      return false;
+    }
+  }
+  if (snapshot.has_sensor_temp) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "sensor_temp_c", snapshot.sensor_temp_c, 1)) {
+      return false;
+    }
+  }
+  if (snapshot.has_humidity) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "humidity_pct", snapshot.humidity_pct, 0)) {
+      return false;
+    }
+  }
+  if (snapshot.has_pressure) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "pressure_hpa", snapshot.pressure_hpa, 1)) {
+      return false;
+    }
+  }
+  if (snapshot.has_pressure_altitude) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "pressure_altitude_m", snapshot.pressure_altitude_m, 0)) {
+      return false;
+    }
+  }
+  if (snapshot.has_mcu_temp) {
+    if (!appendJsonFloatField(reply, reply_size, offset, needs_comma, "mcu_temp_c", snapshot.mcu_temp_c, 1)) {
+      return false;
+    }
+  }
+
+  const int close_written = snprintf(&reply[offset], reply_size - offset, "}");
+  if (close_written < 0 || static_cast<size_t>(close_written) >= (reply_size - offset)) {
+    return false;
+  }
+  offset += static_cast<size_t>(close_written);
+  return true;
+#else
+  (void)reply;
+  (void)reply_size;
+  (void)offset;
   return false;
 #endif
 }
