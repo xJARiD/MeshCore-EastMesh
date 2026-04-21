@@ -1780,6 +1780,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     }
     function sparkStrokeColor(key, points) {
       if (key === "packets") return "#d97706";
+      if (key === "gps_satellites") return "#2f8f4e";
       if (key === "signal") return "#3b82f6";
       if (key === "noise_floor") return "#94a3b8";
       if (key === "memory") {
@@ -1790,6 +1791,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return colorForHeapFreePercent(percent);
       }
       return "#2f8f4e";
+    }
+    function sparkHoverColor(key, baseColor) {
+      if (key === "packets") return "#f59e0b";
+      if (key === "gps_satellites") return "#48b267";
+      return baseColor || "#2f8f4e";
     }
     function sparkValueRange(key, values) {
       if (key === "signal") {
@@ -1880,14 +1886,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         y: scaleY(point[1])
       }));
       const strokeColor = sparkStrokeColor(key, points);
-      if (key === "packets") {
+      if (key === "packets" || key === "gps_satellites") {
         const slotWidth = (plotRight - plotLeft) / Math.max(points.length, 1);
         const barWidth = Math.max(3, Math.min(18, slotWidth * 0.68));
+        const hoverColor = sparkHoverColor(key, strokeColor);
         coords.forEach((point, index) => {
           const left = clamp(point.x - (barWidth / 2), plotLeft, plotRight - barWidth);
           const top = point.y;
           const barHeight = Math.max(1, plotBottom - top);
-          ctx.fillStyle = Number.isInteger(hoverIndex) && hoverIndex === index ? "#f59e0b" : strokeColor;
+          ctx.fillStyle = Number.isInteger(hoverIndex) && hoverIndex === index ? hoverColor : strokeColor;
           ctx.fillRect(left, top, barWidth, barHeight);
         });
         return;
@@ -1993,7 +2000,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (gpsEnabled) {
         order.push("gps_satellites");
       }
-      return order.concat(["voltage", "sensor_temp", "humidity", "pressure", "pressure_altitude", "mcu_temp", "gps_altitude"]);
+      return order;
     }
     function initTrendCards(seriesOrder) {
       const trendsEl = document.getElementById("statsTrends");

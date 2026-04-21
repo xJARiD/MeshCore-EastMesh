@@ -27,6 +27,7 @@ AutoDiscoverRTCClock rtc_clock(fallback_clock);
 
 bool radio_init() {
   fallback_clock.begin();
+  Wire1.begin(PIN_BOARD_SDA1, PIN_BOARD_SCL1);
   rtc_clock.begin(Wire1);
   return radio.std_init(&spi);
 }

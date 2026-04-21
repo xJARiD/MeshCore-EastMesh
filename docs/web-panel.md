@@ -192,7 +192,7 @@ The `/stats` page currently shows:
 
 - `Services`: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity
 - optional full-width `Environment` summary card on boards that report GPS or environmental telemetry
-- `Trends`: battery, heap free, packet activity, signal, noise floor, and supported environment history such as voltage, temperatures, humidity, barometer, altitude, and, when GPS is enabled, satellites
+- `Trends`: battery, heap free, packet activity, signal, noise floor, and, when GPS is enabled, satellites
 - `Neighbours`: current neighbour table with ID, SNR, heard age, and advert age
 - `Events`: current boot/session events
 
@@ -207,11 +207,11 @@ The trend graphs load sequentially rather than as one large payload:
 3. memory
 4. packet activity
 5. signal
-6. remaining supported environment series
+6. satellites when GPS is enabled
 
 This keeps browser-side and device-side memory use lower than the previous in-page stats view.
 
-If `web.stats` is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history. This now includes the supported environment series as well as the original core/radio stats.
+If `web.stats` is enabled and an SD archive is mounted, trends can restore archived summary points after reboot from the latest SD snapshot. Recent live points are still added from in-memory history.
 
 ### Stats History Capacity
 
@@ -230,7 +230,7 @@ On boards with roughly `2 MB` PSRAM or more, stats history starts capturing from
 
 Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the EastMesh archive path.
 
-The main purpose of the SD card is to let the repeater retain and restore stats history for `/stats`. As a secondary option, the archive files can also be removed and inspected on a computer for deeper manual review.
+The main purpose of the SD card is to let the repeater retain and restore stats history for `/stats`. The archive keeps fast `.latest` snapshot files for quick restore and UTC-dated daily `.log` files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.
 
 On no-PSRAM boards, `/stats` can still show recent graphs while the stats view is active, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.
 
