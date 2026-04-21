@@ -69,7 +69,7 @@ Legacy dotted aliases are also accepted:
 
 - `get web`
 - `get web.status`: shows whether the local HTTPS panel is available. After `start ota`, this reports `web:suspended ota` until the repeater reboots.
-- `get web.stats.status`: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series.
+- `get web.stats.status`: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-enabled boards also record per-minute satellites samples for the `/stats` history view.
 - `set web on|off`
 - `set.web on|off`: enables or disables the local HTTPS panel.
 - `set web.stats on|off`

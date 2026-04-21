@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <RTClib.h>
 
 #if defined(ESP32)
   #include <esp_heap_caps.h>
@@ -31,6 +32,11 @@ constexpr size_t kEventsRestoreWindowBytes = 4096;
 constexpr uint32_t kBootAutoCapturePsramMinBytes = 2000000UL;
 constexpr size_t kLiveOnlySampleCapacity = 24;
 constexpr size_t kLiveOnlyEventCapacity = 8;
+
+constexpr const char* kSummaryLatestPath = "/stats/summary.latest";
+constexpr const char* kSummaryLegacyLogPath = "/stats/summary.log";
+constexpr const char* kEventsLatestPath = "/stats/events.latest";
+constexpr const char* kEventsLegacyLogPath = "/stats/events.log";
 
 struct HistoryCapacityBucket {
   size_t sample_capacity;
@@ -185,6 +191,19 @@ File openArchiveWriteWithRecovery(ArchiveStorage* archive, const char* filename)
   }
   fs = archive->getFS();
   return fs != nullptr ? openArchiveWrite(fs, filename) : File();
+}
+
+bool buildUtcDailyLogPath(const char* prefix, uint32_t epoch_secs, char* path, size_t path_size) {
+  if (prefix == nullptr || path == nullptr || path_size == 0) {
+    return false;
+  }
+  if (epoch_secs == 0) {
+    snprintf(path, path_size, "/stats/%s-unknown.log", prefix);
+    return true;
+  }
+  const DateTime dt(epoch_secs);
+  snprintf(path, path_size, "/stats/%s-%04d-%02d-%02d.log", prefix, dt.year(), dt.month(), dt.day());
+  return true;
 }
 
 bool buildPointValue(const HistorySample& sample, const HistorySample* previous, const char* series, int& value) {
@@ -752,17 +771,59 @@ bool StatsHistory::restoreSummaryLog() {
   }
 
   FILESYSTEM* fs = _archive->getFS();
-  if (fs == nullptr || !fs->exists("/stats/summary.log")) {
-    return false;
-  }
-
-  File file = openArchiveReadWithRecovery(_archive, "/stats/summary.log");
-  if (!file) {
-    ARCHIVE_LOG("summary restore open failed path=%s", "/stats/summary.log");
+  if (fs == nullptr) {
     return false;
   }
 
   _restored_sample_count = 0;
+
+  if (fs->exists(kSummaryLatestPath)) {
+    File latest_file = openArchiveReadWithRecovery(_archive, kSummaryLatestPath);
+    if (latest_file) {
+      char line[384];
+      size_t line_len = 0;
+      while (latest_file.available()) {
+        const int raw = latest_file.read();
+        if (raw < 0) {
+          break;
+        }
+        const char ch = static_cast<char>(raw);
+        if (ch == '\r') {
+          continue;
+        }
+        if (ch == '\n') {
+          break;
+        }
+        if (line_len + 1 < sizeof(line)) {
+          line[line_len++] = ch;
+        }
+      }
+      line[line_len] = 0;
+      latest_file.close();
+      HistorySample latest_sample{};
+      if (line_len > 0 && parseSummaryLine(line, latest_sample)) {
+        storeSample(latest_sample, false);
+        _restored_sample_count = 1;
+        return true;
+      }
+    } else {
+      ARCHIVE_LOG("summary restore open failed path=%s", kSummaryLatestPath);
+    }
+  }
+
+  const char* summary_restore_path = nullptr;
+  if (fs->exists(kSummaryLegacyLogPath)) {
+    summary_restore_path = kSummaryLegacyLogPath;
+  } else {
+    return false;
+  }
+
+  File file = openArchiveReadWithRecovery(_archive, summary_restore_path);
+  if (!file) {
+    ARCHIVE_LOG("summary restore open failed path=%s", summary_restore_path);
+    return false;
+  }
+
   const size_t size = static_cast<size_t>(file.size());
   const size_t start = (size > kSummaryRestoreWindowBytes) ? (size - kSummaryRestoreWindowBytes) : 0;
   if (start > 0 && !file.seek(start)) {
@@ -851,17 +912,28 @@ bool StatsHistory::restoreEventsLog() {
   }
 
   FILESYSTEM* fs = _archive->getFS();
-  if (fs == nullptr || !fs->exists("/stats/events.log")) {
+  if (fs == nullptr) {
     return false;
   }
 
-  File file = openArchiveRead(fs, "/stats/events.log");
+  const char* events_restore_path = nullptr;
+  if (fs->exists(kEventsLatestPath)) {
+    events_restore_path = kEventsLatestPath;
+  } else if (fs->exists(kEventsLegacyLogPath)) {
+    events_restore_path = kEventsLegacyLogPath;
+  } else {
+    return false;
+  }
+
+  File file = openArchiveReadWithRecovery(_archive, events_restore_path);
   if (!file) {
     return false;
   }
 
   const size_t size = static_cast<size_t>(file.size());
-  const size_t start = (size > kEventsRestoreWindowBytes) ? (size - kEventsRestoreWindowBytes) : 0;
+  const size_t start = (strcmp(events_restore_path, kEventsLatestPath) == 0)
+      ? 0
+      : ((size > kEventsRestoreWindowBytes) ? (size - kEventsRestoreWindowBytes) : 0);
   if (start > 0 && !file.seek(start)) {
     file.close();
     return false;
@@ -994,12 +1066,6 @@ void StatsHistory::flushSummaryLog() {
     return;
   }
 
-  File file = openArchiveAppendWithRecovery(_archive, "/stats/summary.log");
-  if (!file) {
-    ARCHIVE_LOG("summary open failed path=%s", "/stats/summary.log");
-    return;
-  }
-
   char line[384];
   snprintf(line, sizeof(line),
            "%lu,%lu,%u,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%d,%d,%u,%u,%d,%d,%ld,%ld,%u,%u\n",
@@ -1031,11 +1097,31 @@ void StatsHistory::flushSummaryLog() {
            static_cast<long>(latest.gps_lon_e6),
            static_cast<unsigned>(latest.sensor_flags),
            static_cast<unsigned>(latest.gps_satellites));
+
+  File latest_file = openArchiveWriteWithRecovery(_archive, kSummaryLatestPath);
+  if (!latest_file) {
+    ARCHIVE_LOG("summary latest open failed path=%s", kSummaryLatestPath);
+    return;
+  }
+  const size_t latest_written = latest_file.print(line);
+  latest_file.flush();
+  latest_file.close();
+
+  char daily_path[48];
+  buildUtcDailyLogPath("summary", latest.epoch_secs, daily_path, sizeof(daily_path));
+  File file = openArchiveAppendWithRecovery(_archive, daily_path);
+  if (!file) {
+    ARCHIVE_LOG("summary open failed path=%s", daily_path);
+    return;
+  }
+
   const size_t written = file.print(line);
   file.flush();
   file.close();
-  ARCHIVE_LOG("summary flushed path=%s bytes=%u sample_count=%u",
-              "/stats/summary.log",
+  ARCHIVE_LOG("summary flushed latest=%s bytes=%u log=%s log_bytes=%u sample_count=%u",
+              kSummaryLatestPath,
+              static_cast<unsigned>(latest_written),
+              daily_path,
               static_cast<unsigned>(written),
               static_cast<unsigned>(_sample_count));
   writeMetaFile();
@@ -1051,13 +1137,24 @@ void StatsHistory::flushEventsLog() {
     return;
   }
 
-  File file = openArchiveAppendWithRecovery(_archive, "/stats/events.log");
+  File latest_file = openArchiveWriteWithRecovery(_archive, kEventsLatestPath);
+  if (!latest_file) {
+    ARCHIVE_LOG("events latest open failed path=%s", kEventsLatestPath);
+    return;
+  }
+
+  char latest_epoch_path[48];
+  uint32_t latest_epoch_secs = _pending_events[_pending_event_count - 1].epoch_secs;
+  buildUtcDailyLogPath("events", latest_epoch_secs, latest_epoch_path, sizeof(latest_epoch_path));
+  File file = openArchiveAppendWithRecovery(_archive, latest_epoch_path);
   if (!file) {
-    ARCHIVE_LOG("events open failed path=%s", "/stats/events.log");
+    latest_file.close();
+    ARCHIVE_LOG("events open failed path=%s", latest_epoch_path);
     return;
   }
 
   size_t total_written = 0;
+  size_t latest_written = 0;
   for (size_t i = 0; i < _pending_event_count; ++i) {
     const HistoryEvent& event = _pending_events[i];
     char line[160];
@@ -1068,11 +1165,16 @@ void StatsHistory::flushEventsLog() {
              getEventTypeName(event.type),
              static_cast<int>(event.value));
     total_written += file.print(line);
+    latest_written += latest_file.print(line);
   }
+  latest_file.flush();
+  latest_file.close();
   file.flush();
   file.close();
-  ARCHIVE_LOG("events flushed path=%s bytes=%u count=%u",
-              "/stats/events.log",
+  ARCHIVE_LOG("events flushed latest=%s bytes=%u log=%s log_bytes=%u count=%u",
+              kEventsLatestPath,
+              static_cast<unsigned>(latest_written),
+              latest_epoch_path,
               static_cast<unsigned>(total_written),
               static_cast<unsigned>(_pending_event_count));
   _pending_event_count = 0;

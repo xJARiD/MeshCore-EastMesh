@@ -79,9 +79,9 @@ WebSensorSnapshot collectWebSensorSnapshot(mesh::MainBoard& board, SensorManager
     snapshot.gps_enabled = location->isEnabled();
     snapshot.gps_fix = location->isValid();
     const long satellites = location->satellitesCount();
-    if (satellites > 0) {
+    if (snapshot.gps_enabled || satellites > 0) {
       snapshot.has_satellites = true;
-      snapshot.satellites = satellites;
+      snapshot.satellites = max<long>(satellites, 0);
     }
     if (snapshot.gps_fix) {
       snapshot.has_gps_lat = true;
@@ -207,6 +207,20 @@ bool appendJsonFloatField(char* reply, size_t reply_size, size_t& offset, bool& 
 
 constexpr unsigned long kArchiveNeighboursFlushIntervalMs = 60UL * 1000UL;
 constexpr const char* kArchiveNeighboursSnapshotPath = "/stats/neighbours.snapshot";
+constexpr const char* kArchiveNeighboursLatestPath = "/stats/neighbours.latest";
+
+bool buildUtcDailyArchivePath(const char* prefix, uint32_t epoch_secs, char* path, size_t path_size) {
+  if (prefix == nullptr || path == nullptr || path_size == 0) {
+    return false;
+  }
+  if (epoch_secs == 0) {
+    snprintf(path, path_size, "/stats/%s-unknown.log", prefix);
+    return true;
+  }
+  const DateTime dt(epoch_secs);
+  snprintf(path, path_size, "/stats/%s-%04d-%02d-%02d.log", prefix, dt.year(), dt.month(), dt.day());
+  return true;
+}
 
 File openArchiveWrite(FILESYSTEM* fs, const char* filename) {
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
@@ -245,6 +259,33 @@ File openArchiveWriteWithRecovery(ArchiveStorage* archive, const char* filename)
   }
   fs = archive->getFS();
   return fs != nullptr ? openArchiveWrite(fs, filename) : File();
+}
+
+File openArchiveAppend(FILESYSTEM* fs, const char* filename) {
+#if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM) || defined(RP2040_PLATFORM)
+  return fs->open(filename, "a");
+#else
+  return fs->open(filename, FILE_APPEND, true);
+#endif
+}
+
+File openArchiveAppendWithRecovery(ArchiveStorage* archive, const char* filename) {
+  if (archive == nullptr) {
+    return File();
+  }
+  FILESYSTEM* fs = archive->getFS();
+  if (fs == nullptr) {
+    return File();
+  }
+  File file = openArchiveAppend(fs, filename);
+  if (file) {
+    return file;
+  }
+  if (!archive->recover()) {
+    return File();
+  }
+  fs = archive->getFS();
+  return fs != nullptr ? openArchiveAppend(fs, filename) : File();
 }
 
 File openArchiveReadWithRecovery(ArchiveStorage* archive, const char* filename) {
@@ -1549,13 +1590,22 @@ bool MyMesh::restoreArchiveNeighbours() {
   }
 
   FILESYSTEM* fs = _archive->getFS();
-  if (fs == nullptr || !fs->exists(kArchiveNeighboursSnapshotPath)) {
+  if (fs == nullptr) {
     return false;
   }
 
-  File file = openArchiveReadWithRecovery(_archive, kArchiveNeighboursSnapshotPath);
+  const char* restore_path = nullptr;
+  if (fs->exists(kArchiveNeighboursLatestPath)) {
+    restore_path = kArchiveNeighboursLatestPath;
+  } else if (fs->exists(kArchiveNeighboursSnapshotPath)) {
+    restore_path = kArchiveNeighboursSnapshotPath;
+  } else {
+    return false;
+  }
+
+  File file = openArchiveReadWithRecovery(_archive, restore_path);
   if (!file) {
-    ARCHIVE_LOG("neighbours restore open failed path=%s", kArchiveNeighboursSnapshotPath);
+    ARCHIVE_LOG("neighbours restore open failed path=%s", restore_path);
     return false;
   }
 
@@ -1651,9 +1701,39 @@ void MyMesh::flushArchiveNeighbours() {
     return a->heard_timestamp > b->heard_timestamp;
   });
 
-  File file = openArchiveWriteWithRecovery(_archive, kArchiveNeighboursSnapshotPath);
+  char latest_block[1536];
+  size_t latest_len = 0;
+  uint32_t latest_epoch_secs = 0;
+  for (int i = 0; i < neighbours_count; ++i) {
+    char full_hex[65];
+    mesh::Utils::toHex(full_hex, sorted_neighbours[i]->id.pub_key, PUB_KEY_SIZE);
+    latest_len += snprintf(&latest_block[latest_len], sizeof(latest_block) - latest_len,
+                           "%s,%lu,%lu,%d\n",
+                           full_hex,
+                           static_cast<unsigned long>(sorted_neighbours[i]->advert_timestamp),
+                           static_cast<unsigned long>(sorted_neighbours[i]->heard_timestamp),
+                           static_cast<int>(sorted_neighbours[i]->snr));
+    latest_epoch_secs = max<uint32_t>(latest_epoch_secs, sorted_neighbours[i]->heard_timestamp);
+    if (latest_len >= sizeof(latest_block)) {
+      latest_len = sizeof(latest_block) - 1;
+      break;
+    }
+  }
+
+  File latest_file = openArchiveWriteWithRecovery(_archive, kArchiveNeighboursLatestPath);
+  if (!latest_file) {
+    ARCHIVE_LOG("neighbours open failed path=%s", kArchiveNeighboursLatestPath);
+    return;
+  }
+  const size_t latest_written = latest_file.print(latest_block);
+  latest_file.flush();
+  latest_file.close();
+
+  char daily_path[52];
+  buildUtcDailyArchivePath("neighbours", latest_epoch_secs, daily_path, sizeof(daily_path));
+  File file = openArchiveAppendWithRecovery(_archive, daily_path);
   if (!file) {
-    ARCHIVE_LOG("neighbours open failed path=%s", kArchiveNeighboursSnapshotPath);
+    ARCHIVE_LOG("neighbours open failed path=%s", daily_path);
     return;
   }
 
@@ -1669,8 +1749,10 @@ void MyMesh::flushArchiveNeighbours() {
   }
   file.flush();
   file.close();
-  ARCHIVE_LOG("neighbours flushed path=%s bytes=%u count=%d",
-              kArchiveNeighboursSnapshotPath,
+  ARCHIVE_LOG("neighbours flushed latest=%s bytes=%u log=%s log_bytes=%u count=%d",
+              kArchiveNeighboursLatestPath,
+              static_cast<unsigned>(latest_written),
+              daily_path,
               static_cast<unsigned>(total_written),
               static_cast<int>(neighbours_count));
   _archive_neighbours_dirty = false;
