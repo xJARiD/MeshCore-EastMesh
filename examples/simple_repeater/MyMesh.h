@@ -65,6 +65,41 @@ struct RepeaterStats {
   uint32_t n_recv_errors;
 };
 
+struct WebSensorSnapshot {
+  bool has_battery = false;
+  uint16_t battery_mv = 0;
+
+  bool has_supply_voltage = false;
+  float supply_voltage_v = NAN;
+
+  bool has_sensor_temp = false;
+  float sensor_temp_c = NAN;
+
+  bool has_mcu_temp = false;
+  float mcu_temp_c = NAN;
+
+  bool has_humidity = false;
+  float humidity_pct = NAN;
+
+  bool has_pressure = false;
+  float pressure_hpa = NAN;
+
+  bool has_pressure_altitude = false;
+  float pressure_altitude_m = NAN;
+
+  bool has_gps = false;
+  bool gps_enabled = false;
+  bool gps_fix = false;
+  bool has_gps_lat = false;
+  float gps_lat = NAN;
+  bool has_gps_lon = false;
+  float gps_lon = NAN;
+  bool has_gps_altitude = false;
+  float gps_altitude_m = NAN;
+  bool has_satellites = false;
+  long satellites = 0;
+};
+
 #ifndef MAX_CLIENTS
   #define MAX_CLIENTS           32
 #endif
@@ -94,10 +129,13 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public WebPanelComm
   uint32_t last_millis;
   uint64_t uptime_millis;
   unsigned long next_archive_neighbours_flush_ms;
+  unsigned long next_battery_sample_ms;
   unsigned long next_history_sample_ms;
   unsigned long next_local_advert, next_flood_advert;
   bool _logging;
   bool _archive_neighbours_dirty;
+  bool _battery_sample_valid;
+  uint16_t _battery_mv_cache;
   NodePrefs _prefs;
   ClientACL  acl;
   CommonCLI _cli;
@@ -159,7 +197,8 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public WebPanelComm
   void recordStatsEvent(uint8_t type, int16_t value = 0);
   bool appendJsonEvents(char* reply, size_t reply_size, size_t& offset) const;
   bool appendJsonNeighbours(char* reply, size_t reply_size, size_t& offset) const;
-  bool appendJsonSensors(char* reply, size_t reply_size, size_t& offset) const;
+  bool appendJsonSensors(char* reply, size_t reply_size, size_t& offset, const WebSensorSnapshot& snapshot) const;
+  uint16_t getBatteryMilliVolts(bool force_refresh = false);
   uint8_t handleLoginReq(const mesh::Identity& sender, const uint8_t* secret, uint32_t sender_timestamp, const uint8_t* data, bool is_flood);
   uint8_t handleAnonRegionsReq(const mesh::Identity& sender, uint32_t sender_timestamp, const uint8_t* data);
   uint8_t handleAnonOwnerReq(const mesh::Identity& sender, uint32_t sender_timestamp, const uint8_t* data);

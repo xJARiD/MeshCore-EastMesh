@@ -28,44 +28,14 @@
 
 namespace {
 
-struct WebSensorSnapshot {
-  bool has_supply_voltage = false;
-  float supply_voltage_v = NAN;
-
-  bool has_sensor_temp = false;
-  float sensor_temp_c = NAN;
-
-  bool has_mcu_temp = false;
-  float mcu_temp_c = NAN;
-
-  bool has_humidity = false;
-  float humidity_pct = NAN;
-
-  bool has_pressure = false;
-  float pressure_hpa = NAN;
-
-  bool has_pressure_altitude = false;
-  float pressure_altitude_m = NAN;
-
-  bool has_gps = false;
-  bool gps_enabled = false;
-  bool gps_fix = false;
-  bool has_gps_lat = false;
-  float gps_lat = NAN;
-  bool has_gps_lon = false;
-  float gps_lon = NAN;
-  bool has_gps_altitude = false;
-  float gps_altitude_m = NAN;
-  bool has_satellites = false;
-  long satellites = 0;
-};
-
-WebSensorSnapshot collectWebSensorSnapshot(mesh::MainBoard& board, SensorManager& sensors) {
+WebSensorSnapshot collectWebSensorSnapshot(mesh::MainBoard& board, SensorManager& sensors, uint16_t battery_mv) {
   WebSensorSnapshot snapshot;
+  snapshot.has_battery = true;
+  snapshot.battery_mv = battery_mv;
 
   CayenneLPP sensor_telemetry(200);
   sensor_telemetry.reset();
-  sensor_telemetry.addVoltage(TELEM_CHANNEL_SELF, static_cast<float>(board.getBattMilliVolts()) / 1000.0f);
+  sensor_telemetry.addVoltage(TELEM_CHANNEL_SELF, static_cast<float>(battery_mv) / 1000.0f);
   sensors.querySensors(0xFF, sensor_telemetry);
 
   const float board_temp_c = board.getMCUTemperature();
@@ -567,7 +537,7 @@ int MyMesh::handleRequest(ClientInfo *sender, uint32_t sender_timestamp, uint8_t
 
   if (payload[0] == REQ_TYPE_GET_STATUS) {  // guests can also access this now
     RepeaterStats stats;
-    stats.batt_milli_volts = board.getBattMilliVolts();
+    stats.batt_milli_volts = getBatteryMilliVolts(true);
     stats.curr_tx_queue_len = _mgr->getOutboundTotal();
     stats.noise_floor = (int16_t)_radio->getNoiseFloor();
     stats.last_rssi = (int16_t)radio_driver.getLastRSSI();
@@ -593,7 +563,7 @@ int MyMesh::handleRequest(ClientInfo *sender, uint32_t sender_timestamp, uint8_t
     uint8_t perm_mask = ~(payload[1]); // NEW: first reserved byte (of 4), is now inverse mask to apply to permissions
 
     telemetry.reset();
-    telemetry.addVoltage(TELEM_CHANNEL_SELF, (float)board.getBattMilliVolts() / 1000.0f);
+    telemetry.addVoltage(TELEM_CHANNEL_SELF, (float)getBatteryMilliVolts(true) / 1000.0f);
 
     // query other sensors -- target specific
     if ((sender->permissions & PERM_ACL_ROLE_MASK) == PERM_ACL_GUEST) {
@@ -1219,12 +1189,15 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _archive = nullptr;
   uptime_millis = 0;
   next_archive_neighbours_flush_ms = 0;
+  next_battery_sample_ms = 0;
   next_history_sample_ms = 0;
   next_local_advert = next_flood_advert = 0;
   dirty_contacts_expiry = 0;
   set_radio_at = revert_radio_at = 0;
   _logging = false;
   _archive_neighbours_dirty = false;
+  _battery_sample_valid = false;
+  _battery_mv_cache = 0;
   region_load_active = false;
   memset(&_stats_state, 0, sizeof(_stats_state));
 
@@ -1399,6 +1372,25 @@ void MyMesh::sendFloodScoped(const TransportKey& scope, mesh::Packet* pkt, uint3
   }
 }
 
+uint16_t MyMesh::getBatteryMilliVolts(bool force_refresh) {
+  constexpr unsigned long kBatterySampleIntervalMs = 60000UL;
+
+  if (board.supportsBatteryReporting() && !board.isBatteryReportingEnabled()) {
+    _battery_sample_valid = true;
+    _battery_mv_cache = 0;
+    next_battery_sample_ms = 0;
+    return 0;
+  }
+
+  if (force_refresh || !_battery_sample_valid || next_battery_sample_ms == 0 || millisHasNowPassed(next_battery_sample_ms)) {
+    _battery_mv_cache = board.getBattMilliVolts();
+    _battery_sample_valid = true;
+    next_battery_sample_ms = millis() + kBatterySampleIntervalMs;
+  }
+
+  return _battery_mv_cache;
+}
+
 void MyMesh::applyTempRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, int timeout_mins) {
   set_radio_at = futureMillis(2000); // give CLI reply some time to be sent back, before applying temp radio params
   pending_freq = freq;
@@ -1534,7 +1526,13 @@ void MyMesh::removeNeighbor(const uint8_t *pubkey, int key_len) {
 }
 
 void MyMesh::formatStatsReply(char *reply, size_t reply_size) {
-  StatsFormatHelper::formatCoreStats(reply, reply_size, board, *_ms, _err_flags, _mgr);
+  snprintf(reply,
+           reply_size,
+           "{\"battery_mv\":%u,\"uptime_secs\":%u,\"errors\":%u,\"queue_len\":%u}",
+           getBatteryMilliVolts(true),
+           _ms->getMillis() / 1000,
+           _err_flags,
+           _mgr->getOutboundTotal());
 }
 
 void MyMesh::startRegionsLoad() {
@@ -1863,13 +1861,14 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
 #endif
   if (next_history_sample_ms == 0 || millisHasNowPassed(next_history_sample_ms)) {
     if (!live_stats_headroom_low) {
-      WebSensorSnapshot sensor_snapshot = collectWebSensorSnapshot(board, sensors);
+      const uint16_t battery_mv = getBatteryMilliVolts();
+      WebSensorSnapshot sensor_snapshot = collectWebSensorSnapshot(board, sensors, battery_mv);
       HistorySample sample{};
       sample.epoch_secs = getRTCClock()->getCurrentTime();
       sample.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
       sample.packets_sent = radio_driver.getPacketsSent();
       sample.packets_recv = radio_driver.getPacketsRecv();
-      sample.battery_mv = board.getBattMilliVolts();
+      sample.battery_mv = battery_mv;
       sample.queue_len = static_cast<uint16_t>(_mgr->getOutboundTotal());
       sample.error_flags = _err_flags;
       sample.recv_errors = static_cast<uint16_t>(min<uint32_t>(radio_driver.getPacketsRecvErrors(), 0xFFFF));
@@ -2488,7 +2487,9 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   wifi_signal[sizeof(wifi_signal) - 1] = 0;
 #endif
 
+  const uint16_t battery_mv = getBatteryMilliVolts(true);
   const int battery_pct = board.getBatteryPercent();
+  const WebSensorSnapshot sensor_snapshot = collectWebSensorSnapshot(board, sensors, battery_mv);
   const bool archive_available = (_archive != nullptr) && _archive->isMounted();
 #ifdef WITH_MQTT_UPLINK
   const bool mqtt_connected = mqtt.isAnyBrokerConnected();
@@ -2544,7 +2545,7 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      archive_type,
                      static_cast<unsigned long long>(_archive != nullptr ? _archive->getTotalBytes() : 0),
                      static_cast<unsigned long long>(_archive != nullptr ? _archive->getUsedBytes() : 0),
-                     board.getBattMilliVolts(),
+                     battery_mv,
                      battery_pct,
                      static_cast<unsigned long>(uptime_millis / 1000),
                      _err_flags,
@@ -2594,7 +2595,7 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   }
 
   offset += snprintf(&reply[offset], reply_size - offset, ",");
-  if (!appendJsonSensors(reply, reply_size, offset)) {
+  if (!appendJsonSensors(reply, reply_size, offset, sensor_snapshot)) {
     return false;
   }
   offset += snprintf(&reply[offset], reply_size - offset, ",");
@@ -2634,10 +2635,8 @@ bool MyMesh::formatWebStatsSeriesJson(const char* series, char* reply, size_t re
 #endif
 }
 
-bool MyMesh::appendJsonSensors(char* reply, size_t reply_size, size_t& offset) const {
+bool MyMesh::appendJsonSensors(char* reply, size_t reply_size, size_t& offset, const WebSensorSnapshot& snapshot) const {
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
-  WebSensorSnapshot snapshot = collectWebSensorSnapshot(board, sensors);
-
   bool needs_comma = false;
   const int open_written = snprintf(&reply[offset], reply_size - offset, "\"sensors\":{");
   if (open_written < 0 || static_cast<size_t>(open_written) >= (reply_size - offset)) {
@@ -2776,7 +2775,7 @@ void MyMesh::loop() {
 #endif
 #ifdef WITH_MQTT_UPLINK
   MQTTStatusSnapshot mqtt_status{};
-  mqtt_status.battery_mv = static_cast<int>(board.getBattMilliVolts());
+  mqtt_status.battery_mv = static_cast<int>(getBatteryMilliVolts());
   mqtt_status.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
   mqtt_status.error_flags = _err_flags;
   mqtt_status.queue_len = static_cast<uint16_t>(_mgr->getOutboundTotal());
