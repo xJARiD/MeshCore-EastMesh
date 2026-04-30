@@ -1164,17 +1164,30 @@ bool MQTTUplink::setIata(const char* iata) {
   for (size_t i = 0; cleaned[i] != 0; ++i) {
     cleaned[i] = toupper(static_cast<unsigned char>(cleaned[i]));
   }
-  if (strcmp(cleaned, _prefs.iata) != 0 && !isUnsetIataValue(_prefs.iata)) {
+  bool changed = strcmp(cleaned, _prefs.iata) != 0;
+  if (changed && !isUnsetIataValue(_prefs.iata)) {
     publishStatus(false);
   }
   if (strcmp(cleaned, MQTT_UNSET_IATA) == 0) {
     StrHelper::strncpy(_prefs.iata, MQTT_UNSET_IATA, sizeof(_prefs.iata));
     refreshIdentityStrings();
-    return savePrefs();
+    bool saved = savePrefs();
+    if (changed) {
+      for (BrokerState& broker : _brokers) {
+        destroyBroker(broker);
+      }
+    }
+    return saved;
   }
   StrHelper::strncpy(_prefs.iata, cleaned, sizeof(_prefs.iata));
   refreshIdentityStrings();
-  return savePrefs();
+  bool saved = savePrefs();
+  if (changed) {
+    for (BrokerState& broker : _brokers) {
+      destroyBroker(broker);
+    }
+  }
+  return saved;
 }
 
 bool MQTTUplink::setOwnerPublicKey(const char* owner_public_key) {

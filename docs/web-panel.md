@@ -222,7 +222,7 @@ Notes:
 - the current MQTT server states are loaded when the page opens
 - you can toggle each MQTT server on or off from this panel
 - turning off a connected MQTT server publishes retained offline status before the client disconnects
-- changing `mqtt.iata` away from a configured value publishes retained offline status to the old status topic before the new topic is used
+- changing `mqtt.iata` away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path
 - if all three servers are enabled at once, the panel shows a warning recommending two at most
 
 ## `/stats` Overview

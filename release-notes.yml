@@ -570,7 +570,7 @@ releases:
         text: "Published explicit retained offline status before a connected broker is toggled off, matching operator expectations without relying on last-will behavior that only fires on unclean disconnects."
       - type: fixed
         area: mqtt
-        text: "Published retained offline status to the old status topic before `mqtt.iata` changes, preventing stale online status from remaining under the previous IATA path."
+        text: "Published retained offline status to the old status topic before `mqtt.iata` changes, then restarted connected broker clients so they reconnect and publish online status under the new IATA path."
       - type: docs
         area: mqtt
         text: "Updated the CLI and web-panel docs to describe retained offline status publishing for broker toggles and IATA changes."
