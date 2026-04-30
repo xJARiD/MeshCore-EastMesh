@@ -72,6 +72,8 @@ Example:
 - the connection is HTTPS, but the certificate is self-signed
 - browsers will warn the first time you connect
 - the panel exposes the repeater CLI after login
+- the browser keeps the session token while changing between `/app` and `/stats`; the page switches views in place until logout, idle lock, or server restart
+- after a device restart or reflash, the app checks the stored token before loading settings and returns to login if the session is stale
 
 This is intended for local admin use on a trusted network, not for open internet exposure.
 
@@ -267,13 +269,13 @@ Current in-memory history caps are:
 | `4 MB` to less than `8 MB` PSRAM |      `480` |     `192` | About `8` hours          |
 | `8 MB` PSRAM or more             |      `720` |     `288` | About `12` hours         |
 
-On boards with roughly `2 MB` PSRAM or more, stats history starts capturing from boot when `web.stats` is enabled, even if `/stats` has not been opened yet.
+When `web.stats` is enabled, stats history starts capturing from boot or from the time it is enabled, even if `/stats` has not been opened yet. No-PSRAM boards use the smaller live-only buffer shown above.
 
 Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the EastMesh archive path.
 
 The main purpose of the SD card is to let the repeater retain and restore stats history for `/stats`. The archive keeps fast `.latest` snapshot files for quick restore and UTC-dated daily `.log` files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.
 
-On no-PSRAM boards, `/stats` can still show recent graphs while the stats view is active, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.
+On no-PSRAM boards, `/stats` can still show recent graphs, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.
 
 Useful CLI commands:
 
