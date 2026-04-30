@@ -1471,6 +1471,8 @@
 <li>the connection is HTTPS, but the certificate is self-signed</li>
 <li>browsers will warn the first time you connect</li>
 <li>the panel exposes the repeater CLI after login</li>
+<li>the browser keeps the session token while changing between <code>/app</code> and <code>/stats</code>; the page switches views in place until logout, idle lock, or server restart</li>
+<li>after a device restart or reflash, the app checks the stored token before loading settings and returns to login if the session is stale</li>
 </ul>
 <p>This is intended for local admin use on a trusted network, not for open internet exposure.</p>
 <h2 id="performance-notes">Performance Notes<a class="headerlink" href="#performance-notes" title="Permanent link">&para;</a></h2>
@@ -1602,12 +1604,12 @@
 <ul>
 <li><code>Services</code>: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity</li>
 <li>optional full-width <code>Environment</code> summary card on boards that report GPS or environmental telemetry</li>
-<li><code>Trends</code>: battery, heap free, packet activity, signal, noise floor, and, when GPS is enabled, satellites</li>
+<li><code>Trends</code>: battery, heap free, packet activity, signal, noise floor, and, when GPS is active, satellites</li>
 <li><code>Neighbours</code>: current neighbour table with ID, SNR, heard age, and advert age</li>
 <li><code>Events</code>: current boot/session events</li>
 </ul>
 <p>Planned MQTT JWT rotations are shown as <code>mqtt_token_refreshed</code> events instead of a short <code>mqtt_disconnected</code> / <code>mqtt_connected</code> pair.</p>
-<p>For boards that expose extra telemetry, the optional <code>Environment</code> summary card can show current values such as GPS fix state, latitude, longitude, GPS altitude, voltage, sensor temperature, humidity, barometer, pressure-derived altitude, and MCU temperature.</p>
+<p>For boards that expose extra telemetry, the optional <code>Environment</code> summary card can show current values such as GPS active/fix state, latitude, longitude, GPS altitude, voltage, sensor temperature, humidity, barometer, pressure-derived altitude, and MCU temperature.</p>
 <p>Metrics with no current value are hidden rather than showing placeholder rows, so the cards vary by board and by current sensor state.</p>
 <p>The <code>Core</code> battery meter prefers a board-reported battery percentage when the target exposes one. On those boards, the meter detail shows the live battery millivolt reading only. Otherwise it scales the displayed percentage from the board's configured battery voltage range and shows that range in the detail text rather than assuming a fixed single-cell <code>3000-4200 mV</code> pack.</p>
 <p>The trend graphs load sequentially rather than as one large payload:</p>
@@ -1617,7 +1619,7 @@
 <li>memory</li>
 <li>packet activity</li>
 <li>signal</li>
-<li>satellites when GPS is enabled</li>
+<li>satellites when GPS is active</li>
 </ol>
 <p>This keeps browser-side and device-side memory use lower than the previous in-page stats view.</p>
 <p>If <code>web.stats</code> is enabled and an SD archive is mounted, trends can restore archived summary points after reboot from the latest SD snapshot. Recent live points are still added from in-memory history.</p>
@@ -1660,10 +1662,10 @@
 </tr>
 </tbody>
 </table>
-<p>On boards with roughly <code>2 MB</code> PSRAM or more, stats history starts capturing from boot when <code>web.stats</code> is enabled, even if <code>/stats</code> has not been opened yet.</p>
+<p>When <code>web.stats</code> is enabled, stats history starts capturing from boot or from the time it is enabled, even if <code>/stats</code> has not been opened yet. No-PSRAM boards use the smaller live-only buffer shown above.</p>
 <p>Archive-backed restore requires <code>web.stats</code> enabled plus a mounted SD card on boards that support the EastMesh archive path.</p>
 <p>The main purpose of the SD card is to let the repeater retain and restore stats history for <code>/stats</code>. The archive keeps fast <code>.latest</code> snapshot files for quick restore and UTC-dated daily <code>.log</code> files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.</p>
-<p>On no-PSRAM boards, <code>/stats</code> can still show recent graphs while the stats view is active, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.</p>
+<p>On no-PSRAM boards, <code>/stats</code> can still show recent graphs, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.</p>
 <p>Useful CLI commands:</p>
 <ul>
 <li><code>set web.stats on</code></li>

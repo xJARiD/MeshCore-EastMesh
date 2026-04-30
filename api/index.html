@@ -501,6 +501,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#get-apisession" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/session
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#post-apicommand" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -824,6 +835,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#get-apisession" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /api/session
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#post-apicommand" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1073,13 +1095,23 @@
 <p>Example:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://&lt;repeater-ip&gt;/login<span class="w"> </span>--data<span class="w"> </span><span class="s1">&#39;&lt;admin-password&gt;&#39;</span>
 </span></code></pre></div>
-<h3 id="post-apicommand"><code>POST /api/command</code><a class="headerlink" href="#post-apicommand" title="Permanent link">&para;</a></h3>
-<p>Run a repeater CLI command remotely.</p>
+<h3 id="get-apisession"><code>GET /api/session</code><a class="headerlink" href="#get-apisession" title="Permanent link">&para;</a></h3>
+<p>Check whether a stored session token is still valid.</p>
 <p>Headers:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>X-Auth-Token: &lt;token&gt;
 </span></code></pre></div>
+<p>Response:</p>
+<ul>
+<li>JSON <code>{"authenticated":true}</code> on success</li>
+<li><code>401 Unauthorized</code> if the token is missing or stale after lock, restart, or reflash</li>
+</ul>
+<h3 id="post-apicommand"><code>POST /api/command</code><a class="headerlink" href="#post-apicommand" title="Permanent link">&para;</a></h3>
+<p>Run a repeater CLI command remotely.</p>
+<p>Headers:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>X-Auth-Token: &lt;token&gt;
+</span></code></pre></div>
 <p>Request body:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>get wifi.status
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>get wifi.status
 </span></code></pre></div>
 <p>Response:</p>
 <ul>
@@ -1087,18 +1119,18 @@
 <li><code>OK</code> if a command succeeds without returning text</li>
 </ul>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get wifi.status&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get wifi.status&#39;</span>
 </span></code></pre></div>
 <h3 id="get-apistats"><code>GET /api/stats</code><a class="headerlink" href="#get-apistats" title="Permanent link">&para;</a></h3>
 <p>Fetch the current summary payload used by the dedicated <code>/stats</code> page.</p>
 <p>Headers:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>X-Auth-Token: &lt;token&gt;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>X-Auth-Token: &lt;token&gt;
 </span></code></pre></div>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/stats<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/stats<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
 </span></code></pre></div>
 <p>Notes:</p>
 <ul>
@@ -1126,8 +1158,8 @@
 <li><code>gps_satellites</code></li>
 </ul>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;https://&lt;repeater-ip&gt;/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;https://&lt;repeater-ip&gt;/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
 </span></code></pre></div>
 <p>Notes:</p>
 <ul>
@@ -1138,8 +1170,8 @@
 <h3 id="get-apistatsviewlegacy"><code>GET /api/stats?view=legacy</code><a class="headerlink" href="#get-apistatsviewlegacy" title="Permanent link">&para;</a></h3>
 <p>Fetch the older bundle-style stats payload.</p>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;https://&lt;repeater-ip&gt;/api/stats?view=legacy&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;https://&lt;repeater-ip&gt;/api/stats?view=legacy&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
 </span></code></pre></div>
 <p>This exists for compatibility and troubleshooting. For new integrations, prefer the summary endpoint plus specific <code>series</code> requests.</p>
 <h2 id="common-use-cases">Common Use Cases<a class="headerlink" href="#common-use-cases" title="Permanent link">&para;</a></h2>
@@ -1161,9 +1193,9 @@
 <li>admin tools that want to reuse existing CLI behavior instead of adding new firmware endpoints</li>
 </ul>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
 </span></code></pre></div>
 <h3 id="2-build-a-lightweight-status-dashboard">2. Build A Lightweight Status Dashboard<a class="headerlink" href="#2-build-a-lightweight-status-dashboard" title="Permanent link">&para;</a></h3>
 <p>Use <code>/api/stats</code> for summary information and one <code>series</code> call at a time for trend lines.</p>
@@ -1185,9 +1217,9 @@
 <li>confirm current radio settings before applying changes</li>
 </ul>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get web.status&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get web.status&#39;</span>
 </span></code></pre></div>
 <h3 id="4-remote-admin-actions">4. Remote Admin Actions<a class="headerlink" href="#4-remote-admin-actions" title="Permanent link">&para;</a></h3>
 <p>The web panel also uses <code>/api/command</code> for operator actions, not just read-only queries.</p>
@@ -1201,9 +1233,9 @@
 </ul>
 <p>These are powerful commands. Treat them the same way you would treat direct serial CLI access.</p>
 <p>Example:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;advert&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;advert&#39;</span>
 </span></code></pre></div>
 <h3 id="5-remote-configuration-helpers">5. Remote Configuration Helpers<a class="headerlink" href="#5-remote-configuration-helpers" title="Permanent link">&para;</a></h3>
 <p>The web panel saves settings by generating CLI commands and sending them through <code>/api/command</code>.</p>
@@ -1218,28 +1250,28 @@
 <p>This is a practical way to automate setup while preserving existing CLI semantics.</p>
 <h2 id="example-script">Example Script<a class="headerlink" href="#example-script" title="Permanent link">&para;</a></h2>
 <p>This shell example logs in, fetches summary stats, fetches one trend series, and runs a CLI command:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="ch">#!/usr/bin/env bash</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="nv">BASE_URL</span><span class="o">=</span><span class="s2">&quot;https://192.168.1.123&quot;</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&quot;your-admin-password&quot;</span>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/login&quot;</span><span class="w"> </span>--data<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PASSWORD</span><span class="s2">&quot;</span><span class="k">)</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
-</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Summary:&quot;</span>
-</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/stats&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
-</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>
-</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="nb">echo</span>
-</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Memory trend:&quot;</span>
-</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-16-16"><a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
-</span><span id="__span-16-17"><a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>
-</span><span id="__span-16-18"><a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="nb">echo</span>
-</span><span id="__span-16-19"><a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MQTT status:&quot;</span>
-</span><span id="__span-16-20"><a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/command&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-16-21"><a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-16-22"><a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="ch">#!/usr/bin/env bash</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="nv">BASE_URL</span><span class="o">=</span><span class="s2">&quot;https://192.168.1.123&quot;</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&quot;your-admin-password&quot;</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/login&quot;</span><span class="w"> </span>--data<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PASSWORD</span><span class="s2">&quot;</span><span class="k">)</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Summary:&quot;</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/stats&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="nb">echo</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Memory trend:&quot;</span>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>
+</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="nb">echo</span>
+</span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MQTT status:&quot;</span>
+</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/command&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
 </span></code></pre></div>
 <h2 id="error-cases">Error Cases<a class="headerlink" href="#error-cases" title="Permanent link">&para;</a></h2>
 <p>Common responses:</p>
