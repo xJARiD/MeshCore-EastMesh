@@ -2320,7 +2320,7 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.isRawEnabled() ? "on" : "off");
   } else if (memcmp(command, "get mqtt.tx", 11) == 0) {
     sprintf(reply, "> %s", mqtt.isTxEnabled() ? "on" : "off");
-  } else if (memcmp(command, "get mqtt.eastmesh-au", 20) == 0 || memcmp(command, "get mqtt.eastmesh.au", 20) == 0) {
+  } else if (memcmp(command, "get mqtt.eastmesh-au", 21) == 0 || memcmp(command, "get mqtt.eastmesh.au", 21) == 0) {
     sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x01) ? "on" : "off");
   } else if (memcmp(command, "get mqtt.letsmesh-eu", 21) == 0 || memcmp(command, "get mqtt.letsmesh.eu", 21) == 0) {
     sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x02) ? "on" : "off");
