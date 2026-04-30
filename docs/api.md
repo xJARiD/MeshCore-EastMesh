@@ -102,6 +102,21 @@ Example:
 curl -sk -X POST https://<repeater-ip>/login --data '<admin-password>'
 ```
 
+### `GET /api/session`
+
+Check whether a stored session token is still valid.
+
+Headers:
+
+```text
+X-Auth-Token: <token>
+```
+
+Response:
+
+- JSON `{"authenticated":true}` on success
+- `401 Unauthorized` if the token is missing or stale after lock, restart, or reflash
+
 ### `POST /api/command`
 
 Run a repeater CLI command remotely.

@@ -255,7 +255,12 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
     </section>
   </main>
   <script>
+    const TOKEN_KEY = "repeater-token";
     const statusEl = document.getElementById("status");
+    function storeToken(value) {
+      try { sessionStorage.setItem(TOKEN_KEY, value); } catch (_) {}
+      try { localStorage.setItem(TOKEN_KEY, value); } catch (_) {}
+    }
     function getPreferredPage() {
       const params = new URLSearchParams(window.location.search);
       const next = params.get("next");
@@ -269,7 +274,7 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
         statusEl.textContent = text || "Access denied";
         return;
       }
-      sessionStorage.setItem("repeater-token", text.trim());
+      storeToken(text.trim());
       window.location.replace(getPreferredPage());
     }
     document.getElementById("loginBtn").onclick = () => login();
@@ -1021,7 +1026,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
   </main>
   <script>
     const RADIO_PRESETS_URL = "https://api.meshcore.nz/api/v1/config";
-    const isStatsPage = window.location.pathname === "/stats";
+    let isStatsPage = window.location.pathname === "/stats";
+    let pageLoadGeneration = 0;
     const PANEL_TITLE_KEY = "repeater-panel-title";
     const REGION_STATE_CODES = {
       "ACT": "act",
@@ -1031,10 +1037,27 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       "Tasmania": "tas",
       "Victoria": "vic"
     };
-    let token = sessionStorage.getItem("repeater-token") || "";
+    const TOKEN_KEY = "repeater-token";
+    function readStoredToken() {
+      try {
+        const sessionToken = sessionStorage.getItem(TOKEN_KEY);
+        if (sessionToken) return sessionToken;
+      } catch (_) {}
+      try {
+        return localStorage.getItem(TOKEN_KEY) || "";
+      } catch (_) {
+        return "";
+      }
+    }
+    function clearStoredToken() {
+      try { sessionStorage.removeItem(TOKEN_KEY); } catch (_) {}
+      try { localStorage.removeItem(TOKEN_KEY); } catch (_) {}
+    }
+    let token = readStoredToken();
     let commandQueue = Promise.resolve();
     let radioPresetEntries = [];
     let currentRadioConfig = null;
+    let mqttIataLoaded = false;
     const statusEl = document.getElementById("status");
     const replyEl = document.getElementById("reply");
     const themeToggleEl = document.getElementById("themeToggle");
@@ -1058,7 +1081,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     }
     function redirectToLogin() {
       const next = isStatsPage ? "/stats" : "/app";
-      sessionStorage.removeItem("repeater-token");
+      clearStoredToken();
       token = "";
       window.location.replace("/?next=" + encodeURIComponent(next));
     }
@@ -1084,12 +1107,12 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (appBtn) {
         appBtn.classList.toggle("active", !isStatsPage);
         appBtn.title = "Open app page";
-        appBtn.onclick = () => window.location.assign("/app");
+        appBtn.onclick = () => navigateToPage("/app");
       }
       if (statsBtn) {
         statsBtn.classList.toggle("active", isStatsPage);
         statsBtn.title = "Open stats page";
-        statsBtn.onclick = () => window.location.assign("/stats");
+        statsBtn.onclick = () => navigateToPage("/stats");
       }
       if (advertBtn) advertBtn.style.display = isStatsPage ? "none" : "";
       if (otaBtn) otaBtn.style.display = isStatsPage ? "none" : "";
@@ -2031,6 +2054,12 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         else ctx.lineTo(point.x, point.y);
       });
       ctx.stroke();
+      if (coords.length === 1) {
+        ctx.fillStyle = strokeColor;
+        ctx.beginPath();
+        ctx.arc(coords[0].x, coords[0].y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
       if (Number.isInteger(hoverIndex) && hoverIndex >= 0 && hoverIndex < coords.length) {
         const hover = coords[hoverIndex];
         ctx.fillStyle = strokeColor;
@@ -2168,7 +2197,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const input = document.getElementById("mqttIata");
       const banner = document.getElementById("mqttIataBanner");
       const inlineWarning = document.getElementById("mqttBrokerWarning");
-      const showWarning = !!(input && isUnsetMqttIata(input.value));
+      const showWarning = !!(mqttIataLoaded && input && isUnsetMqttIata(input.value));
       if (banner) {
         banner.classList.toggle("visible", showWarning && !isStatsPage);
       }
@@ -2216,6 +2245,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const result = await runCommand(prefix + value);
       if (!result.ok) return;
       if (inputId === "mqttIata") {
+        mqttIataLoaded = true;
         refreshMqttIataWarning();
       }
       if (inputId === "nodeName") {
@@ -2233,6 +2263,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       document.getElementById(inputId).value = value;
       if (inputId === "mqttIata") {
+        mqttIataLoaded = true;
         refreshMqttIataWarning();
       }
       if (inputId === "nodeName") {
@@ -2294,6 +2325,18 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         }
         return JSON.parse(text);
       });
+    }
+    async function validateSession() {
+      if (!token) {
+        redirectToLogin();
+        return false;
+      }
+      try {
+        await fetchJson("/api/session");
+        return true;
+      } catch (_) {
+        return false;
+      }
     }
 	    function getLetsmeshMode() {
 	      const eu = document.getElementById("mqttLetsmeshEu");
@@ -2436,13 +2479,37 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         setRadioPresetStatus(error && error.message ? error.message : "Unable to load community presets.", true);
       }
     }
-    async function loadStatsPage() {
+    function nextPageLoadGeneration() {
+      pageLoadGeneration++;
+      return pageLoadGeneration;
+    }
+    function isCurrentPageLoad(generation) {
+      return generation === pageLoadGeneration;
+    }
+    function navigateToPage(path, options = {}) {
+      if (path !== "/app" && path !== "/stats") return;
+      const replace = options.replace === true;
+      if (window.location.pathname !== path) {
+        if (replace) window.history.replaceState({ page:path }, "", path);
+        else window.history.pushState({ page:path }, "", path);
+      }
+      isStatsPage = path === "/stats";
+      syncNavButton();
+      refreshMqttIataWarning();
+      const generation = nextPageLoadGeneration();
+      initApp(generation);
+    }
+    window.addEventListener("popstate", () => {
+      navigateToPage(window.location.pathname === "/stats" ? "/stats" : "/app", { replace:true });
+    });
+    async function loadStatsPage(generation = pageLoadGeneration) {
       const summaryEl = document.getElementById("statsSummary");
       if (!summaryEl) return;
       summaryEl.innerHTML = '<div class="stats-empty">Loading summary...</div>';
       let summaryPayload = null;
       try {
         summaryPayload = await fetchJson("/api/stats?view=summary");
+        if (!isCurrentPageLoad(generation)) return;
         if (!summaryPayload) throw new Error("no summary payload");
         renderStatsSummary(summaryPayload);
         initTrendCards(getTrendSeriesOrder(summaryPayload));
@@ -2453,8 +2520,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 
       const seriesOrder = getTrendSeriesOrder(summaryPayload);
       for (const key of seriesOrder) {
+        if (!isCurrentPageLoad(generation)) return;
         try {
           const payload = await fetchJson("/api/stats?series=" + encodeURIComponent(key));
+          if (!isCurrentPageLoad(generation)) return;
           renderTrendResult(key, payload);
         } catch (error) {
           renderTrendError(key, error && error.message ? error.message : "Unavailable");
@@ -2463,9 +2532,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
     }
     document.getElementById("runBtn").onclick = () => runCommand(document.getElementById("command").value);
-    const openStats = () => window.location.assign("/stats");
-    const openApp = () => window.location.assign("/app");
-    document.getElementById("openStatsPanelBtn").onclick = () => openStats();
+    document.getElementById("openStatsPanelBtn").onclick = () => navigateToPage("/stats");
     document.getElementById("command").addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -2615,26 +2682,33 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
     };
     document.getElementById("refreshPageBtn").onclick = async () => {
+      const generation = nextPageLoadGeneration();
       if (isStatsPage) {
-        await loadStatsPage();
+        await loadStatsPage(generation);
       } else {
-        await initApp();
+        await initApp(generation);
       }
     };
     document.getElementById("logoutBtn").onclick = () => {
       redirectToLogin();
     };
-	    async function initApp() {
+	    async function initApp(generation = nextPageLoadGeneration()) {
       if (!token) {
         redirectToLogin();
+        return;
+      }
+      mqttIataLoaded = false;
+      refreshMqttIataWarning();
+      if (!await validateSession()) {
         return;
       }
       showAuthedUi(true);
       if (isStatsPage) {
         try {
-          await loadStatsPage();
-          statusEl.textContent = "Ready";
+          await loadStatsPage(generation);
+          if (isCurrentPageLoad(generation)) statusEl.textContent = "Ready";
         } catch (error) {
+          if (!isCurrentPageLoad(generation)) return;
           statusEl.textContent = error && error.message ? error.message : "Unable to load stats.";
         }
         return;
@@ -2647,6 +2721,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("clock", "clockUtc", null, quiet),
           () => loadField("get public.key", "publicKey", "uppercase", quiet)
         ]);
+        if (!isCurrentPageLoad(generation)) return;
         await loadSection("Loading repeater settings...", [
           () => loadField("get name", "nodeName", null, quiet),
           () => loadField("get lat", "nodeLat", null, quiet),
@@ -2654,17 +2729,20 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get prv.key", "privateKey", "uppercase", quiet),
           () => loadField("get owner.info", "ownerInfo", "multiline", quiet)
         ]);
+        if (!isCurrentPageLoad(generation)) return;
         await loadSection("Loading radio settings...", [
           () => loadRadioConfig(quiet),
           () => loadField("get path.hash.mode", "pathHashMode", null, quiet),
           () => loadRegionSelection(quiet)
         ]);
+        if (!isCurrentPageLoad(generation)) return;
         await loadSection("Loading advertising...", [
           () => loadField("get advert.interval", "advertInterval", null, quiet),
           () => loadField("get flood.advert.interval", "floodInterval", null, quiet),
           () => loadField("get flood.max", "floodMax", null, quiet),
           () => loadGhostNodeModeState(quiet)
         ]);
+        if (!isCurrentPageLoad(generation)) return;
         await loadSection("Loading MQTT settings...", [
           () => loadField("get mqtt.iata", "mqttIata", null, quiet),
           () => loadField("get mqtt.owner", "mqttOwner", null, quiet),
@@ -2673,18 +2751,19 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
           () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet)
         ]);
+        if (!isCurrentPageLoad(generation)) return;
         statusEl.textContent = "Ready";
       } catch (error) {
-        if (!token) {
+        if (!token || !isCurrentPageLoad(generation)) {
           return;
         }
         statusEl.textContent = error && error.message ? error.message : "Unable to load repeater settings.";
       }
-      loadRadioPresets();
+      if (isCurrentPageLoad(generation)) loadRadioPresets();
 	    }
 	    refreshEastmeshModeUi();
 	    refreshLetsmeshModeUi();
-	    initApp();
+	    navigateToPage(isStatsPage ? "/stats" : "/app", { replace:true });
   </script>
 </body>
 </html>
@@ -2737,12 +2816,14 @@ bool WebPanelServer::start() {
   httpd_uri_t app_uri = {.uri = "/app", .method = HTTP_GET, .handler = &WebPanelServer::handleApp, .user_ctx = &_route_context};
   httpd_uri_t stats_page_uri = {.uri = "/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStatsPage, .user_ctx = &_route_context};
   httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &WebPanelServer::handleLogin, .user_ctx = &_route_context};
+  httpd_uri_t session_uri = {.uri = "/api/session", .method = HTTP_GET, .handler = &WebPanelServer::handleSession, .user_ctx = &_route_context};
   httpd_uri_t command_uri = {.uri = "/api/command", .method = HTTP_POST, .handler = &WebPanelServer::handleCommand, .user_ctx = &_route_context};
   httpd_uri_t stats_uri = {.uri = "/api/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStats, .user_ctx = &_route_context};
   httpd_register_uri_handler(_server, &index_uri);
   httpd_register_uri_handler(_server, &app_uri);
   httpd_register_uri_handler(_server, &stats_page_uri);
   httpd_register_uri_handler(_server, &login_uri);
+  httpd_register_uri_handler(_server, &session_uri);
   httpd_register_uri_handler(_server, &command_uri);
   httpd_register_uri_handler(_server, &stats_uri);
 
@@ -2892,6 +2973,21 @@ esp_err_t WebPanelServer::handleLogin(httpd_req_t* req) {
   httpd_resp_set_type(req, "text/plain; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   return httpd_resp_sendstr(req, ctx->self->_token);
+}
+
+esp_err_t WebPanelServer::handleSession(httpd_req_t* req) {
+  auto* ctx = static_cast<RouteContext*>(req->user_ctx);
+  if (ctx == nullptr || ctx->self == nullptr) {
+    return httpd_resp_send_500(req);
+  }
+  if (!ctx->self->isAuthorized(req)) {
+    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+  }
+
+  ctx->self->noteActivity();
+  httpd_resp_set_type(req, "application/json; charset=utf-8");
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  return httpd_resp_sendstr(req, "{\"authenticated\":true}");
 }
 
 esp_err_t WebPanelServer::handleCommand(httpd_req_t* req) {

@@ -537,7 +537,7 @@ bool StatsHistory::supportsPersistence() const {
 }
 
 bool StatsHistory::shouldAutoActivateFromBoot() const {
-  return _enabled && !_live_only && hasBootAutoCapturePsram();
+  return _enabled && (_live_only || hasBootAutoCapturePsram());
 }
 
 bool StatsHistory::isBootAutoCaptureExpected() const {
@@ -556,7 +556,7 @@ bool StatsHistory::isAccessActive(uint32_t now_ms) const {
   if (!_live_only) {
     return true;
   }
-  return _last_access_ms != 0 && (now_ms - _last_access_ms) < kLiveOnlyIdleTimeoutMs;
+  return _activated || (_last_access_ms != 0 && (now_ms - _last_access_ms) < kLiveOnlyIdleTimeoutMs);
 }
 
 void StatsHistory::noteAccess(uint32_t now_ms) {

@@ -1,5 +1,7 @@
 #include "EnvironmentSensorManager.h"
 
+#include <Wire.h>
+
 #if ENV_PIN_SDA && ENV_PIN_SCL
 #define TELEM_WIRE &Wire1  // Use Wire1 as the I2C bus for Environment Sensors
 #else
@@ -161,6 +163,18 @@ public:
 static RAK12500LocationProvider RAK12500_provider;
 #endif
 
+namespace {
+
+bool i2cDevicePresent(TwoWire* wire, uint8_t address) {
+  if (wire == nullptr) {
+    return false;
+  }
+  wire->beginTransmission(address);
+  return wire->endTransmission() == 0;
+}
+
+}  // namespace
+
 bool EnvironmentSensorManager::begin() {
   #if ENV_INCLUDE_GPS
   #ifdef RAK_WISBLOCK_GPS
@@ -182,7 +196,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_AHTX0
-  if (AHTX0.begin(TELEM_WIRE, 0, TELEM_AHTX_ADDRESS)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_AHTX_ADDRESS) && AHTX0.begin(TELEM_WIRE, 0, TELEM_AHTX_ADDRESS)) {
     MESH_DEBUG_PRINTLN("Found AHT10/AHT20 at address: %02X", TELEM_AHTX_ADDRESS);
     AHTX0_initialized = true;
   } else {
@@ -192,7 +206,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_BME680
-  if (BME680.begin(TELEM_BME680_ADDRESS)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_BME680_ADDRESS) && BME680.begin(TELEM_BME680_ADDRESS)) {
     MESH_DEBUG_PRINTLN("Found BME680 at address: %02X", TELEM_BME680_ADDRESS);
     BME680_initialized = true;
   } else {
@@ -202,7 +216,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_BME280
-  if (BME280.begin(TELEM_BME280_ADDRESS, TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_BME280_ADDRESS) && BME280.begin(TELEM_BME280_ADDRESS, TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found BME280 at address: %02X", TELEM_BME280_ADDRESS);
     MESH_DEBUG_PRINTLN("BME sensor ID: %02X", BME280.sensorID());
     // Reduce self-heating: single-shot conversions, light oversampling, long standby.
@@ -220,7 +234,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_BMP280
-  if (BMP280.begin(TELEM_BMP280_ADDRESS)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_BMP280_ADDRESS) && BMP280.begin(TELEM_BMP280_ADDRESS)) {
     MESH_DEBUG_PRINTLN("Found BMP280 at address: %02X", TELEM_BMP280_ADDRESS);
     MESH_DEBUG_PRINTLN("BMP sensor ID: %02X", BMP280.sensorID());
     BMP280_initialized = true;
@@ -231,7 +245,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_SHTC3
-  if (SHTC3.begin(TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, 0x70) && SHTC3.begin(TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found sensor: SHTC3");
     SHTC3_initialized = true;
   } else {
@@ -242,10 +256,14 @@ bool EnvironmentSensorManager::begin() {
 
 
   #if ENV_INCLUDE_SHT4X
-  SHT4X.begin(*TELEM_WIRE, TELEM_SHT4X_ADDRESS);
   uint32_t serialNumber = 0;
   int16_t sht4x_error;
-  sht4x_error = SHT4X.serialNumber(serialNumber);
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_SHT4X_ADDRESS)) {
+    SHT4X.begin(*TELEM_WIRE, TELEM_SHT4X_ADDRESS);
+    sht4x_error = SHT4X.serialNumber(serialNumber);
+  } else {
+    sht4x_error = -1;
+  }
   if (sht4x_error == 0) {
     MESH_DEBUG_PRINTLN("Found SHT4X at address: %02X", TELEM_SHT4X_ADDRESS);
     SHT4X_initialized = true;
@@ -256,7 +274,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_LPS22HB
-  if (LPS22HB.begin()) {
+  if (i2cDevicePresent(TELEM_WIRE, 0x5C) && LPS22HB.begin()) {
     MESH_DEBUG_PRINTLN("Found sensor: LPS22HB");
     LPS22HB_initialized = true;
   } else {
@@ -266,7 +284,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_INA3221
-  if (INA3221.begin(TELEM_INA3221_ADDRESS, TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_INA3221_ADDRESS) && INA3221.begin(TELEM_INA3221_ADDRESS, TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found INA3221 at address: %02X", TELEM_INA3221_ADDRESS);
     MESH_DEBUG_PRINTLN("%04X %04X", INA3221.getDieID(), INA3221.getManufacturerID());
 
@@ -281,7 +299,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_INA219
-  if (INA219.begin(TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_INA219_ADDRESS) && INA219.begin(TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found INA219 at address: %02X", TELEM_INA219_ADDRESS);
     INA219_initialized = true;
   } else {
@@ -291,7 +309,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_INA260
-  if (INA260.begin(TELEM_INA260_ADDRESS, TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_INA260_ADDRESS) && INA260.begin(TELEM_INA260_ADDRESS, TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found INA260 at address: %02X", TELEM_INA260_ADDRESS);
     INA260_initialized = true;
   } else {
@@ -301,7 +319,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_INA226
-  if (INA226.begin()) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_INA226_ADDRESS) && INA226.begin()) {
     MESH_DEBUG_PRINTLN("Found INA226 at address: %02X", TELEM_INA226_ADDRESS);
     INA226.setMaxCurrentShunt(TELEM_INA226_MAX_AMP, TELEM_INA226_SHUNT_VALUE);
     INA226_initialized = true;
@@ -312,7 +330,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_MLX90614
-  if (MLX90614.begin(TELEM_MLX90614_ADDRESS, TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_MLX90614_ADDRESS) && MLX90614.begin(TELEM_MLX90614_ADDRESS, TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found MLX90614 at address: %02X", TELEM_MLX90614_ADDRESS);
     MLX90614_initialized = true;
   } else {
@@ -322,7 +340,7 @@ bool EnvironmentSensorManager::begin() {
   #endif
 
   #if ENV_INCLUDE_VL53L0X
-  if (VL53L0X.begin(TELEM_VL53L0X_ADDRESS, false, TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_VL53L0X_ADDRESS) && VL53L0X.begin(TELEM_VL53L0X_ADDRESS, false, TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found VL53L0X at address: %02X", TELEM_VL53L0X_ADDRESS);
     VL53L0X_initialized = true;
   } else {
@@ -334,7 +352,7 @@ bool EnvironmentSensorManager::begin() {
   #if ENV_INCLUDE_BMP085
   // First argument is  MODE (aka oversampling)
   // choose ULTRALOWPOWER
-  if (BMP085.begin(0, TELEM_WIRE)) {
+  if (i2cDevicePresent(TELEM_WIRE, 0x77) && BMP085.begin(0, TELEM_WIRE)) {
     MESH_DEBUG_PRINTLN("Found sensor BMP085");
     BMP085_initialized = true;
   } else {
@@ -345,7 +363,7 @@ bool EnvironmentSensorManager::begin() {
 
   #if ENV_INCLUDE_RAK12035
     RAK12035.setup(*TELEM_WIRE);
-  if (RAK12035.begin(TELEM_RAK12035_ADDRESS)) {
+  if (i2cDevicePresent(TELEM_WIRE, TELEM_RAK12035_ADDRESS) && RAK12035.begin(TELEM_RAK12035_ADDRESS)) {
     MESH_DEBUG_PRINTLN("Found sensor RAK12035 at address: %02X", TELEM_RAK12035_ADDRESS);
     RAK12035_initialized = true;
   } else {
