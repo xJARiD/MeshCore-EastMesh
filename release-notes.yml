@@ -557,3 +557,21 @@ releases:
         area: web-panel
         text: "Documented no-PSRAM `/stats` history behavior, stale browser-token recovery, and the lightweight `/api/session` endpoint used by the web panel."
     breaking_changes: []
+
+  - track: repeater-mqtt
+    version: "1.3.15"
+    tag: "repeater-mqtt-eastmesh-v1.3.15"
+    date: "2026-04-30"
+    previous_version: "1.3.14"
+    summary: "Publishes retained offline status for clean MQTT broker disables and IATA topic changes so operator-driven disconnects do not leave stale online status behind."
+    changes:
+      - type: fixed
+        area: mqtt
+        text: "Published explicit retained offline status before a connected broker is toggled off, matching operator expectations without relying on last-will behavior that only fires on unclean disconnects."
+      - type: fixed
+        area: mqtt
+        text: "Published retained offline status to the old status topic before `mqtt.iata` changes, preventing stale online status from remaining under the previous IATA path."
+      - type: docs
+        area: mqtt
+        text: "Updated the CLI and web-panel docs to describe retained offline status publishing for broker toggles and IATA changes."
+    breaking_changes: []

@@ -695,12 +695,12 @@ int MQTTUplink::buildRawJson(char* buffer, size_t buffer_size, const mesh::Packe
   return len;
 }
 
-void MQTTUplink::publishOnlineStatus(BrokerState& broker) {
+void MQTTUplink::publishBrokerStatus(BrokerState& broker, bool online) {
   char* payload = allocScratchBuffer(768);
   if (payload == nullptr) {
     return;
   }
-  int len = buildStatusJson(payload, 768, true);
+  int len = buildStatusJson(payload, 768, online);
   if (len > 0 && static_cast<size_t>(len) < 768) {
     queuePublish(broker, broker.status_topic, payload, true);
   }
@@ -999,7 +999,7 @@ void MQTTUplink::loop(const MQTTStatusSnapshot& snapshot) {
       connect_started = true;
     }
     if (broker.connected && !broker.connect_announced) {
-      publishOnlineStatus(broker);
+      publishBrokerStatus(broker, true);
       broker.connect_announced = true;
       _last_status_publish = millis();
     } else if (!broker.connected) {
@@ -1116,6 +1116,12 @@ bool MQTTUplink::setEndpointEnabled(uint8_t bit, bool enabled) {
       return false;
     }
   } else {
+    for (BrokerState& broker : _brokers) {
+      if (broker.spec != nullptr && broker.spec->bit == bit && broker.connected && broker.client != nullptr) {
+        publishBrokerStatus(broker, false);
+        break;
+      }
+    }
     next_mask &= ~bit;
   }
   _prefs.enabled_mask = next_mask;
@@ -1157,6 +1163,9 @@ bool MQTTUplink::setIata(const char* iata) {
   makeSafeToken(iata, cleaned, sizeof(cleaned));
   for (size_t i = 0; cleaned[i] != 0; ++i) {
     cleaned[i] = toupper(static_cast<unsigned char>(cleaned[i]));
+  }
+  if (strcmp(cleaned, _prefs.iata) != 0 && !isUnsetIataValue(_prefs.iata)) {
+    publishStatus(false);
   }
   if (strcmp(cleaned, MQTT_UNSET_IATA) == 0) {
     StrHelper::strncpy(_prefs.iata, MQTT_UNSET_IATA, sizeof(_prefs.iata));

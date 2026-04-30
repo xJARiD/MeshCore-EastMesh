@@ -138,7 +138,7 @@ private:
   void destroyBroker(BrokerState& broker, bool reset_retry_state = true);
   bool refreshToken(BrokerState& broker);
   void publishStatus(bool online);
-  void publishOnlineStatus(BrokerState& broker);
+  void publishBrokerStatus(BrokerState& broker, bool online);
   void queuePublish(BrokerState& broker, const char* topic, const char* payload, bool retain);
   int buildStatusJson(char* buffer, size_t buffer_size, bool online) const;
   int buildPacketJson(char* buffer, size_t buffer_size, const mesh::Packet& packet, bool is_tx, int rssi, float snr,

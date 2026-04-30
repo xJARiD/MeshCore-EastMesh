@@ -50,6 +50,8 @@ Notes:
 - new repeater MQTT installs default `mqtt.iata` to `UNSET`
 - `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
 - if `mqtt.iata` is `UNSET`, `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
+- turning off a connected broker publishes a retained MQTT status update with `"status":"offline"` before the client disconnects
+- changing `mqtt.iata` away from a configured value also publishes retained offline status to the old status topic before switching topics
 
 Legacy dotted aliases are also accepted:
 
