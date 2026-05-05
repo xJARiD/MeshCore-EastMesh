@@ -170,14 +170,18 @@ Current tag formats:
 
 ```bash
 git tag companion-wifi-v1.2.3
+git tag repeater-bridge-espnow-v1.2.3
+git tag repeater-mqtt-bridge-eastmesh-v1.0.1
 git tag repeater-mqtt-eastmesh-v1.0.1
 ```
 
 Rules:
 
 - `companion-wifi` tags use the upstream MeshCore version directly
+- `repeater-bridge-espnow` tags use the upstream MeshCore version directly
+- `repeater-mqtt-bridge` tags use the EastMesh release version in the tag
 - `repeater-mqtt` tags use the EastMesh release version in the tag
-- GitHub Actions variable `OFFICIAL_MESHCORE_VERSION` supplies the upstream base version for repeater MQTT release builds
+- GitHub Actions variable `OFFICIAL_MESHCORE_VERSION` supplies the upstream base version for repeater MQTT and repeater MQTT bridge release builds
 - if the upstream MeshCore release version changes, update `OFFICIAL_MESHCORE_VERSION` in GitHub before cutting release tags
 
 Typical release flow:

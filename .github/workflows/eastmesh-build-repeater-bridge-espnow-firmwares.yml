@@ -1,4 +1,4 @@
-name: EastMesh Build Repeater MQTT Bridge Firmwares
+name: EastMesh Build Repeater ESP-NOW Bridge Firmwares
 
 permissions:
   contents: write
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'repeater-mqtt-bridge-eastmesh-*'
+      - 'repeater-bridge-espnow-v*'
 
 jobs:
 
@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OFFICIAL_MESHCORE_VERSION: ${{ vars.OFFICIAL_MESHCORE_VERSION }}
-      PLATFORMIO_BUILD_FLAGS: -UMQTT_DEBUG
     steps:
 
       - name: Clone Repo
@@ -25,19 +24,19 @@ jobs:
         uses: ./.github/actions/setup-build-environment
 
       - name: Build Firmwares
-        run: /usr/bin/env bash eastmesh-build.sh build-repeater-mqtt-bridge-firmwares
+        run: /usr/bin/env bash eastmesh-build.sh build-repeater-bridge-espnow-firmwares
 
       - name: Upload Workflow Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: repeater-mqtt-bridge-firmwares
+          name: repeater-bridge-espnow-firmwares
           path: out
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: Repeater MQTT Bridge Firmware ${{ env.RELEASE_VERSION }}
+          name: Repeater ESP-NOW Bridge Firmware ${{ env.RELEASE_VERSION }}
           body: ""
           draft: true
           files: out/*

@@ -4,7 +4,7 @@
 
 #if defined(ESP_PLATFORM)
   #include <WiFi.h>
-  #if !defined(WITH_WEB_PANEL)
+  #if defined(WITH_MQTT_UPLINK) && !defined(WITH_WEB_PANEL)
     #define WITH_WEB_PANEL 1
   #endif
   #if WITH_WEB_PANEL

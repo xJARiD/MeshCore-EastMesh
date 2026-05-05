@@ -17,14 +17,20 @@ This value becomes the base `FIRMWARE_VERSION` used by the release workflows.
 Push one or more of the following tag formats to trigger the matching firmware release workflow:
 
 - `companion-wifi-v1.2.3`
+- `repeater-bridge-espnow-v1.2.3`
+- `repeater-mqtt-bridge-eastmesh-v1.0.1`
 - `repeater-mqtt-eastmesh-v1.0.1`
 
 Use the upstream MeshCore version in `companion-wifi-v1.2.3`.
+Use the upstream MeshCore version in `repeater-bridge-espnow-v1.2.3`.
+Use the EastMesh release version in `repeater-mqtt-bridge-eastmesh-v1.0.1`.
 Use the EastMesh release version in `repeater-mqtt-eastmesh-v1.0.1`.
 
 Each tag triggers a separate workflow:
 
 - `companion-wifi-v*` builds companion WiFi firmware
+- `repeater-bridge-espnow-v*` builds repeater ESP-NOW bridge firmware
+- `repeater-mqtt-bridge-eastmesh-*` builds repeater MQTT bridge firmware
 - `repeater-mqtt-eastmesh-*` builds repeater MQTT firmware
 
 You can push one, or more tags on the same commit, and they will all build separately.
@@ -34,12 +40,15 @@ You can push one, or more tags on the same commit, and they will all build separ
 During the GitHub Actions build:
 
 - `companion-wifi` uses the version in the tag as `FIRMWARE_VERSION`
-- `repeater-mqtt` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION`
-- `repeater-mqtt` uses the EastMesh version from the tag as `EASTMESH_VERSION`
+- `repeater-bridge-espnow` uses the version in the tag as `FIRMWARE_VERSION`
+- `repeater-mqtt-bridge` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
+- `repeater-mqtt` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
 
 The resulting version string depends on the workflow:
 
 - `companion-wifi`: `v1.2.3-<commit>`
+- `repeater-bridge-espnow`: `v1.2.3-<commit>`
+- `repeater-mqtt-bridge`: `v1.2.3-eastmesh-v1.0.1-<commit>`
 - `repeater-mqtt`: `v1.2.3-eastmesh-v1.0.1-<commit>`
 
 Example:
@@ -65,11 +74,15 @@ Example:
 
 ```bash
 git tag companion-wifi-v1.2.3
+git tag repeater-bridge-espnow-v1.2.3
+git tag repeater-mqtt-bridge-eastmesh-v1.0.1
 git tag repeater-mqtt-eastmesh-v1.0.1
-git push origin companion-wifi-v1.2.3 repeater-mqtt-eastmesh-v1.0.1
+git push origin companion-wifi-v1.2.3 repeater-bridge-espnow-v1.2.3 repeater-mqtt-bridge-eastmesh-v1.0.1 repeater-mqtt-eastmesh-v1.0.1
 ```
 
 ## Supported Tags
 
 - `companion-wifi-v1.2.3`
+- `repeater-bridge-espnow-v1.2.3`
+- `repeater-mqtt-bridge-eastmesh-v1.0.1`
 - `repeater-mqtt-eastmesh-v1.0.1`

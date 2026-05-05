@@ -34,6 +34,7 @@ Commands:
   build-companion-firmwares: Build all companion firmwares for all build targets.
   build-companion-wifi-firmwares: Build all companion WiFi firmwares for all build targets.
   build-repeater-firmwares: Build all repeater firmwares for all build targets.
+  build-repeater-bridge-espnow-firmwares: Build all repeater ESP-NOW bridge firmwares for all build targets.
   build-repeater-mqtt-firmwares: Build all repeater MQTT firmwares for all build targets.
   build-repeater-mqtt-bridge-firmwares: Build all repeater MQTT bridge firmwares for all build targets.
   build-room-server-firmwares: Build all chat room server firmwares for all build targets.
@@ -53,6 +54,9 @@ $ sh eastmesh-build.sh build-companion-wifi-firmwares
 
 Build all repeater firmwares
 $ sh eastmesh-build.sh build-repeater-firmwares
+
+Build all repeater ESP-NOW bridge firmwares
+$ sh eastmesh-build.sh build-repeater-bridge-espnow-firmwares
 
 Build all repeater MQTT firmwares
 $ sh eastmesh-build.sh build-repeater-mqtt-firmwares
@@ -279,6 +283,12 @@ build_repeater_firmwares() {
 
 }
 
+build_repeater_bridge_espnow_firmwares() {
+
+  build_all_firmwares_by_suffix "_repeater_bridge_espnow"
+
+}
+
 build_companion_firmwares() {
 
 #  # build specific companion firmwares
@@ -364,6 +374,8 @@ elif [[ $1 == "build-companion-wifi-firmwares" ]]; then
   build_companion_wifi_firmwares
 elif [[ $1 == "build-repeater-firmwares" ]]; then
   build_repeater_firmwares
+elif [[ $1 == "build-repeater-bridge-espnow-firmwares" ]]; then
+  build_repeater_bridge_espnow_firmwares
 elif [[ $1 == "build-repeater-mqtt-firmwares" ]]; then
   build_repeater_mqtt_firmwares
 elif [[ $1 == "build-repeater-mqtt-bridge-firmwares" ]]; then
