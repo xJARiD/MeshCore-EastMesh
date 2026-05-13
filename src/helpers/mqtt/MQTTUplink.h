@@ -26,6 +26,7 @@ struct MQTTStatusSnapshot {
   float radio_bw;
   uint8_t radio_sf;
   uint8_t radio_cr;
+  bool repeat_enabled;
 };
 
 class MQTTUplink {

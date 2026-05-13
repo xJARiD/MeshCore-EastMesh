@@ -475,8 +475,9 @@ void MQTTUplink::refreshBrokerState(BrokerState& broker) {
   formatIsoTimestamp(time(nullptr), ts, sizeof(ts));
   snprintf(broker.offline_payload, sizeof(broker.offline_payload),
            "{\"status\":\"offline\",\"timestamp\":\"%s\",\"origin\":\"%s\",\"origin_id\":\"%s\",\"model\":\"%s\","
-           "\"firmware_version\":\"%s\",\"radio\":\"%s\",\"client_version\":\"%s\"}",
-           ts, origin, _device_id, safe_name, FIRMWARE_VERSION, radio_info, client_version);
+           "\"firmware_version\":\"%s\",\"radio\":\"%s\",\"client_version\":\"%s\",\"repeat\":\"%s\"}",
+           ts, origin, _device_id, safe_name, FIRMWARE_VERSION, radio_info, client_version,
+           _last_status.repeat_enabled ? "on" : "off");
 }
 
 bool MQTTUplink::refreshToken(BrokerState& broker) {
@@ -585,11 +586,12 @@ int MQTTUplink::buildStatusJson(char* buffer, size_t buffer_size, bool online) c
   return snprintf(buffer, buffer_size,
                   "{\"status\":\"%s\",\"timestamp\":\"%s\",\"origin\":\"%s\",\"origin_id\":\"%s\","
                   "\"model\":\"%s\",\"firmware_version\":\"%s\",\"radio\":\"%s\",\"client_version\":\"%s\","
-                  "\"stats\":{\"battery_mv\":%d,\"uptime_secs\":%lu,\"errors\":%u,\"queue_len\":%u,"
+                  "\"repeat\":\"%s\",\"stats\":{\"battery_mv\":%d,\"uptime_secs\":%lu,\"errors\":%u,\"queue_len\":%u,"
                   "\"noise_floor\":%d,\"tx_air_secs\":%lu,\"rx_air_secs\":%lu,\"recv_errors\":%lu}}",
                   online ? "online" : "offline", ts, origin, _device_id, model, FIRMWARE_VERSION, radio_info, client_version,
-                  _last_status.battery_mv, static_cast<unsigned long>(_last_status.uptime_secs), _last_status.error_flags,
-                  _last_status.queue_len, _last_status.noise_floor, static_cast<unsigned long>(_last_status.tx_air_secs),
+                  _last_status.repeat_enabled ? "on" : "off", _last_status.battery_mv,
+                  static_cast<unsigned long>(_last_status.uptime_secs), _last_status.error_flags, _last_status.queue_len,
+                  _last_status.noise_floor, static_cast<unsigned long>(_last_status.tx_air_secs),
                   static_cast<unsigned long>(_last_status.rx_air_secs),
                   static_cast<unsigned long>(_last_status.recv_errors));
 }

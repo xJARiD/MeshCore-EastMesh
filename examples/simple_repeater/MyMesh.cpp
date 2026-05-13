@@ -2817,6 +2817,7 @@ void MyMesh::loop() {
   mqtt_status.radio_bw = _prefs.bw;
   mqtt_status.radio_sf = _prefs.sf;
   mqtt_status.radio_cr = _prefs.cr;
+  mqtt_status.repeat_enabled = !_prefs.disable_fwd;
   mqtt.loop(mqtt_status);
 #endif
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
