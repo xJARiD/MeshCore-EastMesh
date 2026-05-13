@@ -62,8 +62,8 @@ with tempfile.TemporaryDirectory() as tmp:
             f"openssl failed while generating the web panel certificate header: {exc.stderr.strip()}"
         ) from exc
 
-    cert_pem = cert_path.read_text()
-    key_pem = key_path.read_text()
+    cert_pem = cert_path.read_text().replace('\r', '')
+    key_pem = key_path.read_text().replace('\r', '')
 
 header_path.parent.mkdir(parents=True, exist_ok=True)
 header_path.write_text(

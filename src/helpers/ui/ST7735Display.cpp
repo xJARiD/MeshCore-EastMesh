@@ -7,6 +7,23 @@
 #define SCALE_X  1.25f     // 160 / 128
 #define SCALE_Y  1.25f      // 80 / 64
 
+// Clear the full 132×162 controller RAM of the ST7735S so uninitialised data
+// does not appear as a rainbow stripe at the panel edges after initR().
+void ExtendedST7735::clearFullRAM() {
+  startWrite();
+  writeCommand(ST77XX_CASET);
+  spiWrite(0); spiWrite(0);    // x_start = 0
+  spiWrite(0); spiWrite(131);  // x_end   = 131  (132 columns)
+  writeCommand(ST77XX_RASET);
+  spiWrite(0); spiWrite(0);    // y_start = 0
+  spiWrite(0); spiWrite(161);  // y_end   = 161  (162 rows)
+  writeCommand(ST77XX_RAMWR);
+  for (uint32_t i = 0; i < 132UL * 162 * 2; i++) {
+    spiWrite(0);
+  }
+  endWrite();
+}
+
 bool ST7735Display::i2c_probe(TwoWire& wire, uint8_t addr) {
   return true;
 /*
@@ -26,13 +43,23 @@ bool ST7735Display::begin() {
 #else
     digitalWrite(PIN_TFT_LEDA_CTL, HIGH); 
 #endif
+#if defined(PIN_TFT_RST) && PIN_TFT_RST >= 0
     digitalWrite(PIN_TFT_RST, HIGH);
+#endif
 
 #if defined(HELTEC_TRACKER_V2) || defined(HELTEC_T096)
     display.initR(INITR_MINI160x80);
     display.setRotation(DISPLAY_ROTATION);
     uint8_t madctl = ST77XX_MADCTL_MY | ST77XX_MADCTL_MV |ST7735_MADCTL_BGR;//Adjust color to BGR
     display.sendCommand(ST77XX_MADCTL, &madctl, 1);
+#elif defined(ST7735_COL_OFFSET)
+    // ST7735S panels whose controller RAM (132×162) is larger than the visible
+    // area (128×160): clear uninitialised RAM before setting the viewport.
+    display.initR(INITR_BLACKTAB);
+    display.setRotation(DISPLAY_ROTATION);
+    display.clearFullRAM();
+    display.initR(INITR_BLACKTAB);   // re-init to reset driver internal state
+    display.setOffsets(ST7735_COL_OFFSET, ST7735_ROW_OFFSET);
 #else
     display.initR(INITR_MINI160x80_PLUGIN);
     display.setRotation(DISPLAY_ROTATION);
@@ -54,7 +81,9 @@ void ST7735Display::turnOn() {
 
 void ST7735Display::turnOff() {
   if (_isOn) {
+#if defined(PIN_TFT_RST) && PIN_TFT_RST >= 0
     digitalWrite(PIN_TFT_RST, LOW);
+#endif
 #if defined(PIN_TFT_LEDA_CTL_ACTIVE)
     digitalWrite(PIN_TFT_LEDA_CTL, !PIN_TFT_LEDA_CTL_ACTIVE);
 #else
