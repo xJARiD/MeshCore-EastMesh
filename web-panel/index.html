@@ -1467,7 +1467,7 @@
 
 
 <h1 id="repeater-web-panel">Repeater Web Panel<a class="headerlink" href="#repeater-web-panel" title="Permanent link">&para;</a></h1>
-<p>This page is for end users running an EastMesh <code>*_repeater_mqtt</code> build with the local web panel enabled.</p>
+<p>This page is for end users running an EastMesh <code>*_repeater_observer</code> build with the local web panel enabled.</p>
 <p>It covers how to reach the panel, what each section does, and what to expect when using it on desktop or mobile.</p>
 <h2 id="start-here">Start Here<a class="headerlink" href="#start-here" title="Permanent link">&para;</a></h2>
 <p>For normal first-time use:</p>
@@ -1496,7 +1496,7 @@
 <p>Operational guidance:</p>
 <ul>
 <li>use it for initial setup, occasional configuration changes, and troubleshooting</li>
-<li>when you are finished, prefer <code>set web off</code> on MQTT repeaters that need maximum headroom</li>
+<li>when you are finished, prefer <code>set web off</code> on observers that need maximum headroom</li>
 <li>this leaves more internal heap available for MQTT/WSS activity, especially on dual-broker setups</li>
 </ul>
 <h2 id="common-tasks">Common Tasks<a class="headerlink" href="#common-tasks" title="Permanent link">&para;</a></h2>
@@ -1531,7 +1531,7 @@
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <p>You need:</p>
 <ul>
-<li>a supported <code>*_repeater_mqtt</code> firmware build</li>
+<li>a supported <code>*_repeater_observer</code> firmware build</li>
 <li>Wi-Fi configured on the repeater</li>
 <li>the repeater connected to your local network</li>
 <li>the repeater admin password</li>
@@ -1678,7 +1678,7 @@
 <li><code>mqtt.email</code>: owner contact email.</li>
 <li>MQTT server toggles: <code>eastmesh-au</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code>.</li>
 </ul>
-<p><code>UNSET - To be configured</code> is the default for new repeater MQTT installs until a real saved value exists.</p>
+<p><code>UNSET - To be configured</code> is the default for new observer installs until a real saved value exists.</p>
 <p>Notes:</p>
 <ul>
 <li>when <code>mqtt.iata</code> is <code>UNSET</code>, the panel shows a banner at the top reminding you to set it under MQTT Settings</li>
@@ -1755,6 +1755,7 @@
 </table>
 <p>When <code>web.stats</code> is enabled, stats history starts capturing from boot or from the time it is enabled, even if <code>/stats</code> has not been opened yet. No-PSRAM boards use the smaller live-only buffer shown above.</p>
 <p>Archive-backed restore requires <code>web.stats</code> enabled plus a mounted SD card on boards that support the EastMesh archive path.</p>
+<p>If archive access drops at runtime, the repeater retries the SD mount periodically while <code>web.stats</code> remains enabled.</p>
 <p>The main purpose of the SD card is to let the repeater retain and restore stats history for <code>/stats</code>. The archive keeps fast <code>.latest</code> snapshot files for quick restore and UTC-dated daily <code>.log</code> files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.</p>
 <p>On no-PSRAM boards, <code>/stats</code> can still show recent graphs, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.</p>
 <p>Useful CLI commands:</p>
@@ -1780,7 +1781,7 @@
 <li>The local HTTP redirect listener on port <code>80</code> is released so OTA can take over that port.</li>
 <li>Continue with your normal OTA workflow.</li>
 </ol>
-<p>If an older build sends you through a strange redirect after <code>start ota</code>, use the web <code>Start OTA</code> button to begin the upgrade. This redirect issue is fixed in <code>repeater-mqtt-eastmesh-v1.3.11</code>.</p>
+<p>If an older build sends you through a strange redirect after <code>start ota</code>, use the web <code>Start OTA</code> button to begin the upgrade. This redirect issue is fixed in <code>observer-eastmesh-v1.3.11</code>.</p>
 <h3 id="use-historical-stats">Use Historical Stats<a class="headerlink" href="#use-historical-stats" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Enable stats if needed with <code>set web.stats on</code>.</li>

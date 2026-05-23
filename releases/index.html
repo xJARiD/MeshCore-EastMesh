@@ -487,10 +487,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#repeater-mqtt" class="md-nav__link">
+  <a href="#observer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeater MQTT
+        Observer
       
     </span>
   </a>
@@ -498,10 +498,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#repeater-mqtt-bridge" class="md-nav__link">
+  <a href="#observer-esp-now" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeater MQTT Bridge
+        Observer ESP-NOW
       
     </span>
   </a>
@@ -853,10 +853,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#repeater-mqtt" class="md-nav__link">
+  <a href="#observer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeater MQTT
+        Observer
       
     </span>
   </a>
@@ -864,10 +864,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#repeater-mqtt-bridge" class="md-nav__link">
+  <a href="#observer-esp-now" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeater MQTT Bridge
+        Observer ESP-NOW
       
     </span>
   </a>
@@ -942,7 +942,7 @@
 <li>Click <code>Flash Firmware</code>.</li>
 <li>After flashing, finish setup with <code>Open MeshCore Config Panel</code> or the <code>Serial Console</code>.</li>
 </ol>
-<p>If you are not sure which track you need, start with <code>companion-wifi</code> for app-connected companion devices or <code>repeater-mqtt</code> for a fixed repeater that should publish to MQTT.</p>
+<p>If you are not sure which track you need, start with <code>companion-wifi</code> for app-connected companion devices or <code>observer-eastmesh</code> for a fixed repeater that should publish to MQTT.</p>
 <h2 id="pick-your-track">Pick Your Track<a class="headerlink" href="#pick-your-track" title="Permanent link">&para;</a></h2>
 <p>EastMesh publishes four release tracks:</p>
 <table>
@@ -960,9 +960,9 @@
 <td><code>*_companion_radio_wifi</code></td>
 </tr>
 <tr>
-<td><code>repeater-mqtt</code></td>
+<td><code>observer-eastmesh</code></td>
 <td>You want a repeater with Wi-Fi and MQTT uplink, usually feeding broker visibility such as EastMesh/CoreScope.</td>
-<td><code>*_repeater_mqtt</code></td>
+<td><code>*_repeater_observer</code></td>
 </tr>
 <tr>
 <td><code>repeater-bridge-espnow</code></td>
@@ -970,9 +970,9 @@
 <td><code>*_repeater_bridge_espnow</code></td>
 </tr>
 <tr>
-<td><code>repeater-mqtt-bridge</code></td>
+<td><code>observer-eastmesh-bridge-espnow</code></td>
 <td>You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties.</td>
-<td><code>*_repeater_mqtt_bridge</code></td>
+<td><code>*_repeater_observer_espnow</code></td>
 </tr>
 </tbody>
 </table>
@@ -986,17 +986,17 @@
 <p>Examples:</p>
 <ul>
 <li><code>heltec_v4_companion_radio_wifi-v1.14.1-abcdef.bin</code></li>
-<li><code>heltec_v4_repeater_mqtt-v1.14.1-eastmesh-v1.0.1-abcdef.bin</code></li>
-<li><code>heltec_v4_repeater_mqtt-v1.14.1-eastmesh-v1.0.1-abcdef-merged.bin</code></li>
+<li><code>heltec_v4_repeater_observer-v1.15.0-eastmesh-v2026.5.1-abcdef.bin</code></li>
+<li><code>heltec_v4_repeater_observer-v1.15.0-eastmesh-v2026.5.1-abcdef-merged.bin</code></li>
 <li><code>heltec_v4_repeater_bridge_espnow-v1.15.0-abcdef.bin</code></li>
-<li><code>heltec_v4_repeater_mqtt_bridge-v1.15.0-eastmesh-v1.4.0-abcdef.bin</code></li>
+<li><code>heltec_v4_repeater_observer_espnow-v1.15.0-eastmesh-v2026.5.1-abcdef.bin</code></li>
 </ul>
 <p>The important part is the board/env prefix:</p>
 <ul>
 <li><code>*_companion_radio_wifi</code></li>
-<li><code>*_repeater_mqtt</code></li>
+<li><code>*_repeater_observer</code></li>
 <li><code>*_repeater_bridge_espnow</code></li>
-<li><code>*_repeater_mqtt_bridge</code></li>
+<li><code>*_repeater_observer_espnow</code></li>
 </ul>
 <h2 id="which-file-to-flash">Which File To Flash<a class="headerlink" href="#which-file-to-flash" title="Permanent link">&para;</a></h2>
 <p>If you are using <a href="https://flasher.eastmesh.au/">https://flasher.eastmesh.au/</a>, choose the image type in the flasher:</p>
@@ -1029,7 +1029,7 @@
 <p>It includes native support for the common EastMesh firmware types and can also flash custom firmware files:</p>
 <ul>
 <li><code>companion_radio_wifi</code> firmware</li>
-<li><code>repeater_mqtt</code> firmware</li>
+<li><code>repeater_observer</code> firmware</li>
 <li>custom firmware files</li>
 </ul>
 <p>For bridge releases, use the matching bridge option if the flasher shows one. Otherwise, download the release asset yourself and flash it as a custom firmware file.</p>
@@ -1058,7 +1058,7 @@
 <li>flood max</li>
 <li>some advanced repeater settings</li>
 </ul>
-<p>As of <code>v1.2.1</code>, the local repeater web panel also includes the same common repeater settings, so users can complete initial setup there and return for occasional troubleshooting or configuration changes. On MQTT repeaters that need maximum headroom, it is still best to disable the panel again when you are finished.</p>
+<p>As of <code>v1.2.1</code>, the local repeater web panel also includes the same common repeater settings, so users can complete initial setup there and return for occasional troubleshooting or configuration changes. On observers that need maximum headroom, it is still best to disable the panel again when you are finished.</p>
 <h4 id="console">Console<a class="headerlink" href="#console" title="Permanent link">&para;</a></h4>
 <p><code>Console</code> is the raw CLI interface.</p>
 <p>It is especially useful, and often required, for initial Wi-Fi setup on Wi-Fi-capable firmware tracks:</p>
@@ -1069,8 +1069,8 @@
 <p>This applies to:</p>
 <ul>
 <li><code>companion_radio_wifi</code></li>
-<li><code>repeater_mqtt</code></li>
-<li><code>repeater_mqtt_bridge</code></li>
+<li><code>repeater_observer</code></li>
+<li><code>repeater_observer_espnow</code></li>
 </ul>
 <h3 id="serial-console">Serial Console<a class="headerlink" href="#serial-console" title="Permanent link">&para;</a></h3>
 <p>Use <code>Serial Console</code> when you want to connect over USB and type CLI commands directly.</p>
@@ -1085,8 +1085,8 @@
 </ul>
 <p>For <code>set</code> commands, complete the command in the input box before sending it. For example, select <code>set wifi.ssid</code>, add your Wi-Fi network name, then press <code>Send</code>.</p>
 <h2 id="common-first-steps">Common First Steps<a class="headerlink" href="#common-first-steps" title="Permanent link">&para;</a></h2>
-<h3 id="repeater-mqtt">Repeater MQTT<a class="headerlink" href="#repeater-mqtt" title="Permanent link">&para;</a></h3>
-<p><code>repeater_mqtt</code> builds include the EastMesh MQTT additions. Depending on the board, they may also include the local web panel.</p>
+<h3 id="observer">Observer<a class="headerlink" href="#observer" title="Permanent link">&para;</a></h3>
+<p><code>repeater_observer</code> builds include the EastMesh MQTT additions. Depending on the board, they may also include the local web panel.</p>
 <p>Typical first steps after flashing:</p>
 <ul>
 <li>set <code>wifi.ssid</code></li>
@@ -1096,8 +1096,8 @@
 <li>optionally set <code>mqtt.owner</code> and <code>mqtt.email</code></li>
 <li>optionally enable <code>letsmesh-eu</code> or <code>letsmesh-us</code></li>
 </ul>
-<h3 id="repeater-mqtt-bridge">Repeater MQTT Bridge<a class="headerlink" href="#repeater-mqtt-bridge" title="Permanent link">&para;</a></h3>
-<p><code>repeater_mqtt_bridge</code> builds combine the MQTT repeater role with local ESP-NOW bridge support.</p>
+<h3 id="observer-esp-now">Observer ESP-NOW<a class="headerlink" href="#observer-esp-now" title="Permanent link">&para;</a></h3>
+<p><code>repeater_observer_espnow</code> builds combine the observer role with local ESP-NOW bridge support.</p>
 <p>Typical first steps after flashing:</p>
 <ul>
 <li>set <code>wifi.ssid</code></li>

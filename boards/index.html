@@ -370,10 +370,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#repeater_mqtt-boards" class="md-nav__link">
+  <a href="#repeater_observer-boards" class="md-nav__link">
     <span class="md-ellipsis">
       
-        repeater_mqtt Boards
+        repeater_observer Boards
       
     </span>
   </a>
@@ -668,10 +668,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#repeater_mqtt-boards" class="md-nav__link">
+  <a href="#repeater_observer-boards" class="md-nav__link">
     <span class="md-ellipsis">
       
-        repeater_mqtt Boards
+        repeater_observer Boards
       
     </span>
   </a>
@@ -748,9 +748,9 @@
 <p>For MQTT/web repeaters, think Wi-Fi, broker visibility, and enough headroom for the local web panel:</p>
 <ul>
 <li>common starting points are <code>Heltec_v3</code> and <code>heltec_v4</code></li>
-<li><code>heltec_v4_repeater_mqtt</code> is a strong all-round MQTT repeater choice with GPS, PSRAM, and 16 MB flash</li>
+<li><code>heltec_v4_repeater_observer</code> is a strong all-round observer choice with GPS, PSRAM, and 16 MB flash</li>
 <li>choose boards with more flash and PSRAM when you want MQTT plus the local web panel, stats, or more room for future features</li>
-<li>screens are not a major requirement because MQTT repeaters have the local web panel for setup and troubleshooting</li>
+<li>screens are not a major requirement because observers have the local web panel for setup and troubleshooting</li>
 <li>headless repeaters are often the cleanest choice when the device will live in a roof, box, or fixed install and you will configure it from the web panel, serial console, or app</li>
 </ul>
 <p>For bridge repeaters, think local radio linking between nearby repeaters:</p>
@@ -758,7 +758,7 @@
 <li>use bridge firmware when two local repeaters need to exchange traffic across different MeshCore radio configs, such as <code>Australia (Narrow)</code> and <code>Australia (Mid)</code></li>
 <li>pure ESP-NOW bridge repeaters do not need MQTT, the EastMesh web panel, or a screen</li>
 <li>prioritise stable power, suitable antennas, and placement over display features</li>
-<li>use <code>repeater-mqtt-bridge</code> only when the same repeater also needs MQTT uplink; otherwise <code>repeater-bridge-espnow</code> keeps the role simpler</li>
+<li>use <code>observer-eastmesh-bridge-espnow</code> only when the same repeater also needs MQTT uplink; otherwise <code>repeater-bridge-espnow</code> keeps the role simpler</li>
 </ul>
 <p>Other notes:</p>
 <ul>
@@ -771,7 +771,7 @@
 <h2 id="about-the-tables">About The Tables<a class="headerlink" href="#about-the-tables" title="Permanent link">&para;</a></h2>
 <p>The tables below are built from the repo's PlatformIO board metadata and variant build flags.</p>
 <ul>
-<li><code>Target</code> is the short board name used in this comparison page. Release filenames and local build commands still use the full env names such as <code>heltec_v4_repeater_mqtt</code>.</li>
+<li><code>Target</code> is the short board name used in this comparison page. Release filenames and local build commands still use the full env names such as <code>heltec_v4_repeater_observer</code>.</li>
 <li><code>MCU</code> shows the chip family only. Actual runtime clock can vary by env and board configuration.</li>
 <li><code>RAM</code> is the MCU's built-in RAM.</li>
 <li><code>PSRAM</code> is extra memory on some boards. More PSRAM usually means more headroom for UI, MQTT, and future features.</li>
@@ -781,8 +781,8 @@
 <h2 id="track-notes">Track Notes<a class="headerlink" href="#track-notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>companion-wifi</code> boards are for app-connected companion devices.</li>
-<li><code>repeater-mqtt</code> boards are for Wi-Fi repeaters that publish to MQTT.</li>
-<li><code>repeater-bridge-espnow</code> and <code>repeater-mqtt-bridge</code> boards are for local ESP-NOW bridge use between nearby repeaters on different MeshCore radio configs.</li>
+<li><code>observer-eastmesh</code> boards are for Wi-Fi repeaters that publish to MQTT.</li>
+<li><code>repeater-bridge-espnow</code> and <code>observer-eastmesh-bridge-espnow</code> boards are for local ESP-NOW bridge use between nearby repeaters on different MeshCore radio configs.</li>
 </ul>
 <p>Bridge firmware is not MQTT-over-WAN or VPN bridging. Use it when two local repeaters need to exchange traffic across radio configs such as <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>.</p>
 <h2 id="additional-signals">Additional Signals<a class="headerlink" href="#additional-signals" title="Permanent link">&para;</a></h2>
@@ -1059,8 +1059,8 @@
 </tbody>
 </table>
 <p>* These targets use a PA or RF front-end, so effective output can be much higher than the configured <code>LORA_TX_POWER</code>.</p>
-<h2 id="repeater_mqtt-boards"><code>repeater_mqtt</code> Boards<a class="headerlink" href="#repeater_mqtt-boards" title="Permanent link">&para;</a></h2>
-<p>This table includes all repeater MQTT targets currently defined in <code>variants/eastmesh_mqtt/platformio.ini</code>.</p>
+<h2 id="repeater_observer-boards"><code>repeater_observer</code> Boards<a class="headerlink" href="#repeater_observer-boards" title="Permanent link">&para;</a></h2>
+<p>This table includes all observer targets currently defined in <code>variants/eastmesh_mqtt/platformio.ini</code>.</p>
 <table>
 <thead>
 <tr>
@@ -1653,9 +1653,9 @@
 </table>
 <h2 id="practical-picks">Practical Picks<a class="headerlink" href="#practical-picks" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Best all-round MQTT repeater with screen and overall headroom: <code>heltec_v4_repeater_mqtt</code>, <code>heltec_v4_tft_repeater_mqtt</code>, <code>Station_G2_repeater_mqtt</code>, <code>LilyGo_TBeam_1W_repeater_mqtt</code>.</li>
-<li>Best MQTT repeater if you want a simple headless install: <code>RAK_3112_repeater_mqtt</code>, <code>Generic_E22_sx1262_repeater_mqtt</code>, <code>Meshimi_repeater_mqtt</code>, <code>Xiao_C6_repeater_mqtt</code>.</li>
-<li>Best low-power display MQTT builds: <code>Heltec_E213_repeater_mqtt</code>, <code>Heltec_E290_repeater_mqtt</code>, <code>Heltec_Wireless_Paper_repeater_mqtt</code>, <code>ThinkNode_M5_Repeater_mqtt</code>.</li>
+<li>Best all-round observer with screen and overall headroom: <code>heltec_v4_repeater_observer</code>, <code>heltec_v4_tft_repeater_observer</code>, <code>Station_G2_repeater_observer</code>, <code>LilyGo_TBeam_1W_repeater_observer</code>.</li>
+<li>Best observer if you want a simple headless install: <code>RAK_3112_repeater_observer</code>, <code>Generic_E22_sx1262_repeater_observer</code>, <code>Meshimi_repeater_observer</code>, <code>Xiao_C6_repeater_observer</code>.</li>
+<li>Best low-power display observer builds: <code>Heltec_E213_repeater_observer</code>, <code>Heltec_E290_repeater_observer</code>, <code>Heltec_Wireless_Paper_repeater_observer</code>, <code>ThinkNode_M5_Repeater_observer</code>.</li>
 <li>Best companion choices if you want the richest local UI: <code>heltec_v4_tft_companion_radio_wifi</code> and <code>heltec_tracker_v2_companion_radio_wifi</code>.</li>
 <li>Best companion choices if you want maximum memory headroom: <code>T_Beam_S3_Supreme_SX1262_companion_radio_wifi</code>, <code>Station_G2_companion_radio_wifi</code>, <code>LilyGo_TBeam_1W_companion_radio_wifi</code>.</li>
 <li>Best companion choices if you are happy with an app-first, mostly headless setup: <code>RAK_3112_companion_radio_wifi</code>, <code>Xiao_S3_WIO_companion_radio_wifi</code>, <code>Station_G2_companion_radio_wifi</code>.</li>

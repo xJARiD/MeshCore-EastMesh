@@ -497,15 +497,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#repeater-mqtt-commands" class="md-nav__link">
+  <a href="#observer-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeater MQTT Commands
+        Observer Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Repeater MQTT Commands">
+    <nav class="md-nav" aria-label="Observer Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -553,10 +553,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#wi-fi-settings-for-mqtt-repeaters" class="md-nav__link">
+  <a href="#wi-fi-settings-for-observers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Wi-Fi Settings For MQTT Repeaters
+        Wi-Fi Settings For Observers
       
     </span>
   </a>
@@ -564,10 +564,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#esp-now-bridge-settings-for-mqtt-bridge-repeaters" class="md-nav__link">
+  <a href="#esp-now-bridge-settings-for-observer-esp-now-builds" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ESP-NOW Bridge Settings For MQTT Bridge Repeaters
+        ESP-NOW Bridge Settings For Observer ESP-NOW Builds
       
     </span>
   </a>
@@ -705,15 +705,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#repeater-mqtt-commands" class="md-nav__link">
+  <a href="#observer-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeater MQTT Commands
+        Observer Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Repeater MQTT Commands">
+    <nav class="md-nav" aria-label="Observer Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -761,10 +761,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#wi-fi-settings-for-mqtt-repeaters" class="md-nav__link">
+  <a href="#wi-fi-settings-for-observers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Wi-Fi Settings For MQTT Repeaters
+        Wi-Fi Settings For Observers
       
     </span>
   </a>
@@ -772,10 +772,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#esp-now-bridge-settings-for-mqtt-bridge-repeaters" class="md-nav__link">
+  <a href="#esp-now-bridge-settings-for-observer-esp-now-builds" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ESP-NOW Bridge Settings For MQTT Bridge Repeaters
+        ESP-NOW Bridge Settings For Observer ESP-NOW Builds
       
     </span>
   </a>
@@ -887,14 +887,14 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>set mqtt.iata &lt;code&gt;
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>get mqtt.status
 </span></code></pre></div>
-<p>For MQTT repeaters with the local web panel, these are also useful:</p>
+<p>For observers with the local web panel, these are also useful:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>set web on
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>get web.status
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>set web off
 </span></code></pre></div>
-<p>Use <code>set web on</code> while setting up or troubleshooting, then use <code>set web off</code> when a fixed MQTT repeater needs maximum memory headroom.</p>
-<h2 id="repeater-mqtt-commands">Repeater MQTT Commands<a class="headerlink" href="#repeater-mqtt-commands" title="Permanent link">&para;</a></h2>
-<p>These commands are available on <code>*_repeater_mqtt</code> firmware targets.</p>
+<p>Use <code>set web on</code> while setting up or troubleshooting, then use <code>set web off</code> when a fixed observer needs maximum memory headroom.</p>
+<h2 id="observer-commands">Observer Commands<a class="headerlink" href="#observer-commands" title="Permanent link">&para;</a></h2>
+<p>These commands are available on <code>*_repeater_observer</code> firmware targets.</p>
 <p>No-argument <code>get</code> commands must be entered exactly as shown.</p>
 <h3 id="mqtt-status-and-routing">MQTT Status And Routing<a class="headerlink" href="#mqtt-status-and-routing" title="Permanent link">&para;</a></h3>
 <ul>
@@ -935,7 +935,7 @@
 </ul>
 <p>Notes:</p>
 <ul>
-<li>new repeater MQTT installs default <code>mqtt.iata</code> to <code>UNSET</code></li>
+<li>new observer installs default <code>mqtt.iata</code> to <code>UNSET</code></li>
 <li><code>letsmesh-eu</code> and <code>letsmesh-us</code> remain off by default unless already configured in saved prefs</li>
 <li>if <code>mqtt.iata</code> is <code>UNSET</code>, <code>eastmesh-au</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code> will not connect even if they are toggled on</li>
 <li>turning off a connected broker publishes a retained MQTT status update with <code>"status":"offline"</code> before the client disconnects</li>
@@ -947,7 +947,7 @@
 <li><code>mqtt.letsmesh.eu</code></li>
 <li><code>mqtt.letsmesh.us</code></li>
 </ul>
-<h3 id="wi-fi-settings-for-mqtt-repeaters">Wi-Fi Settings For MQTT Repeaters<a class="headerlink" href="#wi-fi-settings-for-mqtt-repeaters" title="Permanent link">&para;</a></h3>
+<h3 id="wi-fi-settings-for-observers">Wi-Fi Settings For Observers<a class="headerlink" href="#wi-fi-settings-for-observers" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get wifi.status</code>: shows SSID, connection state, raw Wi-Fi status code, IP, channel, and signal when connected.</li>
 <li><code>get wifi.ssid</code>: shows the configured Wi-Fi SSID.</li>
@@ -956,8 +956,8 @@
 <li><code>get wifi.powersaving</code>: shows the current Wi-Fi power save mode.</li>
 <li><code>set wifi.powersaving none|min|max</code>: sets Wi-Fi power saving mode.</li>
 </ul>
-<h3 id="esp-now-bridge-settings-for-mqtt-bridge-repeaters">ESP-NOW Bridge Settings For MQTT Bridge Repeaters<a class="headerlink" href="#esp-now-bridge-settings-for-mqtt-bridge-repeaters" title="Permanent link">&para;</a></h3>
-<p>These commands are available on <code>*_repeater_mqtt_bridge</code> firmware targets.</p>
+<h3 id="esp-now-bridge-settings-for-observer-esp-now-builds">ESP-NOW Bridge Settings For Observer ESP-NOW Builds<a class="headerlink" href="#esp-now-bridge-settings-for-observer-esp-now-builds" title="Permanent link">&para;</a></h3>
+<p>These commands are available on <code>*_repeater_observer_espnow</code> firmware targets.</p>
 <p>Bridge commands are for local ESP-NOW bridge use between nearby repeaters, such as linking repeaters on <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>. They are not MQTT-over-WAN, VPN, or internet bridge controls.</p>
 <ul>
 <li><code>get bridge.channel</code>: shows the configured ESP-NOW bridge channel.</li>
@@ -965,8 +965,8 @@
 <li><code>get bridge.secret</code>: shows the configured ESP-NOW bridge secret.</li>
 <li><code>set bridge.secret &lt;secret&gt;</code>: sets the shared ESP-NOW bridge secret and restarts the bridge.</li>
 </ul>
-<p>After running <code>set bridge.channel</code>, expect the bridge and web panel connection to drop briefly while the radio restarts. On current MQTT bridge test builds, this can look like the board rebooted.</p>
-<p>For <code>*_repeater_mqtt_bridge</code> builds that are connected to Wi-Fi, the ESP-NOW bridge channel must match the active 2.4 GHz Wi-Fi channel:</p>
+<p>After running <code>set bridge.channel</code>, expect the bridge and web panel connection to drop briefly while the radio restarts. On current observer ESP-NOW builds, this can look like the board rebooted.</p>
+<p>For <code>*_repeater_observer_espnow</code> builds that are connected to Wi-Fi, the ESP-NOW bridge channel must match the active 2.4 GHz Wi-Fi channel:</p>
 <ol>
 <li>Run <code>get wifi.status</code>.</li>
 <li>Read the <code>channel:&lt;n&gt;</code> value from the connected Wi-Fi status.</li>
@@ -986,7 +986,7 @@
 <ul>
 <li><code>get web</code></li>
 <li><code>get web.status</code>: shows whether the local HTTPS panel is available.</li>
-<li><code>get web.stats.status</code>: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-active boards also record per-minute satellites samples for the <code>/stats</code> history view.</li>
+<li><code>get web.stats.status</code>: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-active boards also record per-minute satellites samples for the <code>/stats</code> history view. If archive access drops while stats remain enabled, the repeater retries the SD mount periodically.</li>
 <li><code>set web on|off</code></li>
 <li><code>set.web on|off</code>: enables or disables the local HTTPS panel.</li>
 <li><code>set web.stats on|off</code></li>
@@ -1004,7 +1004,7 @@
 </blockquote>
 <h3 id="board-battery-reporting">Board Battery Reporting<a class="headerlink" href="#board-battery-reporting" title="Permanent link">&para;</a></h3>
 <ul>
-<li>On repeater MQTT builds, background battery sampling used for MQTT/status history is rate-limited to about once per minute. Explicit status and telemetry requests still refresh the reading immediately.</li>
+<li>On observer builds, background battery sampling used for MQTT/status history is rate-limited to about once per minute. Explicit status and telemetry requests still refresh the reading immediately.</li>
 </ul>
 <h3 id="t-beam-1w-fan-control">T-Beam 1W Fan Control<a class="headerlink" href="#t-beam-1w-fan-control" title="Permanent link">&para;</a></h3>
 <p>These commands are only available on <code>LilyGo_TBeam_1W_*</code> repeater builds.</p>
