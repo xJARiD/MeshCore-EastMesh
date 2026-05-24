@@ -411,6 +411,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .savebtn:hover { background:var(--accent-hover); }
     .broker-stack { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:12px; align-items:start; }
     .broker-group { display:grid; gap:8px; align-content:start; }
+    .broker-group.wide { grid-column:1 / -1; }
     .broker-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
     .broker-grid.single { grid-template-columns:1fr; }
     .broker-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -982,8 +983,68 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	                </div>
 	              </div>
 	            </div>
+	            <div class="broker-group wide">
+	              <div class="broker-group-title">Custom</div>
+	              <div class="broker-grid one-two">
+	                <div class="broker-card">
+	                  <div class="broker-mode">
+	                    <div class="broker-row">
+	                      <div class="broker-copy">
+	                        <div class="broker-title">Custom MQTT</div>
+	                        <div class="broker-state" id="mqttCustomState">Off</div>
+	                      </div>
+	                    </div>
+	                    <div class="mode-slider">
+	                      <input id="mqttCustomMode" type="range" min="0" max="1" step="1" value="0" aria-label="Custom MQTT mode">
+	                      <div class="mode-labels two" aria-hidden="true">
+	                        <div class="mode-label" data-custom-mqtt-label="off">Off</div>
+	                        <div class="mode-label" data-custom-mqtt-label="on">On</div>
+	                      </div>
+	                    </div>
+	                    <input id="mqttCustom" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	                  </div>
+	                </div>
+	                <div class="broker-card">
+	                  <div class="row">
+	                    <div class="field-card">
+	                      <label class="label" for="mqttCustomHost">Host</label>
+	                      <div class="inline-actions">
+	                        <input id="mqttCustomHost" placeholder="mqtt.example.net" maxlength="95">
+	                        <button class="iconbtn" data-load-cmd="get mqtt.custom.host" data-load-input="mqttCustomHost" title="Refresh custom MQTT host">&#8635;</button>
+	                        <button class="savebtn" data-prefix="set mqtt.custom.host " data-input="mqttCustomHost">Save</button>
+	                      </div>
+	                    </div>
+	                    <div class="field-card">
+	                      <label class="label" for="mqttCustomPort">Port</label>
+	                      <div class="inline-actions">
+	                        <input id="mqttCustomPort" inputmode="numeric" placeholder="1883" maxlength="5">
+	                        <button class="iconbtn" data-load-cmd="get mqtt.custom.port" data-load-input="mqttCustomPort" title="Refresh custom MQTT port">&#8635;</button>
+	                        <button class="savebtn" data-prefix="set mqtt.custom.port " data-input="mqttCustomPort">Save</button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                  <div class="row">
+	                    <div class="field-card">
+	                      <label class="label" for="mqttCustomUsername">Username</label>
+	                      <div class="inline-actions">
+	                        <input id="mqttCustomUsername" placeholder="username" maxlength="64">
+	                        <button class="iconbtn" data-load-cmd="get mqtt.custom.username" data-load-input="mqttCustomUsername" title="Refresh custom MQTT username">&#8635;</button>
+	                        <button class="savebtn" data-prefix="set mqtt.custom.username " data-input="mqttCustomUsername">Save</button>
+	                      </div>
+	                    </div>
+	                    <div class="field-card">
+	                      <label class="label" for="mqttCustomPassword">Password</label>
+	                      <div class="inline-actions two-actions">
+	                        <input id="mqttCustomPassword" type="password" placeholder="password" maxlength="95">
+	                        <button class="savebtn" data-prefix="set mqtt.custom.password " data-input="mqttCustomPassword">Save</button>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
+	            </div>
 	          </div>
-	          <div class="panel-note">If EastMesh is enabled, use only one LetsMesh broker. Enable both LetsMesh brokers only when EastMesh is off.</div>
+	          <div class="panel-note">A maximum of two MQTT brokers can be enabled at once.</div>
 	          <div id="mqttBrokerWarning" class="panel-warning"></div>
 	        </div>
 	      </div>
@@ -2203,7 +2264,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       if (inlineWarning) {
         inlineWarning.textContent = showWarning
-          ? "MQTT IATA is unset. Set it before enabling EastMesh or LetsMesh brokers."
+          ? "MQTT IATA is unset. Set it before enabling MQTT brokers."
           : "";
       }
     }
@@ -2251,6 +2312,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (inputId === "nodeName") {
         await loadField("get name", "nodeName", null, { recordHistory:false, updateInput:false });
       }
+      if (inputId === "mqttCustomPassword") {
+        input.value = "";
+      }
     }
     async function loadField(cmd, inputId, format, options = {}) {
       const result = await runCommand(cmd, options);
@@ -2260,6 +2324,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         value = value.replace(/\|/g, "\n");
       } else if (format === "uppercase") {
         value = value.toUpperCase();
+      }
+      if ((inputId === "mqttCustomHost" || inputId === "mqttCustomUsername") && value === "-") {
+        value = "";
       }
       document.getElementById(inputId).value = value;
       if (inputId === "mqttIata") {
@@ -2359,6 +2426,17 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        label.classList.toggle("active", label.dataset.eastmeshLabel === (enabled ? "on" : "off"));
 	      });
 	    }
+	    function refreshCustomMqttModeUi() {
+	      const input = document.getElementById("mqttCustom");
+	      const enabled = !!(input && input.checked);
+	      const slider = document.getElementById("mqttCustomMode");
+	      if (slider) {
+	        slider.value = enabled ? "1" : "0";
+	      }
+	      document.querySelectorAll("[data-custom-mqtt-label]").forEach((label) => {
+	        label.classList.toggle("active", label.dataset.customMqttLabel === (enabled ? "on" : "off"));
+	      });
+	    }
 	    function getLetsmeshModeIndex(mode) {
 	      const order = { off:0, eu:1, us:2, both:3 };
 	      return Object.prototype.hasOwnProperty.call(order, mode) ? order[mode] : 0;
@@ -2405,6 +2483,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      } else if (inputId === "mqttEastmeshAu") {
 	        refreshEastmeshModeUi();
 	        refreshLetsmeshModeUi();
+	      } else if (inputId === "mqttCustom") {
+	        refreshCustomMqttModeUi();
 	      }
 	    }
     async function loadBrokerState(cmd, inputId, options = {}) {
@@ -2569,6 +2649,24 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      });
 	      eastmeshModeSlider.addEventListener("change", () => {
 	        setEastmeshMode((Number.parseInt(eastmeshModeSlider.value, 10) || 0) >= 1);
+	      });
+	    }
+	    async function setCustomMqttMode(enabled) {
+	      const result = await runCommand(enabled ? "set mqtt.custom on" : "set mqtt.custom off");
+	      if (!result.ok) {
+	        refreshCustomMqttModeUi();
+	        return;
+	      }
+	      setBrokerToggle("mqttCustom", enabled ? "on" : "off");
+	      refreshCustomMqttModeUi();
+	    }
+	    const customMqttModeSlider = document.getElementById("mqttCustomMode");
+	    if (customMqttModeSlider) {
+	      customMqttModeSlider.addEventListener("input", () => {
+	        customMqttModeSlider.value = (Number.parseInt(customMqttModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
+	      });
+	      customMqttModeSlider.addEventListener("change", () => {
+	        setCustomMqttMode((Number.parseInt(customMqttModeSlider.value, 10) || 0) >= 1);
 	      });
 	    }
 	    async function setLetsmeshMode(mode) {
@@ -2759,7 +2857,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get mqtt.email", "mqttEmail", null, quiet),
           () => loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu", quiet),
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
-          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet)
+          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet),
+          () => loadBrokerState("get mqtt.custom", "mqttCustom", quiet),
+          () => loadField("get mqtt.custom.host", "mqttCustomHost", null, quiet),
+          () => loadField("get mqtt.custom.port", "mqttCustomPort", null, quiet),
+          () => loadField("get mqtt.custom.username", "mqttCustomUsername", null, quiet)
         ]);
         if (!isCurrentPageLoad(generation)) return;
         statusEl.textContent = "Ready";

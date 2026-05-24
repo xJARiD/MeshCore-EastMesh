@@ -18,6 +18,7 @@
 #endif
 #include <helpers/TxtDataHelpers.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
@@ -121,12 +122,13 @@ void logMqttMemorySnapshot(const char*, const char* = nullptr) {
 
 }
 
-const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[3] = {
-    {"eastmesh-au", "eastmesh-au", "mqtt2.eastmesh.au", "wss://mqtt2.eastmesh.au:443/mqtt", kEastmeshBit},
+const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[4] = {
+    {"eastmesh-au", "eastmesh-au", "mqtt2.eastmesh.au", "wss://mqtt2.eastmesh.au:443/mqtt", kEastmeshBit, false},
     {"letsmesh-eu", "letsmesh-eu", "mqtt-eu-v1.letsmesh.net", "wss://mqtt-eu-v1.letsmesh.net:443/mqtt",
-     kLetsmeshEuBit},
+     kLetsmeshEuBit, false},
     {"letsmesh-us", "letsmesh-us", "mqtt-us-v1.letsmesh.net", "wss://mqtt-us-v1.letsmesh.net:443/mqtt",
-     kLetsmeshUsBit},
+     kLetsmeshUsBit, false},
+    {"custom", "custom", nullptr, nullptr, kCustomBit, true},
 };
 
 MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
@@ -135,7 +137,7 @@ MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
        {
   memset(_device_id, 0, sizeof(_device_id));
   MQTTPrefsStore::setDefaults(_prefs);
-  for (size_t i = 0; i < 3; ++i) {
+  for (size_t i = 0; i < 4; ++i) {
     memset(&_brokers[i], 0, sizeof(_brokers[i]));
     _brokers[i].spec = &kBrokerSpecs[i];
   }
@@ -156,7 +158,7 @@ bool MQTTUplink::isTokenRefreshInProgress() const {
 }
 
 bool MQTTUplink::hasEnabledBroker() const {
-  return (_prefs.enabled_mask & 0x07) != 0;
+  return (_prefs.enabled_mask & 0x0F) != 0;
 }
 
 uint8_t MQTTUplink::countEnabledBrokers() const {
@@ -188,6 +190,30 @@ const char* MQTTUplink::brokerCaCert(const BrokerSpec& spec) {
     return mqtt_ca_certs::kEastmeshIsrgRootX1Pem;
   }
   return mqtt_ca_certs::kLetsmeshWe1Pem;
+}
+
+const char* MQTTUplink::brokerHost(const BrokerState& broker) const {
+  if (broker.spec == nullptr) {
+    return "";
+  }
+  return broker.spec->custom ? _prefs.custom_host : broker.spec->host;
+}
+
+uint16_t MQTTUplink::brokerPort(const BrokerState& broker) const {
+  if (broker.spec != nullptr && broker.spec->custom) {
+    return _prefs.custom_port != 0 ? _prefs.custom_port : 1883;
+  }
+  return 443;
+}
+
+bool MQTTUplink::isBrokerConfigured(const BrokerState& broker) const {
+  if (broker.spec == nullptr) {
+    return false;
+  }
+  if (!broker.spec->custom) {
+    return true;
+  }
+  return _prefs.custom_host[0] != 0 && _prefs.custom_username[0] != 0 && _prefs.custom_password[0] != 0;
 }
 
 uint8_t MQTTUplink::normalizeEnabledMask(uint8_t mask) {
@@ -236,12 +262,15 @@ bool MQTTUplink::preflightBroker(BrokerState& broker) const {
   if (broker.spec == nullptr) {
     return false;
   }
+  if (broker.spec->custom) {
+    return isBrokerConfigured(broker);
+  }
 
   logMqttMemorySnapshot("preflight-pre", broker.spec->label);
   WiFiClientSecure client;
   client.setCACert(brokerCaCert(*broker.spec));
   client.setTimeout(kWsPreflightTimeoutMillis);
-  if (!client.connect(broker.spec->host, 443)) {
+  if (!client.connect(brokerHost(broker), brokerPort(broker))) {
     MQTT_LOG("%s preflight failed: tcp/tls connect", broker.spec->label);
     client.stop();
     logMqttMemorySnapshot("preflight-failed", broker.spec->label);
@@ -255,8 +284,10 @@ bool MQTTUplink::preflightBroker(BrokerState& broker) const {
                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
                "User-Agent: MeshCore-EastMesh\r\n"
                "Host: ");
-  client.print(broker.spec->host);
-  client.print(":443\r\n\r\n");
+  client.print(brokerHost(broker));
+  client.print(":");
+  client.print(brokerPort(broker));
+  client.print("\r\n\r\n");
 
   char response[kWsPreflightResponseSize];
   size_t used = 0;
@@ -454,7 +485,11 @@ void MQTTUplink::refreshBrokerIdentity(BrokerState& broker) {
   if (broker.spec == nullptr) {
     return;
   }
-  snprintf(broker.username, sizeof(broker.username), "v1_%s", _device_id);
+  if (broker.spec->custom) {
+    StrHelper::strncpy(broker.username, _prefs.custom_username, sizeof(broker.username));
+  } else {
+    snprintf(broker.username, sizeof(broker.username), "v1_%s", _device_id);
+  }
   snprintf(broker.client_id, sizeof(broker.client_id), "mqtt_%s-%.6s", broker.spec->key, _device_id);
   formatTopic(broker.status_topic, sizeof(broker.status_topic), "status");
 }
@@ -481,6 +516,11 @@ void MQTTUplink::refreshBrokerState(BrokerState& broker) {
 }
 
 bool MQTTUplink::refreshToken(BrokerState& broker) {
+  if (broker.spec != nullptr && broker.spec->custom) {
+    broker.token_expires_at = 0;
+    return true;
+  }
+
   time_t now = time(nullptr);
   if (now < kMinSaneEpoch) {
     MQTT_LOG("%s token skipped: clock not ready (%lu)", broker.spec->label, static_cast<unsigned long>(now));
@@ -498,7 +538,7 @@ bool MQTTUplink::refreshToken(BrokerState& broker) {
   time_t expires_at = now + kTokenLifetimeSecs;
   const char* owner = _prefs.owner_public_key[0] ? _prefs.owner_public_key : nullptr;
   const char* email = _prefs.owner_email[0] ? _prefs.owner_email : nullptr;
-  if (!JWTHelper::createAuthToken(*_identity, broker.spec->host, now, expires_at, broker.token, kBrokerTokenSize,
+  if (!JWTHelper::createAuthToken(*_identity, brokerHost(broker), now, expires_at, broker.token, kBrokerTokenSize,
                                   owner, email)) {
     freeScratchBuffer(broker.token);
     broker.token = nullptr;
@@ -803,7 +843,7 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   }
   bool enabled = (_prefs.enabled_mask & broker.spec->bit) != 0;
   bool iata_configured = !isUnsetIataValue(_prefs.iata);
-  if (!enabled || !iata_configured) {
+  if (!enabled || !iata_configured || !isBrokerConfigured(broker)) {
     if (broker.client != nullptr || broker.token != nullptr || broker.connected || broker.connect_announced ||
         broker.reconnect_pending || broker.next_connect_attempt != 0 || broker.last_connect_attempt != 0 ||
         broker.reconnect_failures != 0 || broker.token_expires_at != 0) {
@@ -818,7 +858,8 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
 
   time_t now = time(nullptr);
   unsigned long now_ms = millis();
-  if (broker.client != nullptr && broker.token_expires_at > 0 && now + kTokenRefreshSlackSecs >= broker.token_expires_at) {
+  if (!broker.spec->custom && broker.client != nullptr && broker.token_expires_at > 0 &&
+      now + kTokenRefreshSlackSecs >= broker.token_expires_at) {
     _token_refresh_count++;
     _token_refresh_active_until_ms = now_ms + kTokenRefreshEventWindowMs;
     MQTT_LOG("%s token refresh reconnect count=%lu", broker.spec->label,
@@ -881,23 +922,29 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   }
 
   refreshBrokerState(broker);
-  MQTT_LOG("%s mqtt init host=%s port=%d path=%s client_id=%s", broker.spec->label, broker.spec->host, 443, "/mqtt",
-           broker.client_id);
+  MQTT_LOG("%s mqtt init host=%s port=%u path=%s client_id=%s", broker.spec->label, brokerHost(broker),
+           static_cast<unsigned>(brokerPort(broker)), broker.spec->custom ? "-" : "/mqtt", broker.client_id);
   logMqttMemorySnapshot("init-pre", broker.spec->label);
   esp_mqtt_client_config_t cfg = {};
 #if ESP_IDF_VERSION_MAJOR >= 5
-  cfg.broker.address.hostname = broker.spec->host;
-  cfg.broker.address.port = 443;
-  cfg.broker.address.transport = MQTT_TRANSPORT_OVER_WSS;
-  cfg.broker.address.path = "/mqtt";
+  cfg.broker.address.hostname = brokerHost(broker);
+  cfg.broker.address.port = brokerPort(broker);
+  cfg.broker.address.transport = broker.spec->custom ? MQTT_TRANSPORT_OVER_TCP : MQTT_TRANSPORT_OVER_WSS;
+  if (!broker.spec->custom) {
+    cfg.broker.address.path = "/mqtt";
+  }
+  if (broker.spec->custom) {
+    cfg.credentials.authentication.password = _prefs.custom_password;
+  } else {
 #if defined(MQTT_USE_CRT_BUNDLE)
-  cfg.broker.verification.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
+    cfg.broker.verification.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
 #else
-  cfg.broker.verification.certificate = brokerCaCert(*broker.spec);
+    cfg.broker.verification.certificate = brokerCaCert(*broker.spec);
 #endif
+    cfg.credentials.authentication.password = broker.token;
+  }
   cfg.credentials.username = broker.username;
   cfg.credentials.client_id = broker.client_id;
-  cfg.credentials.authentication.password = broker.token;
   cfg.session.keepalive = 30;
   cfg.session.last_will.topic = broker.status_topic;
   cfg.session.last_will.msg = broker.offline_payload;
@@ -909,10 +956,10 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   cfg.buffer.size = 768;
   cfg.buffer.out_size = 1280;
 #else
-  cfg.host = broker.spec->host;
-  cfg.port = 443;
+  cfg.host = brokerHost(broker);
+  cfg.port = brokerPort(broker);
   cfg.username = broker.username;
-  cfg.password = broker.token;
+  cfg.password = broker.spec->custom ? _prefs.custom_password : broker.token;
   cfg.client_id = broker.client_id;
   cfg.keepalive = 30;
   cfg.buffer_size = 768;
@@ -920,17 +967,19 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   cfg.reconnect_timeout_ms = 10000;
   cfg.network_timeout_ms = 10000;
   cfg.disable_auto_reconnect = true;
-  cfg.transport = MQTT_TRANSPORT_OVER_WSS;
+  cfg.transport = broker.spec->custom ? MQTT_TRANSPORT_OVER_TCP : MQTT_TRANSPORT_OVER_WSS;
+  if (!broker.spec->custom) {
 #if defined(MQTT_USE_CRT_BUNDLE)
-  cfg.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
+    cfg.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
 #else
-  cfg.cert_pem = brokerCaCert(*broker.spec);
+    cfg.cert_pem = brokerCaCert(*broker.spec);
 #endif
+    cfg.path = "/mqtt";
+  }
   cfg.lwt_topic = broker.status_topic;
   cfg.lwt_msg = broker.offline_payload;
   cfg.lwt_qos = 1;
   cfg.lwt_retain = 1;
-  cfg.path = "/mqtt";
 #endif
 
   broker.client = esp_mqtt_client_init(&cfg);
@@ -958,7 +1007,7 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
 void MQTTUplink::begin(FILESYSTEM* fs) {
   _fs = fs;
   MQTTPrefsStore::load(_fs, _prefs);
-  uint8_t normalized_mask = normalizeEnabledMask(_prefs.enabled_mask & 0x07);
+  uint8_t normalized_mask = normalizeEnabledMask(_prefs.enabled_mask & 0x0F);
   if (normalized_mask != _prefs.enabled_mask) {
     _prefs.enabled_mask = normalized_mask;
     savePrefs();
@@ -1087,6 +1136,9 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
     if (broker == nullptr) {
       return "retry";
     }
+    if (!isBrokerConfigured(*broker)) {
+      return "unconfigured";
+    }
     if (broker->connected) {
       return "up";
     }
@@ -1102,16 +1154,17 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
     return "retry";
   };
 
-  snprintf(reply, reply_size, "> wifi:%s ntp:%s iata:%s eastmesh-au:%s letsmesh-eu:%s letsmesh-us:%s status:%s tx:%s",
+  snprintf(reply, reply_size,
+           "> wifi:%s ntp:%s iata:%s eastmesh-au:%s letsmesh-eu:%s letsmesh-us:%s custom:%s status:%s tx:%s",
            (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
            (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
            _prefs.iata,
            broker_state(kEastmeshBit), broker_state(kLetsmeshEuBit), broker_state(kLetsmeshUsBit),
-           _prefs.status_enabled ? "on" : "off", _prefs.tx_enabled ? "on" : "off");
+           broker_state(kCustomBit), _prefs.status_enabled ? "on" : "off", _prefs.tx_enabled ? "on" : "off");
 }
 
 bool MQTTUplink::setEndpointEnabled(uint8_t bit, bool enabled) {
-  uint8_t next_mask = _prefs.enabled_mask & 0x07;
+  uint8_t next_mask = _prefs.enabled_mask & 0x0F;
   if (enabled) {
     next_mask = normalizeEnabledMask(next_mask | bit);
     if ((next_mask & bit) == 0) {
@@ -1224,6 +1277,89 @@ bool MQTTUplink::setOwnerEmail(const char* owner_email) {
   return savePrefs();
 }
 
+bool MQTTUplink::setCustomHost(const char* host) {
+  if (host == nullptr) {
+    return false;
+  }
+  char cleaned[sizeof(_prefs.custom_host)];
+  memset(cleaned, 0, sizeof(cleaned));
+  size_t oi = 0;
+  for (size_t i = 0; host[i] != 0 && oi + 1 < sizeof(cleaned); ++i) {
+    unsigned char c = static_cast<unsigned char>(host[i]);
+    if (c <= ' ' || c == '/' || c == ':' || c == '\\') {
+      return false;
+    }
+    cleaned[oi++] = static_cast<char>(c);
+  }
+  cleaned[oi] = 0;
+  bool changed = strcmp(cleaned, _prefs.custom_host) != 0;
+  StrHelper::strncpy(_prefs.custom_host, cleaned, sizeof(_prefs.custom_host));
+  bool saved = savePrefs();
+  if (saved && changed) {
+    for (BrokerState& broker : _brokers) {
+      if (broker.spec != nullptr && broker.spec->bit == kCustomBit) {
+        destroyBroker(broker);
+      }
+    }
+  }
+  return saved;
+}
+
+bool MQTTUplink::setCustomPort(const char* port) {
+  if (port == nullptr || port[0] == 0) {
+    return false;
+  }
+  char* end = nullptr;
+  unsigned long parsed = strtoul(port, &end, 10);
+  if (end == port || *end != 0 || parsed == 0 || parsed > 65535UL) {
+    return false;
+  }
+  bool changed = _prefs.custom_port != static_cast<uint16_t>(parsed);
+  _prefs.custom_port = static_cast<uint16_t>(parsed);
+  bool saved = savePrefs();
+  if (saved && changed) {
+    for (BrokerState& broker : _brokers) {
+      if (broker.spec != nullptr && broker.spec->bit == kCustomBit) {
+        destroyBroker(broker);
+      }
+    }
+  }
+  return saved;
+}
+
+bool MQTTUplink::setCustomUsername(const char* username) {
+  if (username == nullptr) {
+    return false;
+  }
+  StrHelper::strncpy(_prefs.custom_username, username, sizeof(_prefs.custom_username));
+  refreshIdentityStrings();
+  bool saved = savePrefs();
+  if (saved) {
+    for (BrokerState& broker : _brokers) {
+      if (broker.spec != nullptr && broker.spec->bit == kCustomBit) {
+        destroyBroker(broker);
+      }
+    }
+  }
+  return saved;
+}
+
+bool MQTTUplink::setCustomPassword(const char* password) {
+  if (password == nullptr) {
+    return false;
+  }
+  StrHelper::strncpy(_prefs.custom_password, password, sizeof(_prefs.custom_password));
+  bool saved = savePrefs();
+  if (saved) {
+    for (BrokerState& broker : _brokers) {
+      if (broker.spec != nullptr && broker.spec->bit == kCustomBit) {
+        destroyBroker(broker);
+      }
+    }
+  }
+  return saved;
+}
+
 bool MQTTUplink::isAnyBrokerConnected() const {
   for (const BrokerState& broker : _brokers) {
     if (broker.spec != nullptr && broker.connected) {
@@ -1280,6 +1416,10 @@ bool MQTTUplink::setIata(const char*) { return false; }
 bool MQTTUplink::isActive() const { return false; }
 bool MQTTUplink::setOwnerPublicKey(const char*) { return false; }
 bool MQTTUplink::setOwnerEmail(const char*) { return false; }
+bool MQTTUplink::setCustomHost(const char*) { return false; }
+bool MQTTUplink::setCustomPort(const char*) { return false; }
+bool MQTTUplink::setCustomUsername(const char*) { return false; }
+bool MQTTUplink::setCustomPassword(const char*) { return false; }
 bool MQTTUplink::sendStatusNow() { return false; }
 bool MQTTUplink::isAnyBrokerConnected() const { return false; }
 const char* MQTTUplink::getAggregateBrokerState() const { return "down"; }

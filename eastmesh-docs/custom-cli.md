@@ -68,12 +68,24 @@ No-argument `get` commands must be entered exactly as shown.
 - `set mqtt.letsmesh-eu on|off`
 - `get mqtt.letsmesh-us`
 - `set mqtt.letsmesh-us on|off`
+- `get mqtt.custom`
+- `set mqtt.custom on|off`
+- `get mqtt.custom.host`
+- `set mqtt.custom.host <host>`
+- `get mqtt.custom.port`
+- `set mqtt.custom.port <port>`
+- `get mqtt.custom.username`
+- `set mqtt.custom.username <username>`
+- `get mqtt.custom.password`: shows `set` when a custom password is configured.
+- `set mqtt.custom.password <password>`
 
 Notes:
 
 - new observer installs default `mqtt.iata` to `UNSET`
 - `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
-- if `mqtt.iata` is `UNSET`, `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
+- if `mqtt.iata` is `UNSET`, enabled MQTT brokers will not connect
+- custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication
+- custom MQTT uses the same `meshcore/<IATA>/<device>/<leaf>` topics as the curated brokers
 - turning off a connected broker publishes a retained MQTT status update with `"status":"offline"` before the client disconnects
 - changing `mqtt.iata` away from a configured value also publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path
 

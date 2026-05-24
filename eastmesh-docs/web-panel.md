@@ -247,7 +247,8 @@ This section includes:
 - `mqtt.iata`: selected from a curated east-coast/south-east list.
 - `mqtt.owner`: owner public key.
 - `mqtt.email`: owner contact email.
-- MQTT server toggles: `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us`.
+- MQTT server toggles: `eastmesh-au`, `letsmesh-eu`, `letsmesh-us`, and custom MQTT.
+- custom MQTT host, port, username, and password fields.
 
 `UNSET - To be configured` is the default for new observer installs until a real saved value exists.
 
@@ -257,9 +258,10 @@ Notes:
 - while `mqtt.iata` is `UNSET`, enabled MQTT brokers do not attempt to connect
 - the current MQTT server states are loaded when the page opens
 - you can toggle each MQTT server on or off from this panel
+- custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication
 - turning off a connected MQTT server publishes retained offline status before the client disconnects
 - changing `mqtt.iata` away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path
-- if all three servers are enabled at once, the panel shows a warning recommending two at most
+- at most two MQTT brokers can be enabled at once
 
 ## `/stats` Overview
 

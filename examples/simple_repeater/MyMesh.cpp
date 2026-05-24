@@ -2350,6 +2350,16 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x02) ? "on" : "off");
   } else if (strcmp(command, "get mqtt.letsmesh-us") == 0 || strcmp(command, "get mqtt.letsmesh.us") == 0) {
     sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x04) ? "on" : "off");
+  } else if (strcmp(command, "get mqtt.custom") == 0) {
+    sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x08) ? "on" : "off");
+  } else if (strcmp(command, "get mqtt.custom.host") == 0) {
+    sprintf(reply, "> %s", mqtt.getCustomHost()[0] ? mqtt.getCustomHost() : "-");
+  } else if (strcmp(command, "get mqtt.custom.port") == 0) {
+    sprintf(reply, "> %u", static_cast<unsigned>(mqtt.getCustomPort()));
+  } else if (strcmp(command, "get mqtt.custom.username") == 0) {
+    sprintf(reply, "> %s", mqtt.getCustomUsername()[0] ? mqtt.getCustomUsername() : "-");
+  } else if (strcmp(command, "get mqtt.custom.password") == 0) {
+    sprintf(reply, "> %s", mqtt.hasCustomPassword() ? "set" : "-");
   } else if (memcmp(command, "set mqtt.tx ", 12) == 0) {
     mqtt.setTxEnabled(memcmp(&command[12], "on", 2) == 0);
     strcpy(reply, "OK");
@@ -2397,6 +2407,36 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
       strcpy(reply, "OK");
     } else {
       strcpy(reply, "Err - max 2 mqtt brokers");
+    }
+  } else if (memcmp(command, "set mqtt.custom ", 16) == 0) {
+    if (mqtt.setEndpointEnabled(0x08, memcmp(&command[16], "on", 2) == 0)) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - max 2 mqtt brokers");
+    }
+  } else if (memcmp(command, "set mqtt.custom.host ", 21) == 0) {
+    if (mqtt.setCustomHost(&command[21])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad mqtt.custom.host");
+    }
+  } else if (memcmp(command, "set mqtt.custom.port ", 21) == 0) {
+    if (mqtt.setCustomPort(&command[21])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad mqtt.custom.port");
+    }
+  } else if (memcmp(command, "set mqtt.custom.username ", 25) == 0) {
+    if (mqtt.setCustomUsername(&command[25])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad mqtt.custom.username");
+    }
+  } else if (memcmp(command, "set mqtt.custom.password ", 25) == 0) {
+    if (mqtt.setCustomPassword(&command[25])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad mqtt.custom.password");
     }
 #endif
   } else{

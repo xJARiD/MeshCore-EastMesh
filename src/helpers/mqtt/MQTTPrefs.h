@@ -29,7 +29,11 @@ struct MQTTPrefs {
   char owner_public_key[65];
   char owner_email[96];
   uint8_t deprecated_web_stats_enabled;
-  uint8_t reserved[3];
+  uint16_t custom_port;
+  char custom_host[96];
+  char custom_username[65];
+  char custom_password[96];
+  uint8_t reserved[1];
 };
 
 class MQTTPrefsStore {

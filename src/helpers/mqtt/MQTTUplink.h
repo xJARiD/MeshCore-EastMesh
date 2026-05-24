@@ -62,6 +62,14 @@ public:
   const char* getOwnerPublicKey() const { return _prefs.owner_public_key; }
   bool setOwnerEmail(const char* owner_email);
   const char* getOwnerEmail() const { return _prefs.owner_email; }
+  bool setCustomHost(const char* host);
+  const char* getCustomHost() const { return _prefs.custom_host; }
+  bool setCustomPort(const char* port);
+  uint16_t getCustomPort() const { return _prefs.custom_port; }
+  bool setCustomUsername(const char* username);
+  const char* getCustomUsername() const { return _prefs.custom_username; }
+  bool setCustomPassword(const char* password);
+  bool hasCustomPassword() const { return _prefs.custom_password[0] != 0; }
   bool sendStatusNow();
   bool isAnyBrokerConnected() const;
   const char* getAggregateBrokerState() const;
@@ -77,6 +85,7 @@ private:
     const char* host;
     const char* uri;
     uint8_t bit;
+    bool custom;
   };
 
   struct BrokerState {
@@ -116,12 +125,13 @@ private:
   static constexpr uint8_t kEastmeshBit = 0x01;
   static constexpr uint8_t kLetsmeshEuBit = 0x02;
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
+  static constexpr uint8_t kCustomBit = 0x08;
   static constexpr uint8_t kMaxEnabledBrokers = 2;
-  static const BrokerSpec kBrokerSpecs[3];
+  static const BrokerSpec kBrokerSpecs[4];
   static bool isUnsetIataValue(const char* iata);
   static const char* brokerCaCert(const BrokerSpec& spec);
 
-  BrokerState _brokers[3];
+  BrokerState _brokers[4];
 
   static void handleMqttEvent(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
   static void scheduleBrokerRetry(BrokerState& broker, unsigned long now_ms, bool count_failure);
@@ -131,6 +141,9 @@ private:
   static uint8_t normalizeEnabledMask(uint8_t mask);
   bool hasConnectHeadroom(const BrokerState& broker) const;
   bool preflightBroker(BrokerState& broker) const;
+  const char* brokerHost(const BrokerState& broker) const;
+  uint16_t brokerPort(const BrokerState& broker) const;
+  bool isBrokerConfigured(const BrokerState& broker) const;
   void formatTopic(char* dst, size_t dst_size, const char* leaf) const;
   void refreshIdentityStrings();
   void refreshBrokerIdentity(BrokerState& broker);
