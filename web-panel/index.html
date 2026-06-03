@@ -1560,7 +1560,8 @@
 <li>the connection is HTTPS, but the certificate is self-signed</li>
 <li>browsers will warn the first time you connect</li>
 <li>the panel exposes the repeater CLI after login</li>
-<li>the browser keeps the session token while changing between <code>/app</code> and <code>/stats</code>; the page switches views in place until logout, idle lock, or server restart</li>
+<li>the browser keeps the session token while changing between <code>/app</code> and <code>/stats</code>; the page switches views in place until logout, idle lock, or device restart</li>
+<li>brief Wi-Fi drops can interrupt in-flight page loads, but should not force a new login when the web panel restarts</li>
 <li>after a device restart or reflash, the app checks the stored token before loading settings and returns to login if the session is stale</li>
 </ul>
 <p>This is intended for local admin use on a trusted network, not for open internet exposure.</p>
@@ -1676,7 +1677,8 @@
 <li><code>mqtt.iata</code>: selected from a curated east-coast/south-east list.</li>
 <li><code>mqtt.owner</code>: owner public key.</li>
 <li><code>mqtt.email</code>: owner contact email.</li>
-<li>MQTT server toggles: <code>eastmesh-au</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code>.</li>
+<li>MQTT server toggles: <code>eastmesh-au</code>, <code>letsmesh-eu</code>, <code>letsmesh-us</code>, and custom MQTT.</li>
+<li>custom MQTT <code>host:port</code>, username, and password fields.</li>
 </ul>
 <p><code>UNSET - To be configured</code> is the default for new observer installs until a real saved value exists.</p>
 <p>Notes:</p>
@@ -1685,9 +1687,10 @@
 <li>while <code>mqtt.iata</code> is <code>UNSET</code>, enabled MQTT brokers do not attempt to connect</li>
 <li>the current MQTT server states are loaded when the page opens</li>
 <li>you can toggle each MQTT server on or off from this panel</li>
+<li>custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication</li>
 <li>turning off a connected MQTT server publishes retained offline status before the client disconnects</li>
 <li>changing <code>mqtt.iata</code> away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path</li>
-<li>if all three servers are enabled at once, the panel shows a warning recommending two at most</li>
+<li>at most two MQTT brokers can be enabled at once</li>
 </ul>
 <h2 id="stats-overview"><code>/stats</code> Overview<a class="headerlink" href="#stats-overview" title="Permanent link">&para;</a></h2>
 <p>The stats page is loaded separately from <code>/app</code> and is intended to keep the main admin page lighter.</p>
@@ -1778,9 +1781,11 @@
 <ol>
 <li>Press <code>Start OTA</code>.</li>
 <li>Confirm the action.</li>
+<li>The panel starts OTA, then opens the returned <code>http://.../update</code> URL.</li>
 <li>The local HTTP redirect listener on port <code>80</code> is released so OTA can take over that port.</li>
 <li>Continue with your normal OTA workflow.</li>
 </ol>
+<p>If the repeater is already connected to Wi-Fi, OTA uses the existing LAN address. If Wi-Fi is not connected, the repeater starts the <code>MeshCore-OTA</code> access point and returns that OTA address instead.</p>
 <p>If an older build sends you through a strange redirect after <code>start ota</code>, use the web <code>Start OTA</code> button to begin the upgrade. This redirect issue is fixed in <code>observer-eastmesh-v1.3.11</code>.</p>
 <h3 id="use-historical-stats">Use Historical Stats<a class="headerlink" href="#use-historical-stats" title="Permanent link">&para;</a></h3>
 <ol>
