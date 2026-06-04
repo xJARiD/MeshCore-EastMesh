@@ -150,7 +150,9 @@ It includes:
 
 Use `Start OTA` only when you intend to update firmware.
 
-If the browser can reach GitHub, the app page checks the EastMesh release version from `mqtt.client_version` against published MeshCore-EastMesh releases. When a newer EastMesh release tag is available, a firmware update notice appears at the top of the page.
+If the browser can reach the EastMesh flasher firmware manifest, the app page checks the EastMesh release version from `mqtt.client_version` against published MeshCore-EastMesh releases. When a newer EastMesh release tag is available, a firmware update notice appears at the top of the page.
+
+For builds that include `CLIENT_ENV`, the notice can show `Update now`. This downloads the matching non-merged `.bin` from the EastMesh flasher firmware mirror, shows progress in the banner, uploads the firmware through the HTTPS web panel, and lets the device reboot. This requires CORS headers on the flasher `/firmwares/` paths.
 
 ### `/stats`
 

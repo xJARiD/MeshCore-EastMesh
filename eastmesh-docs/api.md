@@ -166,6 +166,30 @@ curl -sk https://<repeater-ip>/api/command \
   --data 'get wifi.status'
 ```
 
+### `POST /api/firmware-update`
+
+Upload an app firmware `.bin` through the HTTPS web panel and reboot after a successful update.
+
+Headers:
+
+```text
+X-Auth-Token: <token>
+X-Firmware-MD5: <32-character md5>
+Content-Type: application/octet-stream
+```
+
+Request body:
+
+```text
+raw firmware .bin bytes
+```
+
+Response:
+
+- `OK` after the firmware is written and the reboot is scheduled
+- `401 Unauthorized` if the token is missing or stale
+- `400` or `500` if the upload or firmware verification fails
+
 ### `GET /api/stats`
 
 Fetch the current summary payload used by the dedicated `/stats` page.

@@ -216,7 +216,7 @@ build_firmware() {
   FIRMWARE_FILENAME="$1-${FIRMWARE_VERSION_STRING}"
 
   # add build metadata to end of existing platformio build flags in environment vars
-  export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION}\"' -DCLIENT_VERSION='\"${CLIENT_VERSION_STRING}\"'"
+  export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION}\"' -DCLIENT_VERSION='\"${CLIENT_VERSION_STRING}\"' -DCLIENT_ENV='\"${1}\"'"
 
   # disable debug flags if requested
   disable_debug_flags

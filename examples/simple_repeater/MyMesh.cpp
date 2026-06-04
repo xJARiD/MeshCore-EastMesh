@@ -2335,6 +2335,8 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     mqtt.formatStatusReply(reply, 160);
   } else if (strcmp(command, "get mqtt.client_version") == 0) {
     sprintf(reply, "> %s", mqtt.getClientVersion());
+  } else if (strcmp(command, "get mqtt.client_env") == 0) {
+    sprintf(reply, "> %s", mqtt.getClientEnv());
   } else if (strcmp(command, "get mqtt.iata") == 0) {
     sprintf(reply, "> %s", mqtt.getIata());
   } else if (strcmp(command, "get mqtt.owner") == 0) {

@@ -35,6 +35,10 @@
   #define CLIENT_VERSION "eastmesh-observer"
 #endif
 
+#ifndef CLIENT_ENV
+  #define CLIENT_ENV "unknown"
+#endif
+
 #ifndef MQTT_DEBUG
   #define MQTT_DEBUG 0
 #endif
@@ -146,6 +150,10 @@ MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
 
 const char* MQTTUplink::getClientVersion() const {
   return CLIENT_VERSION;
+}
+
+const char* MQTTUplink::getClientEnv() const {
+  return CLIENT_ENV;
 }
 
 bool MQTTUplink::savePrefs() {

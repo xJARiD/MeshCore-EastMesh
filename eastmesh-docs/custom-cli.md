@@ -37,6 +37,7 @@ No-argument `get` commands must be entered exactly as shown.
 - `get mqtt.status`: shows Wi-Fi, NTP, IATA, endpoint status, status publishing state, and TX state.
 - `get mqtt.statuscfg`: shows whether periodic status messages are enabled as a simple `on` or `off` value. Most users can just use `get mqtt.status`.
 - `get mqtt.client_version`: shows the MQTT `client_version` string published by the repeater.
+- `get mqtt.client_env`: shows the PlatformIO env used to build the repeater firmware.
 - `get mqtt.iata`: shows the IATA/location code used in MQTT topics.
 - `set mqtt.iata <code>`: sets the IATA/location code, for example `MEL`.
 - `set mqtt.iata UNSET`: marks MQTT IATA as not configured yet. While it is `UNSET`, enabled MQTT brokers stay disconnected until a real code is saved.

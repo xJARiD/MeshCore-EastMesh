@@ -57,6 +57,7 @@ public:
   bool setIata(const char* iata);
   const char* getIata() const { return _prefs.iata; }
   const char* getClientVersion() const;
+  const char* getClientEnv() const;
   void setNodeNameSource(const char* node_name) { _node_name = node_name; }
   bool setOwnerPublicKey(const char* owner_public_key);
   const char* getOwnerPublicKey() const { return _prefs.owner_public_key; }

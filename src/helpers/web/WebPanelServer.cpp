@@ -6,7 +6,10 @@
 #include <esp_heap_caps.h>
 #include <esp_idf_version.h>
 #include <esp_system.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <string.h>
+#include <Update.h>
 
 #include "../mqtt/generated/WebPanelCert.h"
 
@@ -27,6 +30,7 @@ constexpr size_t kWebReplyBufferSize = 256;
 constexpr size_t kWebStatsQueryBufferSize = 96;
 constexpr size_t kWebStatsReplyBufferSize = 4608;
 constexpr size_t kWebPageChunkSize = 768;
+constexpr size_t kWebFirmwareChunkSize = 4096;
 constexpr unsigned long kWebIdleTimeoutMs = WEB_PANEL_IDLE_TIMEOUT_MS;
 
 #if defined(MQTT_DEBUG) && MQTT_DEBUG
@@ -47,6 +51,11 @@ void freeScratchBuffer(void* ptr) {
   if (ptr != nullptr) {
     heap_caps_free(ptr);
   }
+}
+
+void rebootAfterFirmwareUpdateTask(void*) {
+  vTaskDelay(pdMS_TO_TICKS(1200));
+  esp_restart();
 }
 
 void bytesToHexUpper(const uint8_t* src, size_t len, char* dst, size_t dst_size) {
@@ -441,7 +450,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .panel-copy, .panel-note, .panel-status, .panel-warning, .stats-empty, .stats-error, .events-empty, .spark-status { font-size:13px; line-height:1.45; font-weight:400; }
     .top-banner { display:none; margin-bottom:18px; padding:12px 14px; border-radius:12px; border:1px solid rgba(212,90,90,.45); background:rgba(212,90,90,.12); color:var(--text); }
     .top-banner.visible { display:block; }
-    .top-banner a { color:var(--text); font-weight:700; }
+    .top-banner a { color:var(--text); font-weight:700; margin-left:10px; }
     .panel-warning { min-height:1.4em; color:var(--status-red); }
     .panel-note { color:var(--text-muted); }
     .panel-status { min-height:1.4em; color:var(--text-muted); }
@@ -540,7 +549,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 </head>
 <body>
   <main>
-    <section class="top-banner" id="firmwareUpdateBanner"><span id="firmwareUpdateText"></span> <a id="firmwareUpdateLink" href="https://github.com/xJARiD/MeshCore-EastMesh/releases" target="_blank" rel="noopener">View releases</a> <a id="firmwareFlasherLink" href="https://flasher.eastmesh.au" target="_blank" rel="noopener">Open flasher</a></section>
+    <section class="top-banner" id="firmwareUpdateBanner"><span id="firmwareUpdateText"></span><span id="firmwareUpdateProgress"></span> <a id="firmwareUpdateLink" href="https://github.com/xJARiD/MeshCore-EastMesh/releases" target="_blank" rel="noopener">View releases</a> <a id="firmwareFlasherLink" href="https://flasher.eastmesh.au" target="_blank" rel="noopener">Open flasher</a> <a id="firmwareUpdateNow" href="#" style="display:none">Update now</a></section>
     <section class="top-banner" id="mqttIataBanner">MQTT IATA needs setting under MQTT Settings.</section>
     <section class="card" id="login" style="display:none">
       <h1>Repeater Config</h1>
@@ -622,6 +631,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
             </div>
           </div>
         </div>
+        <input id="clientEnvValue" type="hidden">
         <div class="field-card">
           <label class="label" for="publicKey">Public Key</label>
           <div class="fieldline">
@@ -1091,8 +1101,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       "Victoria": "vic"
     };
     const TOKEN_KEY = "repeater-token";
-    const EASTMESH_RELEASES_API = "https://api.github.com/repos/xJARiD/MeshCore-EastMesh/releases?per_page=30";
     const EASTMESH_RELEASES_URL = "https://github.com/xJARiD/MeshCore-EastMesh/releases";
+    const EASTMESH_FLASHER_URL = "https://flasher.eastmesh.au";
+    const EASTMESH_FIRMWARE_BASE_URL = EASTMESH_FLASHER_URL + "/firmwares/";
+    const EASTMESH_FIRMWARE_MANIFEST_URL = EASTMESH_FIRMWARE_BASE_URL + "manifest.json";
     function readStoredToken() {
       try {
         const sessionToken = sessionStorage.getItem(TOKEN_KEY);
@@ -1113,6 +1125,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     let radioPresetEntries = [];
     let currentRadioConfig = null;
     let mqttIataLoaded = false;
+    let firmwareUpdateCurrentVersion = "";
+    let firmwareUpdateClientEnv = "";
+    let firmwareUpdateLatest = null;
+    let firmwareUpdateAsset = null;
+    let firmwareUpdateManifestPromise = null;
     const statusEl = document.getElementById("status");
     const replyEl = document.getElementById("reply");
     const themeToggleEl = document.getElementById("themeToggle");
@@ -1207,10 +1224,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const match = String(value || "").match(/(?:EastMesh\/|eastmesh-)(v20\d{2}\.\d+\.\d+)/i);
       return match ? match[1] : "";
     }
-    function parseReleaseTagVersion(tagName) {
-      const match = String(tagName || "").match(/(?:^|-)v(20\d{2})\.(\d+)\.(\d+)$/);
-      return match ? `v${match[1]}.${match[2]}.${match[3]}` : "";
-    }
     function versionParts(version) {
       const match = String(version || "").match(/^v(\d+)\.(\d+)\.(\d+)$/);
       return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
@@ -1224,50 +1237,240 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       return 0;
     }
-    function newestEastMeshRelease(releases) {
-      if (!Array.isArray(releases)) return null;
-      return releases.reduce((newest, release) => {
-        if (!release || release.draft || release.prerelease) return newest;
-        const version = parseReleaseTagVersion(release.tag_name);
-        if (!version) return newest;
+    function parseClientEnv(clientEnv) {
+      const env = String(clientEnv || "").trim();
+      const suffixes = [
+        { suffix:"_repeater_observer_espnow", firmware:"repeater_observer_espnow" },
+        { suffix:"_repeater_observer", firmware:"repeater_observer" },
+        { suffix:"_repeater_bridge_espnow", firmware:"repeater_bridge_espnow" },
+        { suffix:"_companion_radio_wifi", firmware:"companion_wifi" }
+      ];
+      for (const item of suffixes) {
+        if (env.endsWith(item.suffix)) {
+          return { board:env.slice(0, -item.suffix.length), firmware:item.firmware };
+        }
+      }
+      return null;
+    }
+    function flasherAssetUrl(path) {
+      const cleanPath = String(path || "").replace(/^\/+/, "");
+      return EASTMESH_FIRMWARE_BASE_URL + cleanPath.split("/").map(encodeURIComponent).join("/");
+    }
+    function fetchFirmwareManifest() {
+      if (!firmwareUpdateManifestPromise) {
+        firmwareUpdateManifestPromise = fetch(EASTMESH_FIRMWARE_MANIFEST_URL, { cache:"no-store" }).then((response) => {
+          if (!response.ok) throw new Error("Firmware manifest check failed");
+          return response.json();
+        });
+      }
+      return firmwareUpdateManifestPromise;
+    }
+    function newestFlasherFirmware(manifest, clientEnv) {
+      const parsed = parseClientEnv(clientEnv);
+      if (!parsed || !manifest || !manifest.boards) return null;
+      const board = manifest.boards[parsed.board];
+      const firmware = board && board.firmwares ? board.firmwares[parsed.firmware] : null;
+      const versions = firmware && firmware.versions ? firmware.versions : null;
+      if (!versions) return null;
+      return Object.keys(versions).reduce((newest, key) => {
+        const entry = versions[key];
+        if (!entry || !entry.eastmesh_version || !entry.images || !entry.images.app_bin) return newest;
+        const version = "v" + entry.eastmesh_version;
         if (!newest || compareVersions(version, newest.version) > 0) {
-          return { version, url: release.html_url || EASTMESH_RELEASES_URL };
+          const image = entry.images.app_bin;
+          return {
+            version,
+            releaseTag:entry.release_tag || key,
+            releaseUrl:entry.release_tag ? `${EASTMESH_RELEASES_URL}/tag/${entry.release_tag}` : EASTMESH_RELEASES_URL,
+            asset:{
+              name:image.file_name || "firmware.bin",
+              url:flasherAssetUrl(image.path),
+              size:image.size || 0,
+              sha256:image.sha256 || ""
+            }
+          };
         }
         return newest;
       }, null);
     }
-    function setFirmwareUpdateBanner(message, url) {
+    function setFirmwareUpdateBanner(message, url, canUpdate = false) {
       const banner = document.getElementById("firmwareUpdateBanner");
       const text = document.getElementById("firmwareUpdateText");
+      const progress = document.getElementById("firmwareUpdateProgress");
       const link = document.getElementById("firmwareUpdateLink");
-      if (!banner || !text || !link) return;
+      const updateNow = document.getElementById("firmwareUpdateNow");
+      if (!banner || !text || !progress || !link || !updateNow) return;
       if (!message) {
         banner.classList.remove("visible");
         text.textContent = "";
+        progress.textContent = "";
         link.href = EASTMESH_RELEASES_URL;
+        updateNow.style.display = "none";
+        updateNow.textContent = "Update now";
+        updateNow.removeAttribute("aria-disabled");
         return;
       }
       text.textContent = message;
+      progress.textContent = "";
       link.href = url || EASTMESH_RELEASES_URL;
+      updateNow.style.display = canUpdate ? "" : "none";
+      updateNow.textContent = "Update now";
+      updateNow.removeAttribute("aria-disabled");
       banner.classList.add("visible");
     }
-    async function checkFirmwareUpdate(clientVersion) {
-      const currentVersion = parseEastMeshClientVersion(clientVersion);
-      if (!currentVersion) {
+    function setFirmwareUpdateProgress(message, busy = false) {
+      const progress = document.getElementById("firmwareUpdateProgress");
+      const updateNow = document.getElementById("firmwareUpdateNow");
+      if (progress) {
+        progress.textContent = message ? " " + message : "";
+      }
+      if (updateNow) {
+        updateNow.textContent = busy ? "Updating..." : "Update now";
+        if (busy) {
+          updateNow.setAttribute("aria-disabled", "true");
+        } else {
+          updateNow.removeAttribute("aria-disabled");
+        }
+      }
+      if (statusEl && message) {
+        statusEl.textContent = message;
+      }
+    }
+    function scheduleFirmwareUpdateReload(seconds) {
+      let remaining = seconds;
+      const updateCountdown = () => {
+        setFirmwareUpdateProgress(`Firmware uploaded. Device will reboot in ${remaining}s.`, true);
+        if (remaining <= 0) {
+          window.location.reload();
+          return;
+        }
+        remaining -= 1;
+        window.setTimeout(updateCountdown, 1000);
+      };
+      updateCountdown();
+    }
+    async function refreshFirmwareUpdate() {
+      if (!firmwareUpdateCurrentVersion) {
         setFirmwareUpdateBanner("", "");
         return;
       }
       try {
-        const response = await fetch(EASTMESH_RELEASES_API, { cache:"no-store" });
-        if (!response.ok) return;
-        const latest = newestEastMeshRelease(await response.json());
-        if (latest && compareVersions(latest.version, currentVersion) > 0) {
-          setFirmwareUpdateBanner(`Firmware update available: ${latest.version} is newer than ${currentVersion}.`, latest.url);
+        const manifest = await fetchFirmwareManifest();
+        firmwareUpdateLatest = newestFlasherFirmware(manifest, firmwareUpdateClientEnv);
+        firmwareUpdateAsset = null;
+        if (firmwareUpdateLatest && compareVersions(firmwareUpdateLatest.version, firmwareUpdateCurrentVersion) > 0) {
+          firmwareUpdateAsset = firmwareUpdateLatest.asset || null;
+          setFirmwareUpdateBanner(
+            `Firmware update available: ${firmwareUpdateLatest.version} is newer than ${firmwareUpdateCurrentVersion}.`,
+            firmwareUpdateLatest.releaseUrl || EASTMESH_RELEASES_URL,
+            !!firmwareUpdateAsset
+          );
         } else {
           setFirmwareUpdateBanner("", "");
         }
       } catch (_) {
         setFirmwareUpdateBanner("", "");
+      }
+    }
+    function checkFirmwareUpdate(clientVersion) {
+      firmwareUpdateCurrentVersion = parseEastMeshClientVersion(clientVersion);
+      refreshFirmwareUpdate();
+    }
+    function checkFirmwareEnv(clientEnv) {
+      firmwareUpdateClientEnv = String(clientEnv || "").trim();
+      refreshFirmwareUpdate();
+    }
+    function md5ArrayBuffer(buffer) {
+      const input = new Uint8Array(buffer);
+      const originalLength = input.length;
+      const totalLength = (((originalLength + 8) >> 6) + 1) * 64;
+      const data = new Uint8Array(totalLength);
+      data.set(input);
+      data[originalLength] = 0x80;
+      const bitLength = originalLength * 8;
+      for (let i = 0; i < 8; i++) {
+        data[totalLength - 8 + i] = Math.floor(bitLength / Math.pow(256, i)) & 0xff;
+      }
+      const shifts = [7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+      const constants = Array.from({ length:64 }, (_, i) => Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) >>> 0);
+      let a = 0x67452301;
+      let b = 0xefcdab89;
+      let c = 0x98badcfe;
+      let d = 0x10325476;
+      const rotl = (value, shift) => ((value << shift) | (value >>> (32 - shift))) >>> 0;
+      for (let offset = 0; offset < data.length; offset += 64) {
+        const words = new Array(16);
+        for (let i = 0; i < 16; i++) {
+          const j = offset + i * 4;
+          words[i] = (data[j] | (data[j + 1] << 8) | (data[j + 2] << 16) | (data[j + 3] << 24)) >>> 0;
+        }
+        let aa = a, bb = b, cc = c, dd = d;
+        for (let i = 0; i < 64; i++) {
+          let f, g;
+          if (i < 16) {
+            f = (bb & cc) | (~bb & dd);
+            g = i;
+          } else if (i < 32) {
+            f = (dd & bb) | (~dd & cc);
+            g = (5 * i + 1) % 16;
+          } else if (i < 48) {
+            f = bb ^ cc ^ dd;
+            g = (3 * i + 5) % 16;
+          } else {
+            f = cc ^ (bb | ~dd);
+            g = (7 * i) % 16;
+          }
+          const temp = dd;
+          dd = cc;
+          cc = bb;
+          bb = (bb + rotl((aa + f + constants[i] + words[g]) >>> 0, shifts[i])) >>> 0;
+          aa = temp;
+        }
+        a = (a + aa) >>> 0;
+        b = (b + bb) >>> 0;
+        c = (c + cc) >>> 0;
+        d = (d + dd) >>> 0;
+      }
+      const hexWord = (word) => [0,8,16,24].map((shift) => ((word >>> shift) & 0xff).toString(16).padStart(2, "0")).join("");
+      return hexWord(a) + hexWord(b) + hexWord(c) + hexWord(d);
+    }
+    async function updateFirmwareNow(event) {
+      if (event) event.preventDefault();
+      const updateNow = document.getElementById("firmwareUpdateNow");
+      if (updateNow && updateNow.getAttribute("aria-disabled") === "true") return;
+      if (!firmwareUpdateLatest || !firmwareUpdateAsset) {
+        setFirmwareUpdateProgress("No matching firmware asset found for this build env.", false);
+        return;
+      }
+      const assetName = firmwareUpdateAsset.name || "firmware.bin";
+      if (!confirm(`Download and flash ${assetName}?`)) return;
+      const downloadUrl = firmwareUpdateAsset.url;
+      try {
+        setFirmwareUpdateProgress("Downloading firmware...", true);
+        const downloadResponse = await fetch(downloadUrl, {
+          cache:"no-store",
+          headers:{ "Accept":"application/octet-stream" }
+        });
+        if (!downloadResponse.ok) throw new Error("Firmware download failed");
+        const firmwareBuffer = await downloadResponse.arrayBuffer();
+        const firmwareBlob = new Blob([firmwareBuffer], { type:"application/octet-stream" });
+        setFirmwareUpdateProgress("Checking firmware...", true);
+        const firmwareMd5 = md5ArrayBuffer(firmwareBuffer);
+        setFirmwareUpdateProgress("Uploading firmware...", true);
+        const uploadResponse = await fetch("/api/firmware-update", {
+          method:"POST",
+          headers:{
+            "X-Auth-Token": token,
+            "X-Firmware-MD5": firmwareMd5,
+            "Content-Type":"application/octet-stream"
+          },
+          body:firmwareBlob
+        });
+        const uploadText = await uploadResponse.text();
+        if (!uploadResponse.ok) throw new Error(uploadText || "OTA upload failed");
+        scheduleFirmwareUpdateReload(15);
+      } catch (error) {
+        setFirmwareUpdateProgress(error && error.message ? error.message : "Firmware update failed.", false);
       }
     }
     function isCommandError(text) {
@@ -2401,6 +2604,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (inputId === "clientVersionValue") {
         checkFirmwareUpdate(value);
       }
+      if (inputId === "clientEnvValue") {
+        checkFirmwareEnv(value);
+      }
     }
     async function copyToClipboard(value, successMessage) {
       try {
@@ -2819,6 +3025,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     document.getElementById("reloadRadioPresetsBtn").onclick = () => loadRadioPresets();
     document.getElementById("copyPublicKeyBtn").onclick = () => copyToClipboard(document.getElementById("publicKey").value, "Public key copied");
     document.getElementById("copyPrivateKeyBtn").onclick = () => copyToClipboard(document.getElementById("privateKey").value.toUpperCase(), "Private key copied");
+    document.getElementById("firmwareUpdateNow").onclick = updateFirmwareNow;
     document.getElementById("syncClockBtn").onclick = () => syncClock();
     const ghostNodeModeSlider = document.getElementById("ghostNodeMode");
     if (ghostNodeModeSlider) {
@@ -2930,6 +3137,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         await loadSection("Loading info...", [
           () => loadField("ver", "versionValue", null, quiet),
           () => loadField("get mqtt.client_version", "clientVersionValue", null, quiet),
+          () => loadField("get mqtt.client_env", "clientEnvValue", null, quiet),
           () => loadField("clock", "clockUtc", null, quiet),
           () => loadField("get public.key", "publicKey", "uppercase", quiet)
         ]);
@@ -3003,11 +3211,11 @@ bool WebPanelServer::start() {
 
   httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
   config.httpd.max_open_sockets = 2;
-  config.httpd.max_uri_handlers = 7;
+  config.httpd.max_uri_handlers = 8;
   config.httpd.max_resp_headers = 4;
   config.httpd.backlog_conn = 2;
-  config.httpd.recv_wait_timeout = 2;
-  config.httpd.send_wait_timeout = 2;
+  config.httpd.recv_wait_timeout = 15;
+  config.httpd.send_wait_timeout = 15;
   config.httpd.stack_size = kWebServerStackSize;
 #if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
   config.servercert = reinterpret_cast<const uint8_t*>(mqtt_web_panel_cert::kServerCertPem);
@@ -3033,6 +3241,7 @@ bool WebPanelServer::start() {
   httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &WebPanelServer::handleLogin, .user_ctx = &_route_context};
   httpd_uri_t session_uri = {.uri = "/api/session", .method = HTTP_GET, .handler = &WebPanelServer::handleSession, .user_ctx = &_route_context};
   httpd_uri_t command_uri = {.uri = "/api/command", .method = HTTP_POST, .handler = &WebPanelServer::handleCommand, .user_ctx = &_route_context};
+  httpd_uri_t firmware_update_uri = {.uri = "/api/firmware-update", .method = HTTP_POST, .handler = &WebPanelServer::handleFirmwareUpdate, .user_ctx = &_route_context};
   httpd_uri_t stats_uri = {.uri = "/api/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStats, .user_ctx = &_route_context};
   httpd_register_uri_handler(_server, &index_uri);
   httpd_register_uri_handler(_server, &app_uri);
@@ -3040,6 +3249,7 @@ bool WebPanelServer::start() {
   httpd_register_uri_handler(_server, &login_uri);
   httpd_register_uri_handler(_server, &session_uri);
   httpd_register_uri_handler(_server, &command_uri);
+  httpd_register_uri_handler(_server, &firmware_update_uri);
   httpd_register_uri_handler(_server, &stats_uri);
 
   httpd_config_t redirect_config = HTTPD_DEFAULT_CONFIG();
@@ -3240,6 +3450,75 @@ esp_err_t WebPanelServer::handleCommand(httpd_req_t* req) {
   esp_err_t rc = httpd_resp_send(req, reply[0] ? reply : "OK", HTTPD_RESP_USE_STRLEN);
   freeScratchBuffer(command);
   freeScratchBuffer(reply);
+  return rc;
+}
+
+esp_err_t WebPanelServer::handleFirmwareUpdate(httpd_req_t* req) {
+  auto* ctx = static_cast<RouteContext*>(req->user_ctx);
+  if (ctx == nullptr || ctx->self == nullptr || ctx->self->_runner == nullptr) {
+    return httpd_resp_send_500(req);
+  }
+  if (!ctx->self->isAuthorized(req)) {
+    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+  }
+  if (req->content_len <= 0) {
+    return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing firmware body");
+  }
+
+  char md5[33] = {0};
+  if (httpd_req_get_hdr_value_str(req, "X-Firmware-MD5", md5, sizeof(md5)) == ESP_OK && md5[0] != 0) {
+    if (!Update.setMD5(md5)) {
+      return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid firmware MD5");
+    }
+  }
+
+  if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH)) {
+    Update.printError(Serial);
+    return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Firmware update could not begin");
+  }
+
+  uint8_t* chunk = reinterpret_cast<uint8_t*>(allocScratchBuffer(kWebFirmwareChunkSize));
+  if (chunk == nullptr) {
+    Update.abort();
+    return httpd_resp_send_500(req);
+  }
+
+  int remaining = req->content_len;
+  bool ok = true;
+  while (remaining > 0) {
+    const int to_read = remaining > static_cast<int>(kWebFirmwareChunkSize)
+      ? static_cast<int>(kWebFirmwareChunkSize)
+      : remaining;
+    const int read = httpd_req_recv(req, reinterpret_cast<char*>(chunk), to_read);
+    if (read <= 0) {
+      ok = false;
+      break;
+    }
+    if (Update.write(chunk, read) != static_cast<size_t>(read)) {
+      Update.printError(Serial);
+      ok = false;
+      break;
+    }
+    remaining -= read;
+  }
+  freeScratchBuffer(chunk);
+
+  if (!ok || remaining != 0) {
+    Update.abort();
+    return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Firmware upload failed");
+  }
+  if (!Update.end(true)) {
+    Update.printError(Serial);
+    return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Firmware update failed");
+  }
+
+  ctx->self->noteActivity();
+  httpd_resp_set_type(req, "text/plain; charset=utf-8");
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  esp_err_t rc = httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
+  if (rc == ESP_OK) {
+    xTaskCreate(rebootAfterFirmwareUpdateTask, "web-fw-reboot", 2048, nullptr, 1, nullptr);
+  }
   return rc;
 }
 
