@@ -923,6 +923,7 @@
 <li><code>get mqtt.status</code>: shows Wi-Fi, NTP, IATA, endpoint status, status publishing state, and TX state.</li>
 <li><code>get mqtt.statuscfg</code>: shows whether periodic status messages are enabled as a simple <code>on</code> or <code>off</code> value. Most users can just use <code>get mqtt.status</code>.</li>
 <li><code>get mqtt.client_version</code>: shows the MQTT <code>client_version</code> string published by the repeater.</li>
+<li><code>get mqtt.client_env</code>: shows the PlatformIO env used to build the repeater firmware.</li>
 <li><code>get mqtt.iata</code>: shows the IATA/location code used in MQTT topics.</li>
 <li><code>set mqtt.iata &lt;code&gt;</code>: sets the IATA/location code, for example <code>MEL</code>.</li>
 <li><code>set mqtt.iata UNSET</code>: marks MQTT IATA as not configured yet. While it is <code>UNSET</code>, enabled MQTT brokers stay disconnected until a real code is saved.</li>
@@ -1040,8 +1041,10 @@
 <ul>
 <li><code>get flood.max.unscoped</code>: shows the hop limit for unscoped flood packets.</li>
 <li><code>set flood.max.unscoped &lt;0-64&gt;</code>: sets the hop limit for unscoped flood packets.</li>
+<li><code>get flood.max.advert</code>: shows the hop limit for flooded advert packets.</li>
+<li><code>set flood.max.advert &lt;0-64&gt;</code>: sets the hop limit for flooded advert packets.</li>
 </ul>
-<p>Observer builds default this value to <code>64</code>. Lower values can limit how far unscoped flood traffic is repeated while leaving scoped/region flood forwarding controlled by <code>flood.max</code>.</p>
+<p>Observer builds default <code>flood.max.unscoped</code> to <code>64</code>. Lower values can limit how far unscoped flood traffic is repeated while leaving scoped/region flood forwarding controlled by <code>flood.max</code>.</p>
 <h3 id="board-battery-reporting">Board Battery Reporting<a class="headerlink" href="#board-battery-reporting" title="Permanent link">&para;</a></h3>
 <ul>
 <li>On observer builds, background battery sampling used for MQTT/status history is rate-limited to about once per minute. Explicit status and telemetry requests still refresh the reading immediately.</li>
