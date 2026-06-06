@@ -61,6 +61,7 @@ private:
   RouteContext _route_context;
 
   static esp_err_t handleIndex(httpd_req_t* req);
+  static esp_err_t handleFavicon(httpd_req_t* req);
   static esp_err_t handleHttpRedirect(httpd_req_t* req);
   static esp_err_t handleApp(httpd_req_t* req);
   static esp_err_t handleStatsPage(httpd_req_t* req);

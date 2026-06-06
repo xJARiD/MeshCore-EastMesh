@@ -199,7 +199,8 @@ This section includes:
 - Private Key
 - Advert Interval
 - Flood Interval
-- Flood Max
+- Scoped Flood Max
+- Unscoped Flood Max
 - Owner Info
 
 Notes:
@@ -347,7 +348,7 @@ On mobile:
 
 1. Press `Start OTA`.
 2. Confirm the action.
-3. The panel starts OTA, then opens the returned `http://.../update` URL.
+3. The panel starts OTA, waits briefly for the OTA HTTP listener to take over port `80`, then opens the returned `http://.../update` URL.
 4. The local HTTP redirect listener on port `80` is released so OTA can take over that port.
 5. Continue with your normal OTA workflow.
 

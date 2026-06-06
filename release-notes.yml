@@ -40,6 +40,21 @@ releases:
         text: "Updated the companion_wifi firmware base to upstream MeshCore v1.15.0."
     breaking_changes: []
 
+  - track: companion-wifi
+    version: "1.16.0"
+    tag: "companion-wifi-v1.16.0"
+    date: "2026-06-07"
+    previous_version: "1.15.0"
+    summary: "Updates companion WiFi firmware to upstream MeshCore v1.16.0."
+    changes:
+      - type: changed
+        area: upstream
+        text: "Updated the companion WiFi firmware base to upstream MeshCore v1.16.0."
+      - type: changed
+        area: board
+        text: "Included upstream board, UI, power-saving, and platform fixes from MeshCore dev."
+    breaking_changes: []
+
   - track: repeater-bridge-espnow
     version: "1.15.0"
     tag: "repeater-bridge-espnow-v1.15.0"
@@ -56,6 +71,21 @@ releases:
       - type: docs
         area: release
         text: "Updated release guidance to document the repeater ESP-NOW bridge tag format and versioning rule."
+    breaking_changes: []
+
+  - track: repeater-bridge-espnow
+    version: "1.16.0"
+    tag: "repeater-bridge-espnow-v1.16.0"
+    date: "2026-06-07"
+    previous_version: "1.15.0"
+    summary: "Updates repeater ESP-NOW bridge firmware to upstream MeshCore v1.16.0."
+    changes:
+      - type: changed
+        area: upstream
+        text: "Updated the repeater ESP-NOW bridge firmware base to upstream MeshCore v1.16.0."
+      - type: changed
+        area: board
+        text: "Included upstream board, radio, UI, and platform fixes from MeshCore dev."
     breaking_changes: []
 
   - track: observer-eastmesh
@@ -104,6 +134,24 @@ releases:
         text: "Merged upstream MeshCore dev updates including sensor handling, RAK4631 BME680/BSEC support, documentation refreshes, and board/platform fixes."
     breaking_changes: []
 
+  - track: observer-eastmesh
+    version: "2026.6.1"
+    tag: "observer-eastmesh-v2026.6.1"
+    date: "2026-06-07"
+    previous_version: "2026.6.0"
+    summary: "Updates Observer firmware to upstream MeshCore v1.16.0 with flood-advert controls and board/platform fixes."
+    changes:
+      - type: added
+        area: cli
+        text: "Added `flood.max.advert` so flooded advert packets can use their own hop limit."
+      - type: changed
+        area: upstream
+        text: "Merged upstream MeshCore v1.16.0 dev updates including companion UI, board, radio, power-saving, documentation, and platform fixes."
+      - type: docs
+        area: docs
+        text: "Updated EastMesh custom CLI docs for the new `flood.max.advert` command."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -148,4 +196,22 @@ releases:
       - type: changed
         area: upstream
         text: "Merged upstream MeshCore dev updates including sensor handling, RAK4631 BME680/BSEC support, documentation refreshes, and board/platform fixes."
+    breaking_changes: []
+
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.6.1"
+    tag: "observer-eastmesh-bridge-espnow-v2026.6.1"
+    date: "2026-06-07"
+    previous_version: "2026.6.0"
+    summary: "Updates Observer ESP-NOW bridge firmware to upstream MeshCore v1.16.0 with flood-advert controls and board/platform fixes."
+    changes:
+      - type: added
+        area: cli
+        text: "Added `flood.max.advert` so flooded advert packets can use their own hop limit."
+      - type: changed
+        area: upstream
+        text: "Merged upstream MeshCore v1.16.0 dev updates including companion UI, board, radio, power-saving, documentation, and platform fixes."
+      - type: docs
+        area: docs
+        text: "Updated EastMesh custom CLI docs for the new `flood.max.advert` command."
     breaking_changes: []

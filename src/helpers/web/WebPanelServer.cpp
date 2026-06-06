@@ -11,6 +11,7 @@
 #include <string.h>
 #include <Update.h>
 
+#include "EastMeshFavicon.h"
 #include "../mqtt/generated/WebPanelCert.h"
 
 namespace {
@@ -217,6 +218,7 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Repeater Login</title>
+  <link rel="icon" type="image/png" href="/favicon.ico">
   <style>
     :root {
       color-scheme: light;
@@ -305,6 +307,7 @@ const char kWebPanelStatsDisabledHtml[] PROGMEM = R"HTML(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Stats Disabled</title>
+  <link rel="icon" type="image/png" href="/favicon.ico">
   <style>
     :root {
       color-scheme: light;
@@ -343,6 +346,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Repeater Config</title>
+  <link rel="icon" type="image/png" href="/favicon.ico">
   <style>
     :root {
       color-scheme: light;
@@ -780,7 +784,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         </div>
         <div class="section-group">
           <h3>Advertising</h3>
-          <div class="row3">
+          <div class="row">
             <div class="field-card">
               <div>
               <label class="label" for="advertInterval">Advert Interval (minutes)</label>
@@ -803,13 +807,23 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
             </div>
             <div class="field-card">
               <div>
-              <label class="label" for="floodMax">Flood Max</label>
+              <label class="label" for="floodMax">Scoped Flood Max</label>
                 <div class="fieldline">
                   <input id="floodMax" placeholder="64">
                   <button class="iconbtn" data-load-cmd="get flood.max" data-load-input="floodMax" title="Refresh flood max">&#8635;</button>
                 </div>
               </div>
-              <button class="savebtn" data-prefix="set flood.max " data-input="floodMax">Save flood max</button>
+              <button class="savebtn" data-prefix="set flood.max " data-input="floodMax">Save scoped flood max</button>
+            </div>
+            <div class="field-card">
+              <div>
+              <label class="label" for="floodUnscopedMax">Unscoped Flood Max</label>
+                <div class="fieldline">
+                  <input id="floodUnscopedMax" placeholder="64">
+                  <button class="iconbtn" data-load-cmd="get flood.max.unscoped" data-load-input="floodUnscopedMax" title="Refresh unscoped flood max">&#8635;</button>
+                </div>
+              </div>
+              <button class="savebtn" data-prefix="set flood.max.unscoped " data-input="floodUnscopedMax">Save unscoped flood max</button>
             </div>
           </div>
         </div>
@@ -1119,6 +1133,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function clearStoredToken() {
       try { sessionStorage.removeItem(TOKEN_KEY); } catch (_) {}
       try { localStorage.removeItem(TOKEN_KEY); } catch (_) {}
+    }
+    function storeToken(value) {
+      try { sessionStorage.setItem(TOKEN_KEY, value); } catch (_) {}
+      try { localStorage.setItem(TOKEN_KEY, value); } catch (_) {}
     }
     let token = readStoredToken();
     let commandQueue = Promise.resolve();
@@ -2516,6 +2534,20 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         if (trendsEl) trendsEl.innerHTML = "";
       }
     }
+    async function loginFromApp() {
+      const passwordEl = document.getElementById("password");
+      const pwd = passwordEl ? passwordEl.value : "";
+      const res = await fetch("/login", { method:"POST", body: pwd });
+      const text = await res.text();
+      if (!res.ok) {
+        statusEl.textContent = text || "Access denied";
+        return;
+      }
+      token = text.trim();
+      storeToken(token);
+      statusEl.textContent = "Unlocked";
+      await initApp();
+    }
     function isUnsetMqttIata(value) {
       return String(value || "").trim().toUpperCase() === "UNSET";
     }
@@ -2920,6 +2952,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
     }
     document.getElementById("runBtn").onclick = () => runCommand(document.getElementById("command").value);
+    document.getElementById("loginBtn").onclick = () => loginFromApp();
+    document.getElementById("password").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        loginFromApp();
+      }
+    });
     document.getElementById("openStatsPanelBtn").onclick = () => navigateToPage("/stats");
     document.getElementById("command").addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -3094,7 +3133,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         if (result.ok && match) {
           window.setTimeout(() => {
             window.location.href = match[0];
-          }, 3000);
+          }, 5000);
         } else {
           otaBtn.disabled = false;
         }
@@ -3160,6 +3199,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get advert.interval", "advertInterval", null, quiet),
           () => loadField("get flood.advert.interval", "floodInterval", null, quiet),
           () => loadField("get flood.max", "floodMax", null, quiet),
+          () => loadField("get flood.max.unscoped", "floodUnscopedMax", null, quiet),
           () => loadGhostNodeModeState(quiet)
         ]);
         if (!isCurrentPageLoad(generation)) return;
@@ -3211,7 +3251,7 @@ bool WebPanelServer::start() {
 
   httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
   config.httpd.max_open_sockets = 2;
-  config.httpd.max_uri_handlers = 8;
+  config.httpd.max_uri_handlers = 9;
   config.httpd.max_resp_headers = 4;
   config.httpd.backlog_conn = 2;
   config.httpd.recv_wait_timeout = 15;
@@ -3236,6 +3276,7 @@ bool WebPanelServer::start() {
   }
 
   httpd_uri_t index_uri = {.uri = "/", .method = HTTP_GET, .handler = &WebPanelServer::handleIndex, .user_ctx = &_route_context};
+  httpd_uri_t favicon_uri = {.uri = "/favicon.ico", .method = HTTP_GET, .handler = &WebPanelServer::handleFavicon, .user_ctx = &_route_context};
   httpd_uri_t app_uri = {.uri = "/app", .method = HTTP_GET, .handler = &WebPanelServer::handleApp, .user_ctx = &_route_context};
   httpd_uri_t stats_page_uri = {.uri = "/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStatsPage, .user_ctx = &_route_context};
   httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &WebPanelServer::handleLogin, .user_ctx = &_route_context};
@@ -3244,6 +3285,7 @@ bool WebPanelServer::start() {
   httpd_uri_t firmware_update_uri = {.uri = "/api/firmware-update", .method = HTTP_POST, .handler = &WebPanelServer::handleFirmwareUpdate, .user_ctx = &_route_context};
   httpd_uri_t stats_uri = {.uri = "/api/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStats, .user_ctx = &_route_context};
   httpd_register_uri_handler(_server, &index_uri);
+  httpd_register_uri_handler(_server, &favicon_uri);
   httpd_register_uri_handler(_server, &app_uri);
   httpd_register_uri_handler(_server, &stats_page_uri);
   httpd_register_uri_handler(_server, &login_uri);
@@ -3331,6 +3373,14 @@ esp_err_t WebPanelServer::handleIndex(httpd_req_t* req) {
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   return sendProgmemChunked(req, kWebPanelLoginHtml);
+}
+
+esp_err_t WebPanelServer::handleFavicon(httpd_req_t* req) {
+  httpd_resp_set_type(req, "image/png");
+  httpd_resp_set_hdr(req, "Cache-Control", "max-age=86400");
+  return httpd_resp_send(req,
+                         reinterpret_cast<const char*>(eastmesh_web_assets::kFaviconPng),
+                         eastmesh_web_assets::kFaviconPngLen);
 }
 
 esp_err_t WebPanelServer::handleHttpRedirect(httpd_req_t* req) {
