@@ -783,6 +783,7 @@ bool StatsHistory::restoreSummaryLog() {
     if (latest_file) {
       char line[384];
       size_t line_len = 0;
+      bool line_too_long = false;
       while (latest_file.available()) {
         const int raw = latest_file.read();
         if (raw < 0) {
@@ -797,10 +798,17 @@ bool StatsHistory::restoreSummaryLog() {
         }
         if (line_len + 1 < sizeof(line)) {
           line[line_len++] = ch;
+        } else {
+          line_too_long = true;
+          break;
         }
       }
       line[line_len] = 0;
       latest_file.close();
+      if (line_too_long) {
+        ARCHIVE_LOG("summary latest ignored: line too long path=%s", kSummaryLatestPath);
+        return false;
+      }
       HistorySample latest_sample{};
       if (line_len > 0 && parseSummaryLine(line, latest_sample)) {
         storeSample(latest_sample, false);
@@ -932,9 +940,10 @@ bool StatsHistory::restoreEventsLog() {
   }
 
   const size_t size = static_cast<size_t>(file.size());
-  const size_t start = (strcmp(events_restore_path, kEventsLatestPath) == 0)
-      ? 0
-      : ((size > kEventsRestoreWindowBytes) ? (size - kEventsRestoreWindowBytes) : 0);
+  const bool is_latest_events = strcmp(events_restore_path, kEventsLatestPath) == 0;
+  const size_t latest_events_window = _event_capacity * 160U;
+  const size_t restore_window = is_latest_events ? latest_events_window : kEventsRestoreWindowBytes;
+  const size_t start = (size > restore_window) ? (size - restore_window) : 0;
   if (start > 0 && !file.seek(start)) {
     file.close();
     return false;

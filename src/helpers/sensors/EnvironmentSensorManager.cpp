@@ -65,8 +65,10 @@ static Adafruit_AHTX0 AHTX0;
 #define TELEM_BME280_ADDRESS    0x76      // BME280 environmental sensor I2C address
 #endif
 #define TELEM_BME280_SEALEVELPRESSURE_HPA (1013.25)    // Atmospheric pressure at sea level
+#ifndef TBEAM_SUPREME_SX1262
 #include <Adafruit_BME280.h>
 static Adafruit_BME280 BME280;
+#endif
 #endif
 
 #if ENV_INCLUDE_BMP280
@@ -211,17 +213,138 @@ static RAK12500LocationProvider RAK12500_provider;
 #endif
 
 // ============================================================
-// I2C bus scanner
-// Probes every valid address and records which ones ACK.
+// I2C sensor probe
+// Probes only the compiled-in sensor addresses.
 // This runs before any sensor library is touched, so a missing
 // or misbehaving device cannot stall or crash the boot sequence.
 // ============================================================
 
-static void scanI2CBus(TwoWire* wire, bool found[128]) {
-  for (uint8_t addr = 0x08; addr < 0x78; addr++) {
-    wire->beginTransmission(addr);
-    found[addr] = (wire->endTransmission() == 0);
+static bool probeI2CAddress(TwoWire* wire, uint8_t addr) {
+  if (wire == nullptr) {
+    return false;
   }
+#if defined(ESP32)
+  wire->setTimeOut(20);
+#endif
+  wire->beginTransmission(addr);
+  return wire->endTransmission() == 0;
+}
+
+static bool readI2CRegister8(TwoWire* wire, uint8_t addr, uint8_t reg, uint8_t* value) {
+  if (wire == nullptr || value == nullptr) {
+    return false;
+  }
+  wire->beginTransmission(addr);
+  wire->write(reg);
+  if (wire->endTransmission(true) != 0) {
+    return false;
+  }
+  if (wire->requestFrom((uint8_t)addr, (uint8_t)1) != 1) {
+    return false;
+  }
+  *value = wire->read();
+  return true;
+}
+
+static bool readI2CBuffer(TwoWire* wire, uint8_t addr, uint8_t reg, uint8_t* buffer, size_t len) {
+  if (wire == nullptr || buffer == nullptr || len == 0) {
+    return false;
+  }
+  wire->beginTransmission(addr);
+  wire->write(reg);
+  if (wire->endTransmission(true) != 0) {
+    return false;
+  }
+  if (wire->requestFrom((uint8_t)addr, (uint8_t)len) != len) {
+    return false;
+  }
+  for (size_t i = 0; i < len; i++) {
+    buffer[i] = wire->read();
+  }
+  return true;
+}
+
+static bool writeI2CRegister8(TwoWire* wire, uint8_t addr, uint8_t reg, uint8_t value) {
+  if (wire == nullptr) {
+    return false;
+  }
+  wire->beginTransmission(addr);
+  wire->write(reg);
+  wire->write(value);
+  return wire->endTransmission(true) == 0;
+}
+
+#if defined(TBEAM_SUPREME_SX1262) && ENV_INCLUDE_BME280
+static void recoverBME280I2CBus(TwoWire* wire) {
+  if (wire == nullptr) {
+    return;
+  }
+#if defined(ESP32) && defined(PIN_BOARD_SDA) && defined(PIN_BOARD_SCL)
+  if (wire == &Wire) {
+    Wire.end();
+    delay(5);
+    Wire.begin(PIN_BOARD_SDA, PIN_BOARD_SCL);
+    Wire.setClock(100000);
+    delay(5);
+  }
+#endif
+}
+
+static bool readI2CRegister8WithRetry(TwoWire* wire, uint8_t addr, uint8_t reg, uint8_t* value) {
+  for (uint8_t attempt = 0; attempt < 20; attempt++) {
+    if (readI2CRegister8(wire, addr, reg, value)) {
+      return true;
+    }
+    if (attempt == 4) {
+      recoverBME280I2CBus(wire);
+    }
+    delay(5);
+  }
+  MESH_DEBUG_PRINTLN("BME280 read reg 0x%02X failed", reg);
+  return false;
+}
+
+static bool readI2CBufferWithRetry(TwoWire* wire, uint8_t addr, uint8_t reg, uint8_t* buffer, size_t len) {
+  for (uint8_t attempt = 0; attempt < 20; attempt++) {
+    if (readI2CBuffer(wire, addr, reg, buffer, len)) {
+      return true;
+    }
+    if (attempt == 4) {
+      recoverBME280I2CBus(wire);
+    }
+    delay(5);
+  }
+  MESH_DEBUG_PRINTLN("BME280 read buffer reg 0x%02X len=%u failed", reg, (unsigned)len);
+  return false;
+}
+
+static bool writeI2CRegister8WithRetry(TwoWire* wire, uint8_t addr, uint8_t reg, uint8_t value) {
+  if (wire == nullptr) {
+    return false;
+  }
+  uint8_t last_error = 0xFF;
+  for (uint8_t attempt = 0; attempt < 20; attempt++) {
+    wire->beginTransmission(addr);
+    wire->write(reg);
+    wire->write(value);
+    last_error = wire->endTransmission(true);
+    if (last_error == 0) {
+      return true;
+    }
+    if (attempt == 4) {
+      recoverBME280I2CBus(wire);
+    }
+    delay(5);
+  }
+  MESH_DEBUG_PRINTLN("BME280 write reg 0x%02X failed err=%u", reg, last_error);
+  return false;
+}
+#endif
+
+uint8_t boardDetectedI2CSensorAddress(const char* name) __attribute__((weak));
+uint8_t boardDetectedI2CSensorAddress(const char* name) {
+  (void)name;
+  return 0;
 }
 
 // ============================================================
@@ -269,8 +392,192 @@ static void query_bme680(uint8_t ch, uint8_t, CayenneLPP& lpp) {
 #endif
 
 #if ENV_INCLUDE_BME280
+#ifdef TBEAM_SUPREME_SX1262
+struct BME280Calibration {
+  uint16_t dig_T1;
+  int16_t dig_T2;
+  int16_t dig_T3;
+  uint16_t dig_P1;
+  int16_t dig_P2;
+  int16_t dig_P3;
+  int16_t dig_P4;
+  int16_t dig_P5;
+  int16_t dig_P6;
+  int16_t dig_P7;
+  int16_t dig_P8;
+  int16_t dig_P9;
+  uint8_t dig_H1;
+  int16_t dig_H2;
+  uint8_t dig_H3;
+  int16_t dig_H4;
+  int16_t dig_H5;
+  int8_t dig_H6;
+};
+
+static BME280Calibration BME280Cal;
+static TwoWire* BME280Wire = nullptr;
+static uint8_t BME280Address = 0;
+static int32_t BME280TFine = 0;
+
+static uint16_t u16le(const uint8_t* p) {
+  return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+
+static int16_t s16le(const uint8_t* p) {
+  return (int16_t)u16le(p);
+}
+
+static bool read_bme280_calibration(TwoWire* wire, uint8_t addr) {
+  uint8_t calib1[26] = {};
+  uint8_t calib2[7] = {};
+  if (!readI2CBufferWithRetry(wire, addr, 0x88, calib1, sizeof(calib1)) ||
+      !readI2CBufferWithRetry(wire, addr, 0xE1, calib2, sizeof(calib2))) {
+    return false;
+  }
+
+  BME280Cal.dig_T1 = u16le(&calib1[0]);
+  BME280Cal.dig_T2 = s16le(&calib1[2]);
+  BME280Cal.dig_T3 = s16le(&calib1[4]);
+  BME280Cal.dig_P1 = u16le(&calib1[6]);
+  BME280Cal.dig_P2 = s16le(&calib1[8]);
+  BME280Cal.dig_P3 = s16le(&calib1[10]);
+  BME280Cal.dig_P4 = s16le(&calib1[12]);
+  BME280Cal.dig_P5 = s16le(&calib1[14]);
+  BME280Cal.dig_P6 = s16le(&calib1[16]);
+  BME280Cal.dig_P7 = s16le(&calib1[18]);
+  BME280Cal.dig_P8 = s16le(&calib1[20]);
+  BME280Cal.dig_P9 = s16le(&calib1[22]);
+  BME280Cal.dig_H1 = calib1[25];
+  BME280Cal.dig_H2 = s16le(&calib2[0]);
+  BME280Cal.dig_H3 = calib2[2];
+  BME280Cal.dig_H4 = ((int16_t)((int8_t)calib2[3]) << 4) | (calib2[4] & 0x0F);
+  BME280Cal.dig_H5 = ((int16_t)((int8_t)calib2[5]) << 4) | (calib2[4] >> 4);
+  BME280Cal.dig_H6 = (int8_t)calib2[6];
+  return BME280Cal.dig_T1 != 0 && BME280Cal.dig_P1 != 0;
+}
+
+static float compensate_bme280_temperature(int32_t adc_T) {
+  int32_t var1 = ((((adc_T >> 3) - ((int32_t)BME280Cal.dig_T1 << 1))) * ((int32_t)BME280Cal.dig_T2)) >> 11;
+  int32_t var2 = (((((adc_T >> 4) - ((int32_t)BME280Cal.dig_T1)) * ((adc_T >> 4) - ((int32_t)BME280Cal.dig_T1))) >> 12) *
+                  ((int32_t)BME280Cal.dig_T3)) >> 14;
+  BME280TFine = var1 + var2;
+  return ((BME280TFine * 5 + 128) >> 8) / 100.0f;
+}
+
+static float compensate_bme280_pressure(int32_t adc_P) {
+  int64_t var1 = ((int64_t)BME280TFine) - 128000;
+  int64_t var2 = var1 * var1 * (int64_t)BME280Cal.dig_P6;
+  var2 = var2 + ((var1 * (int64_t)BME280Cal.dig_P5) << 17);
+  var2 = var2 + (((int64_t)BME280Cal.dig_P4) << 35);
+  var1 = ((var1 * var1 * (int64_t)BME280Cal.dig_P3) >> 8) + ((var1 * (int64_t)BME280Cal.dig_P2) << 12);
+  var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)BME280Cal.dig_P1) >> 33;
+  if (var1 == 0) {
+    return NAN;
+  }
+  int64_t p = 1048576 - adc_P;
+  p = (((p << 31) - var2) * 3125) / var1;
+  var1 = (((int64_t)BME280Cal.dig_P9) * (p >> 13) * (p >> 13)) >> 25;
+  var2 = (((int64_t)BME280Cal.dig_P8) * p) >> 19;
+  p = ((p + var1 + var2) >> 8) + (((int64_t)BME280Cal.dig_P7) << 4);
+  return (float)p / 256.0f;
+}
+
+static float compensate_bme280_humidity(int32_t adc_H) {
+  int32_t v_x1_u32r = BME280TFine - 76800;
+  v_x1_u32r = (((((adc_H << 14) - (((int32_t)BME280Cal.dig_H4) << 20) -
+                  (((int32_t)BME280Cal.dig_H5) * v_x1_u32r)) + 16384) >> 15) *
+                (((((((v_x1_u32r * ((int32_t)BME280Cal.dig_H6)) >> 10) *
+                     (((v_x1_u32r * ((int32_t)BME280Cal.dig_H3)) >> 11) + 32768)) >> 10) + 2097152) *
+                   ((int32_t)BME280Cal.dig_H2) + 8192) >> 14));
+  v_x1_u32r = v_x1_u32r - (((((v_x1_u32r >> 15) * (v_x1_u32r >> 15)) >> 7) * ((int32_t)BME280Cal.dig_H1)) >> 4);
+  v_x1_u32r = v_x1_u32r < 0 ? 0 : v_x1_u32r;
+  v_x1_u32r = v_x1_u32r > 419430400 ? 419430400 : v_x1_u32r;
+  return (v_x1_u32r >> 12) / 1024.0f;
+}
+
 static uint8_t init_bme280(TwoWire* wire, uint8_t addr) {
-  if (!BME280.begin(addr, wire)) return 0;
+  uint8_t chip_id = 0;
+  const bool chip_id_ok = readI2CRegister8WithRetry(wire, addr, 0xD0, &chip_id);
+  if (!chip_id_ok || chip_id != 0x60) {
+    MESH_DEBUG_PRINTLN("BME280 init failed chip ID 0x%02X", chip_id);
+    return 0;
+  }
+  if (!read_bme280_calibration(wire, addr)) {
+    MESH_DEBUG_PRINTLN("BME280 init failed calibration read");
+    return 0;
+  }
+  BME280Wire = wire;
+  BME280Address = addr;
+  writeI2CRegister8(wire, addr, 0xF2, 0x01); // humidity oversampling x1
+  writeI2CRegister8(wire, addr, 0xF5, 0x00); // filter off, standby 0.5 ms
+  return 1;
+}
+
+static void query_bme280(uint8_t ch, uint8_t, CayenneLPP& lpp) {
+  if (BME280Wire == nullptr || BME280Address == 0) {
+    return;
+  }
+  recoverBME280I2CBus(BME280Wire);
+  if (!writeI2CRegister8WithRetry(BME280Wire, BME280Address, 0xF2, 0x01) ||
+      !writeI2CRegister8WithRetry(BME280Wire, BME280Address, 0xF4, 0x25)) { // temp/pressure x1, forced mode
+    MESH_DEBUG_PRINTLN("BME280 query failed to start forced measurement");
+    return;
+  }
+
+  uint8_t status = 0;
+  bool measurement_done = false;
+  for (uint8_t attempt = 0; attempt < 20; attempt++) {
+    if (!readI2CRegister8WithRetry(BME280Wire, BME280Address, 0xF3, &status)) {
+      MESH_DEBUG_PRINTLN("BME280 query failed status read");
+      return;
+    }
+    if ((status & 0x08) == 0) {
+      measurement_done = true;
+      break;
+    }
+    delay(2);
+  }
+  if (!measurement_done) {
+    MESH_DEBUG_PRINTLN("BME280 query timed out waiting for measurement");
+    return;
+  }
+
+  uint8_t data[8] = {};
+  if (!readI2CBufferWithRetry(BME280Wire, BME280Address, 0xF7, data, sizeof(data))) {
+    MESH_DEBUG_PRINTLN("BME280 query failed data read");
+    return;
+  }
+  const int32_t adc_P = ((int32_t)data[0] << 12) | ((int32_t)data[1] << 4) | (data[2] >> 4);
+  const int32_t adc_T = ((int32_t)data[3] << 12) | ((int32_t)data[4] << 4) | (data[5] >> 4);
+  const int32_t adc_H = ((int32_t)data[6] << 8) | data[7];
+  if (adc_P == 0 || adc_T == 0) {
+    MESH_DEBUG_PRINTLN("BME280 query returned invalid raw sample p=%ld t=%ld h=%ld",
+                       (long)adc_P,
+                       (long)adc_T,
+                       (long)adc_H);
+    return;
+  }
+  const float temperature = compensate_bme280_temperature(adc_T);
+  const float pressure_pa = compensate_bme280_pressure(adc_P);
+  const float humidity = compensate_bme280_humidity(adc_H);
+  if (pressure_pa <= 0.0f) {
+    MESH_DEBUG_PRINTLN("BME280 query returned invalid pressure %.2f", pressure_pa);
+    return;
+  }
+  MESH_DEBUG_PRINTLN("BME280 sample temp=%.2f humidity=%.2f pressure=%.2f",
+                     temperature,
+                     humidity,
+                     pressure_pa / 100.0f);
+  lpp.addTemperature(ch, temperature);
+  lpp.addRelativeHumidity(ch, humidity);
+  lpp.addBarometricPressure(ch, pressure_pa / 100.0f);
+  lpp.addAltitude(ch, 44330.0f * (1.0f - powf((pressure_pa / 100.0f) / (float)TELEM_BME280_SEALEVELPRESSURE_HPA, 0.1903f)));
+}
+#else
+static uint8_t init_bme280(TwoWire* wire, uint8_t addr) {
+  if (!BME280.begin(addr, wire)) {
+    return 0;
+  }
   BME280.setSampling(Adafruit_BME280::MODE_FORCED,
                      Adafruit_BME280::SAMPLING_X1,
                      Adafruit_BME280::SAMPLING_X1,
@@ -287,6 +594,7 @@ static void query_bme280(uint8_t ch, uint8_t, CayenneLPP& lpp) {
     lpp.addAltitude(ch, BME280.readAltitude(TELEM_BME280_SEALEVELPRESSURE_HPA));
   }
 }
+#endif
 #endif
 
 #if ENV_INCLUDE_BMP280
@@ -630,31 +938,42 @@ bool EnvironmentSensorManager::begin() {
   Wire1.begin(ENV_PIN_SDA, ENV_PIN_SCL, 100000);
     #endif
   MESH_DEBUG_PRINTLN("Second I2C initialized on pins SDA: %d SCL: %d", ENV_PIN_SDA, ENV_PIN_SCL);
+  #elif defined(ESP32) && defined(PIN_BOARD_SDA) && defined(PIN_BOARD_SCL)
+  Wire.setClock(100000);
+  MESH_DEBUG_PRINTLN("I2C using board pins SDA: %d SCL: %d", PIN_BOARD_SDA, PIN_BOARD_SCL);
   #endif
-
-  // Scan the I2C bus before touching any sensor library.
-  bool detected[128] = {};
-  scanI2CBus(TELEM_WIRE, detected);
 
   // Walk the sensor table and initialize only detected devices.
   _active_sensor_count = 0;
   for (size_t i = 0; i < SENSOR_TABLE_SIZE && _active_sensor_count < MAX_ACTIVE_SENSORS; i++) {
     const SensorDef& def = SENSOR_TABLE[i];
-    if (!detected[def.address]) {
-      MESH_DEBUG_PRINTLN("%s not detected at I2C address %02X", def.name, def.address);
+    uint8_t address = def.address;
+    const uint8_t board_detected_address = boardDetectedI2CSensorAddress(def.name);
+    const bool board_detected = board_detected_address != 0;
+    if (board_detected) {
+      address = board_detected_address;
+      if (address == def.address) {
+        MESH_DEBUG_PRINTLN("%s already detected by board scan at I2C address %02X", def.name, address);
+      } else {
+        MESH_DEBUG_PRINTLN("%s already detected by board scan at I2C address %02X (configured %02X)", def.name, address, def.address);
+      }
+    }
+    if (!board_detected && !probeI2CAddress(TELEM_WIRE, address)) {
+      MESH_DEBUG_PRINTLN("%s not detected at I2C address %02X", def.name, address);
       continue;
     }
-    uint8_t n = def.init(TELEM_WIRE, def.address);
+    uint8_t n = def.init(TELEM_WIRE, address);
     if (n == 0) {
-      MESH_DEBUG_PRINTLN("%s found at %02X but failed to initialize", def.name, def.address);
+      MESH_DEBUG_PRINTLN("%s found at %02X but failed to initialize", def.name, address);
       continue;
     }
-    MESH_DEBUG_PRINTLN("Found %s at address: %02X", def.name, def.address);
+    MESH_DEBUG_PRINTLN("Found %s at address: %02X", def.name, address);
     for (uint8_t sub = 0; sub < n && _active_sensor_count < MAX_ACTIVE_SENSORS; sub++) {
       _active_sensors[_active_sensor_count++] = { def.query, sub };
     }
   }
 
+  MESH_DEBUG_PRINTLN("Environment sensors active: %d", _active_sensor_count);
   return true;
 }
 

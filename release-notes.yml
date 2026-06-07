@@ -152,6 +152,42 @@ releases:
         text: "Updated EastMesh custom CLI docs for the new `flood.max.advert` command."
     breaking_changes: []
 
+  - track: observer-eastmesh
+    version: "2026.6.2"
+    tag: "observer-eastmesh-v2026.6.2"
+    date: "2026-06-07"
+    previous_version: "2026.6.1"
+    summary: "Improves Observer boot reliability, T-Beam S3 Supreme telemetry, Wi-Fi/OTA persistence, and web-panel archive maintenance."
+    changes:
+      - type: fixed
+        area: board
+        text: "Fixed LilyGo T-Beam S3 Supreme BME280 detection and live telemetry by using the board-detected address, stop-based I2C reads, and board-specific I2C bus recovery before samples."
+      - type: fixed
+        area: web
+        text: "Changed live `/stats` sensor values to use the main-loop sensor snapshot instead of reading I2C sensors from the web request handler."
+      - type: fixed
+        area: wifi
+        text: "Improved boot-time Wi-Fi startup by starting Wi-Fi earlier on T-Beam S3 Supreme, remembering the last connected AP channel, and falling back to full scan if that channel is stale."
+      - type: fixed
+        area: wifi
+        text: "Added NVS-backed Wi-Fi preference recovery so SSID and password survive OTA updates even if the filesystem preference file is lost."
+      - type: fixed
+        area: wifi
+        text: "Hardened Wi-Fi retry handling so scan-mode connects are not interrupted early and failed attempts reset the ESP32 station state before retrying."
+      - type: fixed
+        area: cli
+        text: "Fixed `set wifi.powersaving none` returning an error when Wi-Fi power saving was already disabled."
+      - type: fixed
+        area: archive
+        text: "Bounded archive neighbour restore and history reads so large SD-card archive files no longer slow boot unnecessarily."
+      - type: added
+        area: web
+        text: "Added a web-panel and CLI SD purge action for clearing archive contents from supported SD-card targets."
+      - type: fixed
+        area: web
+        text: "Hardened OTA startup by binding before reporting success and falling back to alternate ports when port 80 is still being released."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -214,4 +250,40 @@ releases:
       - type: docs
         area: docs
         text: "Updated EastMesh custom CLI docs for the new `flood.max.advert` command."
+    breaking_changes: []
+
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.6.2"
+    tag: "observer-eastmesh-bridge-espnow-v2026.6.2"
+    date: "2026-06-07"
+    previous_version: "2026.6.1"
+    summary: "Applies the Observer boot, Wi-Fi/OTA persistence, telemetry, archive, and web-panel maintenance fixes to ESP-NOW bridge builds."
+    changes:
+      - type: fixed
+        area: board
+        text: "Fixed LilyGo T-Beam S3 Supreme BME280 detection and live telemetry by using the board-detected address, stop-based I2C reads, and board-specific I2C bus recovery before samples."
+      - type: fixed
+        area: web
+        text: "Changed live `/stats` sensor values to use the main-loop sensor snapshot instead of reading I2C sensors from the web request handler."
+      - type: fixed
+        area: wifi
+        text: "Improved boot-time Wi-Fi startup by starting Wi-Fi earlier on T-Beam S3 Supreme, remembering the last connected AP channel, and falling back to full scan if that channel is stale."
+      - type: fixed
+        area: wifi
+        text: "Added NVS-backed Wi-Fi preference recovery so SSID and password survive OTA updates even if the filesystem preference file is lost."
+      - type: fixed
+        area: wifi
+        text: "Hardened Wi-Fi retry handling so scan-mode connects are not interrupted early and failed attempts reset the ESP32 station state before retrying."
+      - type: fixed
+        area: cli
+        text: "Fixed `set wifi.powersaving none` returning an error when Wi-Fi power saving was already disabled."
+      - type: fixed
+        area: archive
+        text: "Bounded archive neighbour restore and history reads so large SD-card archive files no longer slow boot unnecessarily."
+      - type: added
+        area: web
+        text: "Added a web-panel and CLI SD purge action for clearing archive contents from supported SD-card targets."
+      - type: fixed
+        area: web
+        text: "Hardened OTA startup by binding before reporting success and falling back to alternate ports when port 80 is still being released."
     breaking_changes: []

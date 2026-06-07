@@ -48,6 +48,52 @@ void deassertChipSelect(int pin, uint8_t archive_cs_pin) {
   pinMode(static_cast<uint8_t>(pin), OUTPUT);
   digitalWrite(static_cast<uint8_t>(pin), HIGH);
 }
+
+bool removeArchivePath(FILESYSTEM* fs, const char* path, uint8_t depth, uint32_t& files_removed, uint32_t& dirs_removed) {
+  if (fs == nullptr || path == nullptr || path[0] == 0 || depth > 16) {
+    return false;
+  }
+
+  File entry = fs->open(path, FILE_READ);
+  if (!entry) {
+    return false;
+  }
+
+  if (!entry.isDirectory()) {
+    entry.close();
+    if (fs->remove(path)) {
+      files_removed++;
+      return true;
+    }
+    return false;
+  }
+
+  bool ok = true;
+  while (true) {
+    File child = entry.openNextFile(FILE_READ);
+    if (!child) {
+      break;
+    }
+
+    char child_path[160];
+    const int written = snprintf(child_path, sizeof(child_path), "%s", child.path());
+    child.close();
+    if (written <= 0 || static_cast<size_t>(written) >= sizeof(child_path) ||
+        !removeArchivePath(fs, child_path, depth + 1, files_removed, dirs_removed)) {
+      ok = false;
+    }
+  }
+  entry.close();
+
+  if (strcmp(path, "/") != 0) {
+    if (fs->rmdir(path)) {
+      dirs_removed++;
+    } else {
+      ok = false;
+    }
+  }
+  return ok;
+}
 #endif
 
 }  // namespace
@@ -211,6 +257,42 @@ FILESYSTEM* ArchiveStorage::getFS() {
   return &SD;
 #else
   return nullptr;
+#endif
+}
+
+bool ArchiveStorage::purge(uint32_t* files_removed, uint32_t* dirs_removed) {
+#if defined(ESP32)
+  if (!_mounted) {
+    return false;
+  }
+
+  prepareBusForArchive();
+  uint32_t removed_files = 0;
+  uint32_t removed_dirs = 0;
+  const bool ok = removeArchivePath(&SD, "/", 0, removed_files, removed_dirs);
+  if (!SD.exists(getFsStatsPath())) {
+    SD.mkdir(getFsStatsPath());
+  }
+  refreshCardInfo();
+  if (files_removed != nullptr) {
+    *files_removed = removed_files;
+  }
+  if (dirs_removed != nullptr) {
+    *dirs_removed = removed_dirs;
+  }
+  ARCHIVE_LOG("purged files=%lu dirs=%lu ok=%s",
+              static_cast<unsigned long>(removed_files),
+              static_cast<unsigned long>(removed_dirs),
+              ok ? "yes" : "no");
+  return ok;
+#else
+  if (files_removed != nullptr) {
+    *files_removed = 0;
+  }
+  if (dirs_removed != nullptr) {
+    *dirs_removed = 0;
+  }
+  return false;
 #endif
 }
 

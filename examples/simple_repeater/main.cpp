@@ -34,6 +34,11 @@ void setup() {
   delay(1000);
 
   board.begin();
+
+#if defined(TBEAM_SUPREME_SX1262)
+  sensors.begin();
+#endif
+
   archive.begin();
 
 #if defined(MESH_DEBUG) && defined(NRF52_PLATFORM)
@@ -90,7 +95,9 @@ void setup() {
 
   command[0] = 0;
 
+#if !defined(TBEAM_SUPREME_SX1262)
   sensors.begin();
+#endif
 
   the_mesh.begin(fs, &archive);
 

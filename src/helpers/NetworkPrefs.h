@@ -6,7 +6,8 @@
 struct NetworkPrefs {
   uint32_t magic;
   uint8_t wifi_powersave;
-  uint8_t reserved[3];
+  uint8_t wifi_channel;
+  uint8_t reserved[2];
   char wifi_ssid[33];
   char wifi_pwd[65];
 };
@@ -19,6 +20,7 @@ public:
                    const char* legacy_wifi_ssid = nullptr,
                    const char* legacy_wifi_pwd = nullptr);
   static bool save(FILESYSTEM* fs, const NetworkPrefs& prefs);
+  static constexpr uint32_t magicValue() { return kMagic; }
 
 private:
   static constexpr uint32_t kMagic = 0x4E455450;

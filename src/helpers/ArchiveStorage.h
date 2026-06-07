@@ -20,6 +20,7 @@ public:
   bool isAttempted() const { return _attempted; }
   bool isMounted() const { return _mounted; }
   bool hadMountFailure() const { return _mount_failed; }
+  bool purge(uint32_t* files_removed = nullptr, uint32_t* dirs_removed = nullptr);
 
   const char* getLogicalName() const { return "archive"; }
   const char* getLogicalStatsPath() const { return "archive:/stats"; }

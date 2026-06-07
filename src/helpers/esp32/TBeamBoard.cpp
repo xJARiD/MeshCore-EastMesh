@@ -5,6 +5,17 @@
 //#include <RadioLib.h>
 
 uint32_t deviceOnline = 0x00;
+static uint8_t detectedBME280Address = 0;
+
+uint8_t boardDetectedI2CSensorAddress(const char* name) {
+#ifdef MESH_DEBUG
+  if (name != nullptr && strcmp(name, "BME280") == 0 && (deviceOnline & (1UL << 7))) {
+    return detectedBME280Address;
+  }
+#endif
+  (void)name;
+  return 0;
+}
 
 bool pmuInterrupt;
 static void setPmuFlag()
@@ -40,6 +51,19 @@ void TBeamBoard::begin() {
 }
 
 #ifdef MESH_DEBUG
+static uint8_t readI2CRegister8(TwoWire* w, uint8_t addr, uint8_t reg)
+{
+    w->beginTransmission(addr);
+    w->write(reg);
+    if (w->endTransmission(false) != 0) {
+        return 0;
+    }
+    if (w->requestFrom((uint8_t)addr, (uint8_t)1) != 1) {
+        return 0;
+    }
+    return w->read();
+}
+
 void TBeamBoard::scanDevices(TwoWire *w)
 {
     uint8_t err, addr;
@@ -56,8 +80,15 @@ void TBeamBoard::scanDevices(TwoWire *w)
             switch (addr) {
             case 0x77:
             case 0x76:
-                Serial.println("\tFound BME280 Sensor");
-                deviceOnline |= BME280_ONLINE;
+                {
+                const uint8_t chipId = readI2CRegister8(w, addr, 0xD0);
+                if (chipId == 0x60) {
+                    Serial.print("\tFound BME280 Sensor at address 0x");
+                    Serial.println(addr, HEX);
+                    detectedBME280Address = addr;
+                    deviceOnline |= BME280_ONLINE;
+                }
+                }
                 break;
             case 0x34:
                 Serial.println("\tFound AXP192/AXP2101 PMU");

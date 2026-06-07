@@ -3,6 +3,10 @@
 #include <helpers/TxtDataHelpers.h>
 #include <string.h>
 
+#if defined(ESP_PLATFORM)
+  #include <Preferences.h>
+#endif
+
 namespace {
 
 struct LegacyWebPrefsV1 {
@@ -47,12 +51,48 @@ bool loadLegacyWebWifiPrefs(FILESYSTEM* fs, NetworkPrefs& prefs) {
   return true;
 }
 
+#if defined(ESP_PLATFORM)
+bool loadNvsNetworkPrefs(NetworkPrefs& prefs) {
+  Preferences nvs;
+  if (!nvs.begin("eastmesh-net", true)) {
+    return false;
+  }
+  NetworkPrefs stored{};
+  const size_t read = nvs.getBytes("prefs", &stored, sizeof(stored));
+  nvs.end();
+  if (read != sizeof(stored) || stored.magic != NetworkPrefsStore::magicValue()) {
+    return false;
+  }
+  prefs = stored;
+  return true;
+}
+
+bool saveNvsNetworkPrefs(const NetworkPrefs& prefs) {
+  Preferences nvs;
+  if (!nvs.begin("eastmesh-net", false)) {
+    return false;
+  }
+  const size_t written = nvs.putBytes("prefs", &prefs, sizeof(prefs));
+  nvs.end();
+  return written == sizeof(prefs);
+}
+#else
+bool loadNvsNetworkPrefs(NetworkPrefs&) {
+  return false;
+}
+
+bool saveNvsNetworkPrefs(const NetworkPrefs&) {
+  return true;
+}
+#endif
+
 }  // namespace
 
 void NetworkPrefsStore::setDefaults(NetworkPrefs& prefs) {
   memset(&prefs, 0, sizeof(prefs));
   prefs.magic = kMagic;
   prefs.wifi_powersave = 0;
+  prefs.wifi_channel = 0;
 }
 
 bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
@@ -61,10 +101,15 @@ bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
                              const char* legacy_wifi_pwd) {
   setDefaults(prefs);
   if (fs == nullptr) {
+    loadNvsNetworkPrefs(prefs);
     return false;
   }
 
   if (!fs->exists(kFilename)) {
+    if (loadNvsNetworkPrefs(prefs)) {
+      save(fs, prefs);
+      return true;
+    }
     prefs.wifi_powersave = legacy_wifi_powersave <= 2 ? legacy_wifi_powersave : 0;
     if (legacy_wifi_ssid != nullptr) {
       StrHelper::strncpy(prefs.wifi_ssid, legacy_wifi_ssid, sizeof(prefs.wifi_ssid));
@@ -94,6 +139,10 @@ bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
 
   if (!ok || persisted.magic != kMagic) {
     fs->remove(kFilename);
+    if (loadNvsNetworkPrefs(prefs)) {
+      save(fs, prefs);
+      return true;
+    }
     save(fs, prefs);
     return false;
   }
@@ -102,15 +151,35 @@ bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
   if (prefs.wifi_powersave > 2) {
     prefs.wifi_powersave = 0;
   }
+  if (prefs.wifi_channel < 1 || prefs.wifi_channel > 14) {
+    prefs.wifi_channel = 0;
+  }
+  bool repaired = false;
+  if (prefs.wifi_ssid[0] == 0 && legacy_wifi_ssid != nullptr && legacy_wifi_ssid[0] != 0) {
+    StrHelper::strncpy(prefs.wifi_ssid, legacy_wifi_ssid, sizeof(prefs.wifi_ssid));
+    prefs.wifi_channel = 0;
+    repaired = true;
+  }
+  if (prefs.wifi_pwd[0] == 0 && legacy_wifi_pwd != nullptr && legacy_wifi_pwd[0] != 0) {
+    StrHelper::strncpy(prefs.wifi_pwd, legacy_wifi_pwd, sizeof(prefs.wifi_pwd));
+    prefs.wifi_channel = 0;
+    repaired = true;
+  }
+  if (repaired) {
+    save(fs, prefs);
+  } else {
+    saveNvsNetworkPrefs(prefs);
+  }
   return true;
 }
 
 bool NetworkPrefsStore::save(FILESYSTEM* fs, const NetworkPrefs& prefs) {
+  const bool nvs_ok = saveNvsNetworkPrefs(prefs);
   if (fs == nullptr) {
-    return false;
+    return nvs_ok;
   }
   if (fs->exists(kFilename) && !fs->remove(kFilename)) {
-    return false;
+    return nvs_ok;
   }
 #if defined(RP2040_PLATFORM)
   File file = fs->open(kFilename, "w");
@@ -118,9 +187,9 @@ bool NetworkPrefsStore::save(FILESYSTEM* fs, const NetworkPrefs& prefs) {
   File file = fs->open(kFilename, "w", true);
 #endif
   if (!file) {
-    return false;
+    return nvs_ok;
   }
   bool ok = file.write(reinterpret_cast<const uint8_t*>(&prefs), sizeof(prefs)) == sizeof(prefs);
   file.close();
-  return ok;
+  return ok && nvs_ok;
 }

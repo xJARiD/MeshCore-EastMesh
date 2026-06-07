@@ -348,13 +348,20 @@ On mobile:
 
 1. Press `Start OTA`.
 2. Confirm the action.
-3. The panel starts OTA, waits briefly for the OTA HTTP listener to take over port `80`, then opens the returned `http://.../update` URL.
+3. The panel starts OTA, waits for the OTA HTTP listener to take over port `80`, then opens the returned `http://.../update` URL.
 4. The local HTTP redirect listener on port `80` is released so OTA can take over that port.
 5. Continue with your normal OTA workflow.
 
 If the repeater is already connected to Wi-Fi, OTA uses the existing LAN address. If Wi-Fi is not connected, the repeater starts the `MeshCore-OTA` access point and returns that OTA address instead.
+If the old redirect listener has not fully released port `80`, the OTA listener retries for up to about 30 seconds before giving up.
 
 If an older build sends you through a strange redirect after `start ota`, use the web `Start OTA` button to begin the upgrade. This redirect issue is fixed in `observer-eastmesh-v1.3.11`.
+
+### Purge SD
+
+`Purge SD` appears as red inline text next to `Archive Used` in the `/stats` Services card. It asks for confirmation, then runs the authenticated `purge sd` command.
+
+This deletes files and directories from the mounted SD card archive, then recreates the empty `/stats` archive directory for continued runtime capture. It does not erase the internal repeater filesystem, identity, prefs, regions, radio settings, or MQTT settings.
 
 ### Use Historical Stats
 

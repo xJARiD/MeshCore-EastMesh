@@ -142,10 +142,12 @@ OK
 - `get web`
 - `get web.status`: shows whether the local HTTPS panel is available.
 - `get web.stats.status`: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-active boards also record per-minute satellites samples for the `/stats` history view. If archive access drops while stats remain enabled, the repeater retries the SD mount periodically.
+- At boot, archive-backed stats restore uses bounded reads of the latest summary, events, and neighbour snapshots so malformed or unexpectedly large archive files do not delay MQTT or web startup.
 - `set web on|off`
 - `set.web on|off`: enables or disables the local HTTPS panel.
 - `set web.stats on|off`
 - `set.web.stats on|off`: enables or disables the dedicated `/stats` page and historical stats collection.
+- `purge sd`: deletes files and directories from the mounted SD card archive, then recreates the empty `/stats` archive directory so runtime stats capture can continue. It does not erase the internal repeater filesystem or stored settings.
 
 ### Runtime Diagnostics
 
@@ -204,6 +206,8 @@ Notes:
 - commands run with the same care as if you typed them into the repeater CLI directly
 - this is intended for local admin use on a trusted network
 - `start ota` releases the local HTTP redirect listener on port `80` so the OTA HTTP listener can take over without stopping the rest of the repeater services, regardless of whether the command is run from the web panel, serial CLI, or a remote companion/app CLI session
+- if the old redirect listener has not fully released port `80`, the OTA listener retries for up to about 30 seconds before giving up
+- the web `Purge SD` button runs `purge sd` after browser confirmation
 - `start ota` uses the repeater's existing Wi-Fi address when already connected, or starts the `MeshCore-OTA` access point when Wi-Fi is not connected
 - the `/app` Regions shortcut runs the existing MeshCore region commands in sequence: `region put au`, `region put au-STATE`, `region allowf au`, `region allowf au-STATE`, then `region save`
 

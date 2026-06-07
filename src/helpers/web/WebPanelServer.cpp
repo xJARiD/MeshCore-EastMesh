@@ -514,6 +514,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     :root[data-theme="dark"] .metric { background:rgba(0,0,0,.16); }
     .metric-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
     .metric-value { margin-top:4px; font-size:16px; font-weight:700; color:var(--text); }
+    .metric-value.with-action { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .metric-text-action { width:auto; min-height:0; padding:0; border:none; background:transparent; color:var(--status-red); font:inherit; font-size:12px; font-weight:700; line-height:1.2; text-decoration:underline; }
+    .metric-text-action:hover { background:transparent; color:var(--status-red); text-decoration:none; }
     .events-table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:12px; }
     .events-table { width:100%; border-collapse:collapse; }
     .events-table th, .events-table td { padding:10px 12px; text-align:left; font-size:13px; }
@@ -1858,10 +1861,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         <div class="meter"><div class="meter-fill${tone ? " " + tone : ""}" style="width:${pct}%;${invertFill ? "margin-left:auto;" : ""}"></div></div>
       </div>`;
     }
-    function renderMetric(label, value) {
+    function renderMetric(label, value, actionHtml = "") {
+      const valueClass = actionHtml ? "metric-value with-action" : "metric-value";
       return `<div class="metric">
         <div class="metric-label">${escapeHtml(label)}</div>
-        <div class="metric-value">${escapeHtml(value)}</div>
+        <div class="${valueClass}"><span>${escapeHtml(value)}</span>${actionHtml}</div>
       </div>`;
     }
     function hasMetricValue(value) {
@@ -1874,7 +1878,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (!items.length) return "";
       const classes = ["metric-grid"];
       if (gridClass) classes.push(gridClass);
-      return `<div class="${classes.join(" ")}">${items.map((item) => renderMetric(item.label, item.value)).join("")}</div>`;
+      return `<div class="${classes.join(" ")}">${items.map((item) => renderMetric(item.label, item.value, item.actionHtml || "")).join("")}</div>`;
     }
     function renderMissingCard(title, message) {
       return `<section class="hud-card">
@@ -2080,7 +2084,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         metrics.push(
           { label:"Card", value:archive.type || "--" },
           { label:"Archive Total", value:formatArchiveGigabytes(archiveTotal) },
-          { label:"Archive Used", value:formatArchiveUsed(archiveUsed) },
+          { label:"Archive Used", value:formatArchiveUsed(archiveUsed), actionHtml:'<button type="button" class="metric-text-action" data-action="purge-sd">Purge SD</button>' },
           { label:"Archive Free", value:archiveTotal > 0 ? (formatArchiveGigabytes(archiveFree) + " (" + archiveFreePct + "%)") : "--" }
         );
       }
@@ -2493,8 +2497,29 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const sensors = summaryPayload && summaryPayload.sensors ? summaryPayload.sensors : null;
       const gpsEnabled = !!(sensors && sensors.gps_enabled === true);
       const order = ["battery", "memory", "signal", "noise_floor", "packets"];
+      if (sensors && Number.isFinite(sensors.supply_voltage_v)) {
+        order.push("voltage");
+      }
+      if (sensors && Number.isFinite(sensors.sensor_temp_c)) {
+        order.push("sensor_temp");
+      }
+      if (sensors && Number.isFinite(sensors.humidity_pct)) {
+        order.push("humidity");
+      }
+      if (sensors && Number.isFinite(sensors.pressure_hpa)) {
+        order.push("pressure");
+      }
+      if (sensors && Number.isFinite(sensors.pressure_altitude_m)) {
+        order.push("pressure_altitude");
+      }
+      if (sensors && Number.isFinite(sensors.mcu_temp_c)) {
+        order.push("mcu_temp");
+      }
       if (gpsEnabled) {
         order.push("gps_satellites");
+      }
+      if (sensors && Number.isFinite(sensors.gps_altitude_m)) {
+        order.push("gps_altitude");
       }
       return order;
     }
@@ -2702,10 +2727,19 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return false;
       }
       try {
-        await fetchJson("/api/session");
+        const res = await fetch("/api/session", { headers:{ "X-Auth-Token": token } });
+        if (res.status === 401) {
+          redirectToLogin();
+          return false;
+        }
+        if (!res.ok) {
+          statusEl.textContent = "Web panel reconnecting...";
+          return null;
+        }
         return true;
-      } catch (_) {
-        return false;
+      } catch (err) {
+        statusEl.textContent = "Web panel reconnecting...";
+        return null;
       }
     }
 	    function getLetsmeshMode() {
@@ -3139,6 +3173,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         }
       }
     };
+    document.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!target || !target.matches || !target.matches('[data-action="purge-sd"]')) return;
+      if (confirm("Purge the SD card archive now? This deletes all files on the mounted SD card.")) {
+        await runCommand("purge sd");
+        if (isStatsPage) {
+          await loadStatsPage(nextPageLoadGeneration());
+        }
+      }
+    });
     document.getElementById("refreshPageBtn").onclick = async () => {
       const generation = nextPageLoadGeneration();
       if (isStatsPage) {
@@ -3157,10 +3201,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       mqttIataLoaded = false;
       refreshMqttIataWarning();
-      if (!await validateSession()) {
+      const sessionOk = await validateSession();
+      if (sessionOk === false) {
         return;
       }
       showAuthedUi(true);
+      if (sessionOk === null) {
+        return;
+      }
       if (isStatsPage) {
         try {
           await loadStatsPage(generation);
@@ -3317,7 +3365,7 @@ bool WebPanelServer::start() {
     WEB_PANEL_LOG("redirect server start failed rc=0x%x", static_cast<unsigned>(rc));
   }
 
-  WEB_PANEL_LOG("server started on https://%s/", WiFi.localIP().toString().c_str());
+  WEB_PANEL_LOG("server started t=%lu on https://%s/", static_cast<unsigned long>(millis()), WiFi.localIP().toString().c_str());
   return true;
 }
 

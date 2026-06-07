@@ -46,5 +46,6 @@ private:
   bool _wifi_started;
   bool _sntp_started;
   bool _have_time_sync;
+  int _last_wifi_status;
   unsigned long _last_wifi_attempt;
 };

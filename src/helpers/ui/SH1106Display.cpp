@@ -11,7 +11,12 @@ bool SH1106Display::i2c_probe(TwoWire &wire, uint8_t addr)
 
 bool SH1106Display::begin()
 {
-  return display.begin(DISPLAY_ADDRESS, true) && i2c_probe(Wire, DISPLAY_ADDRESS);
+  const bool started = display.begin(DISPLAY_ADDRESS, true);
+#if defined(ESP32) && defined(TBEAM_SUPREME_SX1262) && defined(PIN_BOARD_SDA) && defined(PIN_BOARD_SCL)
+  Wire.begin(PIN_BOARD_SDA, PIN_BOARD_SCL);
+  Wire.setClock(100000);
+#endif
+  return started && i2c_probe(Wire, DISPLAY_ADDRESS);
 }
 
 void SH1106Display::turnOn()

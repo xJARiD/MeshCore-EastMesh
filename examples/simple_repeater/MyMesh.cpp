@@ -1216,6 +1216,7 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _archive_neighbours_dirty = false;
   _battery_sample_valid = false;
   _battery_mv_cache = 0;
+  _web_sensor_snapshot_valid = false;
   region_load_active = false;
   memset(&_stats_state, 0, sizeof(_stats_state));
 
@@ -1332,6 +1333,11 @@ void MyMesh::begin(FILESYSTEM *fs, ArchiveStorage* archive) {
   web.setCommandRunner(this);
   web.setNetworkStateProvider(&network);
   web.begin(_fs);
+#if defined(TBEAM_SUPREME_SX1262)
+  if (web.isWebEnabled()) {
+    network.loop(true);
+  }
+#endif
   _stats_history.begin(web.isWebStatsEnabled(), _archive);
   if (web.isWebStatsEnabled() && !_stats_history.isLiveOnly() && _archive != nullptr && _archive->isMounted()) {
     restoreArchiveNeighbours();
@@ -1353,6 +1359,11 @@ void MyMesh::begin(FILESYSTEM *fs, ArchiveStorage* archive) {
   mqtt.setNetworkStateProvider(&network);
 #endif
   mqtt.begin(_fs);
+#if defined(ESP_PLATFORM) && defined(TBEAM_SUPREME_SX1262)
+  if (mqtt.isActive()) {
+    network.loop(true);
+  }
+#endif
 #endif
 
   radio_driver.setParams(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
@@ -1578,6 +1589,41 @@ void MyMesh::formatMemoryReply(char *reply, size_t reply_size) {
   StatsFormatHelper::formatMemoryStats(reply, reply_size);
 }
 
+bool MyMesh::purgeSdCard(char* reply, size_t reply_size) {
+  if (reply != nullptr && reply_size > 0) {
+    reply[0] = 0;
+  }
+  if (_archive == nullptr || !_archive->isSupported()) {
+    if (reply != nullptr && reply_size > 0) {
+      snprintf(reply, reply_size, "Err - SD archive unsupported");
+    }
+    return false;
+  }
+  if (!_archive->isMounted() && !_archive->recover()) {
+    if (reply != nullptr && reply_size > 0) {
+      snprintf(reply, reply_size, "Err - SD archive unavailable");
+    }
+    return false;
+  }
+
+  uint32_t files_removed = 0;
+  uint32_t dirs_removed = 0;
+  if (!_archive->purge(&files_removed, &dirs_removed)) {
+    if (reply != nullptr && reply_size > 0) {
+      snprintf(reply, reply_size, "Err - SD purge failed");
+    }
+    return false;
+  }
+
+  _archive_neighbours_dirty = true;
+  if (reply != nullptr && reply_size > 0) {
+    snprintf(reply, reply_size, "OK - SD purged files:%lu dirs:%lu",
+             static_cast<unsigned long>(files_removed),
+             static_cast<unsigned long>(dirs_removed));
+  }
+  return true;
+}
+
 size_t MyMesh::getNeighbourCount() const {
 #if MAX_NEIGHBOURS
   size_t count = 0;
@@ -1618,10 +1664,21 @@ bool MyMesh::restoreArchiveNeighbours() {
     return false;
   }
 
+  const size_t max_restore_bytes = static_cast<size_t>(MAX_NEIGHBOURS) * 128U;
+  const size_t file_size = static_cast<size_t>(file.size());
+  if (file_size > max_restore_bytes) {
+    const size_t start = file_size - max_restore_bytes;
+    if (!file.seek(start)) {
+      file.close();
+      return false;
+    }
+  }
+
   memset(neighbours, 0, sizeof(neighbours));
   char line[128];
   size_t line_len = 0;
   size_t restored = 0;
+  bool skip_partial = file_size > max_restore_bytes;
   while (file.available()) {
     const int raw = file.read();
     if (raw < 0) {
@@ -1629,6 +1686,12 @@ bool MyMesh::restoreArchiveNeighbours() {
     }
 
     const char ch = static_cast<char>(raw);
+    if (skip_partial) {
+      if (ch == '\n') {
+        skip_partial = false;
+      }
+      continue;
+    }
     if (ch == '\r') {
       continue;
     }
@@ -1891,6 +1954,8 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
     if (!live_stats_headroom_low) {
       const uint16_t battery_mv = getBatteryMilliVolts();
       WebSensorSnapshot sensor_snapshot = collectWebSensorSnapshot(board, sensors, battery_mv);
+      _web_sensor_snapshot = sensor_snapshot;
+      _web_sensor_snapshot_valid = true;
       HistorySample sample{};
       sample.epoch_secs = getRTCClock()->getCurrentTime();
       sample.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
@@ -2211,6 +2276,8 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
              static_cast<unsigned>(_stats_history.getEventCount()),
              static_cast<unsigned>(_stats_history.getEventCapacity()),
              (_archive != nullptr && _archive->isMounted()) ? "mounted" : "unavailable");
+  } else if (strcmp(command, "purge sd") == 0) {
+    purgeSdCard(reply, 160);
 #endif
 #if defined(TBEAM_1W)
   } else if (strcmp(command, "get fan") == 0) {
@@ -2586,7 +2653,15 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   const int battery_display_pct =
       (battery_pct >= 0) ? std::max(0, std::min(100, battery_pct))
                          : clampBatteryPercentFromRange(battery_mv, battery_min_mv, battery_max_mv);
-  const WebSensorSnapshot sensor_snapshot = collectWebSensorSnapshot(board, sensors, battery_mv);
+  WebSensorSnapshot sensor_snapshot;
+  if (_web_sensor_snapshot_valid) {
+    sensor_snapshot = _web_sensor_snapshot;
+    sensor_snapshot.has_battery = true;
+    sensor_snapshot.battery_mv = battery_mv;
+  } else {
+    sensor_snapshot.has_battery = true;
+    sensor_snapshot.battery_mv = battery_mv;
+  }
   const bool archive_available = (_archive != nullptr) && _archive->isMounted();
 #ifdef WITH_MQTT_UPLINK
   const bool mqtt_connected = mqtt.isAnyBrokerConnected();

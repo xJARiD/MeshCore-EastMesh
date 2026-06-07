@@ -14,7 +14,12 @@ namespace {
 #if defined(ESP_PLATFORM)
 constexpr unsigned long kWifiRetryMillis = 15000;
 constexpr unsigned long kWifiConnectTimeoutMillis = 45000;
+constexpr unsigned long kWifiChannelHintTimeoutMillis = 7000;
 constexpr time_t kMinSaneEpoch = 1735689600;  // 2025-01-01T00:00:00Z
+
+bool isValidWifiChannel(uint8_t channel) {
+  return channel >= 1 && channel <= 14;
+}
 
 int getWifiQualityPercent(int rssi_dbm) {
   if (rssi_dbm <= -100) {
@@ -43,7 +48,7 @@ const char* getWifiQualityLabel(int rssi_dbm) {
 }  // namespace
 
 NetworkService::NetworkService()
-    : _fs(nullptr), _prefs{}, _wifi_started(false), _sntp_started(false), _have_time_sync(false), _last_wifi_attempt(0) {
+    : _fs(nullptr), _prefs{}, _wifi_started(false), _sntp_started(false), _have_time_sync(false), _last_wifi_status(-1), _last_wifi_attempt(0) {
   NetworkPrefsStore::setDefaults(_prefs);
 }
 
@@ -53,6 +58,12 @@ void NetworkService::begin(FILESYSTEM* fs,
                            const char* legacy_wifi_pwd) {
   _fs = fs;
   NetworkPrefsStore::load(_fs, _prefs, legacy_wifi_powersave, legacy_wifi_ssid, legacy_wifi_pwd);
+#if defined(ESP_PLATFORM)
+  Serial.printf("[BOOT] wifi prefs powersave=%s channel=%u ssid=%s\n",
+                getPowerSaveLabel(_prefs.wifi_powersave),
+                _prefs.wifi_channel,
+                _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-");
+#endif
 }
 
 void NetworkService::end() {
@@ -65,6 +76,7 @@ void NetworkService::end() {
   _wifi_started = false;
   _sntp_started = false;
   _have_time_sync = false;
+  _last_wifi_status = -1;
   _last_wifi_attempt = 0;
 }
 
@@ -86,6 +98,9 @@ bool NetworkService::setWifiSSID(const char* ssid) {
     return false;
   }
   StrHelper::strncpy(_prefs.wifi_ssid, ssid, sizeof(_prefs.wifi_ssid));
+#if defined(ESP_PLATFORM)
+  _prefs.wifi_channel = 0;
+#endif
   bool ok = savePrefs();
   reconnectWifi();
   return ok;
@@ -96,6 +111,9 @@ bool NetworkService::setWifiPassword(const char* pwd) {
     return false;
   }
   StrHelper::strncpy(_prefs.wifi_pwd, pwd, sizeof(_prefs.wifi_pwd));
+#if defined(ESP_PLATFORM)
+  _prefs.wifi_channel = 0;
+#endif
   bool ok = savePrefs();
   reconnectWifi();
   return ok;
@@ -106,22 +124,41 @@ bool NetworkService::setWifiPowerSave(const char* mode) {
     return false;
   }
 
+  char normalized[8];
+  size_t len = 0;
+  while (*mode == ' ' || *mode == '\t') {
+    mode++;
+  }
+  while (len < sizeof(normalized) - 1) {
+    char c = mode[len];
+    if (c == 0 || c == '\r' || c == '\n' || c == ' ' || c == '\t') {
+      break;
+    }
+    normalized[len] = c;
+    len++;
+  }
+  normalized[len] = 0;
+
   uint8_t next_mode;
-  if (strcmp(mode, "none") == 0) {
+  if (strcmp(normalized, "none") == 0) {
     next_mode = 0;
-  } else if (strcmp(mode, "min") == 0) {
+  } else if (strcmp(normalized, "min") == 0) {
     next_mode = 1;
-  } else if (strcmp(mode, "max") == 0) {
+  } else if (strcmp(normalized, "max") == 0) {
     next_mode = 2;
   } else {
     return false;
+  }
+
+  if (_prefs.wifi_powersave == next_mode) {
+    return true;
   }
 
   _prefs.wifi_powersave = next_mode;
   bool ok = savePrefs();
 #if defined(ESP_PLATFORM)
   if (_wifi_started) {
-    ok = WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave)) && ok;
+    WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
   }
 #endif
   return ok;
@@ -244,6 +281,7 @@ void NetworkService::ensureWifi(bool network_required) {
       _wifi_started = false;
       _sntp_started = false;
       _have_time_sync = false;
+      _last_wifi_status = -1;
     }
     return;
   }
@@ -253,15 +291,56 @@ void NetworkService::ensureWifi(bool network_required) {
     return;
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
+  wl_status_t status = WiFi.status();
+  if (static_cast<int>(status) != _last_wifi_status) {
+    _last_wifi_status = static_cast<int>(status);
+    if (status == WL_CONNECTED) {
+      const int connected_channel = WiFi.channel();
+      Serial.printf("[BOOT] wifi connected t=%lu ip=%s rssi=%d channel=%d\n",
+                    static_cast<unsigned long>(millis()),
+                    WiFi.localIP().toString().c_str(),
+                    WiFi.RSSI(),
+                    connected_channel);
+      if (connected_channel > 0 && connected_channel <= 14 && _prefs.wifi_channel != connected_channel) {
+        _prefs.wifi_channel = static_cast<uint8_t>(connected_channel);
+        Serial.printf("[BOOT] wifi learned channel=%u save=%s\n",
+                      _prefs.wifi_channel,
+                      savePrefs() ? "ok" : "failed");
+      }
+    }
+  }
+
+  if (status == WL_CONNECTED) {
     return;
   }
 
   unsigned long now_ms = millis();
-  wl_status_t status = WiFi.status();
   if (_wifi_started) {
-    if (_last_wifi_attempt != 0 && status == WL_IDLE_STATUS && now_ms - _last_wifi_attempt < kWifiConnectTimeoutMillis) {
+    if (isValidWifiChannel(_prefs.wifi_channel) &&
+        _last_wifi_attempt != 0 &&
+        now_ms - _last_wifi_attempt >= kWifiChannelHintTimeoutMillis) {
+      Serial.printf("[BOOT] wifi channel hint timeout t=%lu channel=%u\n",
+                    static_cast<unsigned long>(millis()),
+                    _prefs.wifi_channel);
+      _prefs.wifi_channel = 0;
+      savePrefs();
+      WiFi.disconnect(false, false);
+      _last_wifi_attempt = 0;
+    }
+    if (_last_wifi_attempt != 0 && now_ms - _last_wifi_attempt < kWifiConnectTimeoutMillis) {
       return;
+    }
+    if (_last_wifi_attempt != 0) {
+      Serial.printf("[BOOT] wifi timeout t=%lu code=%d retry\n",
+                    static_cast<unsigned long>(millis()),
+                    static_cast<int>(status));
+      WiFi.disconnect(false, false);
+      WiFi.mode(WIFI_OFF);
+      delay(100);
+      _wifi_started = false;
+      _sntp_started = false;
+      _have_time_sync = false;
+      _last_wifi_status = -1;
     }
     if (now_ms - _last_wifi_attempt < kWifiRetryMillis) {
       return;
@@ -272,10 +351,17 @@ void NetworkService::ensureWifi(bool network_required) {
     WiFi.mode(WIFI_STA);
     WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
     _wifi_started = true;
+    Serial.printf("[BOOT] wifi start t=%lu\n", static_cast<unsigned long>(millis()));
   }
 
   _last_wifi_attempt = now_ms;
-  WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd);
+  if (isValidWifiChannel(_prefs.wifi_channel)) {
+    WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd, _prefs.wifi_channel);
+    Serial.printf("[BOOT] wifi begin t=%lu channel=%u\n", static_cast<unsigned long>(millis()), _prefs.wifi_channel);
+  } else {
+    WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd);
+    Serial.printf("[BOOT] wifi begin t=%lu channel=scan\n", static_cast<unsigned long>(millis()));
+  }
 }
 
 void NetworkService::updateTimeSync() {
