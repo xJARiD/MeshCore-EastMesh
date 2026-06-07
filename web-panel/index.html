@@ -740,6 +740,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#purge-sd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purge SD
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#use-historical-stats" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1323,6 +1334,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#purge-sd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purge SD
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#use-historical-stats" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1784,12 +1806,16 @@
 <ol>
 <li>Press <code>Start OTA</code>.</li>
 <li>Confirm the action.</li>
-<li>The panel starts OTA, waits briefly for the OTA HTTP listener to take over port <code>80</code>, then opens the returned <code>http://.../update</code> URL.</li>
+<li>The panel starts OTA, waits for the OTA HTTP listener to take over port <code>80</code>, then opens the returned <code>http://.../update</code> URL.</li>
 <li>The local HTTP redirect listener on port <code>80</code> is released so OTA can take over that port.</li>
 <li>Continue with your normal OTA workflow.</li>
 </ol>
-<p>If the repeater is already connected to Wi-Fi, OTA uses the existing LAN address. If Wi-Fi is not connected, the repeater starts the <code>MeshCore-OTA</code> access point and returns that OTA address instead.</p>
+<p>If the repeater is already connected to Wi-Fi, OTA uses the existing LAN address. If Wi-Fi is not connected, the repeater starts the <code>MeshCore-OTA</code> access point and returns that OTA address instead.
+If the old redirect listener has not fully released port <code>80</code>, the OTA listener retries for up to about 30 seconds before giving up.</p>
 <p>If an older build sends you through a strange redirect after <code>start ota</code>, use the web <code>Start OTA</code> button to begin the upgrade. This redirect issue is fixed in <code>observer-eastmesh-v1.3.11</code>.</p>
+<h3 id="purge-sd">Purge SD<a class="headerlink" href="#purge-sd" title="Permanent link">&para;</a></h3>
+<p><code>Purge SD</code> appears as red inline text next to <code>Archive Used</code> in the <code>/stats</code> Services card. It asks for confirmation, then runs the authenticated <code>purge sd</code> command.</p>
+<p>This deletes files and directories from the mounted SD card archive, then recreates the empty <code>/stats</code> archive directory for continued runtime capture. It does not erase the internal repeater filesystem, identity, prefs, regions, radio settings, or MQTT settings.</p>
 <h3 id="use-historical-stats">Use Historical Stats<a class="headerlink" href="#use-historical-stats" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Enable stats if needed with <code>set web.stats on</code>.</li>
