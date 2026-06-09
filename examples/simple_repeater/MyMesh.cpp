@@ -2335,6 +2335,12 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", network.getWifiSSID()[0] ? network.getWifiSSID() : "-");
   } else if (strcmp(command, "get wifi.powersaving") == 0) {
     sprintf(reply, "> %s", network.getWifiPowerSave());
+  } else if (strcmp(command, "get ntp.server1") == 0) {
+    sprintf(reply, "> %s", network.getNtpServer(1));
+  } else if (strcmp(command, "get ntp.server2") == 0) {
+    sprintf(reply, "> %s", network.getNtpServer(2));
+  } else if (strcmp(command, "get ntp.server3") == 0) {
+    sprintf(reply, "> %s", network.getNtpServer(3));
 #endif
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
   } else if (memcmp(command, "set web ", 8) == 0) {
@@ -2377,6 +2383,24 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
       strcpy(reply, "OK");
     } else {
       strcpy(reply, "Err - use none|min|max");
+    }
+  } else if (memcmp(command, "set ntp.server1 ", 16) == 0) {
+    if (network.setNtpServer(1, &command[16])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad ntp.server1");
+    }
+  } else if (memcmp(command, "set ntp.server2 ", 16) == 0) {
+    if (network.setNtpServer(2, &command[16])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad ntp.server2");
+    }
+  } else if (memcmp(command, "set ntp.server3 ", 16) == 0) {
+    if (network.setNtpServer(3, &command[16])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad ntp.server3");
     }
 #endif
 #ifdef WITH_MQTT_UPLINK

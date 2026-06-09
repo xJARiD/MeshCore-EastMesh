@@ -16,6 +16,7 @@ constexpr unsigned long kWifiRetryMillis = 15000;
 constexpr unsigned long kWifiConnectTimeoutMillis = 45000;
 constexpr unsigned long kWifiChannelHintTimeoutMillis = 7000;
 constexpr time_t kMinSaneEpoch = 1735689600;  // 2025-01-01T00:00:00Z
+constexpr size_t kNtpServerMaxLen = 64;
 
 bool isValidWifiChannel(uint8_t channel) {
   return channel >= 1 && channel <= 14;
@@ -117,6 +118,69 @@ bool NetworkService::setWifiPassword(const char* pwd) {
   bool ok = savePrefs();
   reconnectWifi();
   return ok;
+}
+
+bool NetworkService::isValidNtpServer(const char* server) {
+  if (server == nullptr || server[0] == 0) {
+    return false;
+  }
+  size_t len = 0;
+  while (server[len] != 0) {
+    const char c = server[len];
+    if (c <= ' ' || c == ',' || c == '\x7F') {
+      return false;
+    }
+    len++;
+    if (len >= kNtpServerMaxLen) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool NetworkService::setNtpServer(uint8_t index, const char* server) {
+  if (!isValidNtpServer(server)) {
+    return false;
+  }
+
+  char* target = nullptr;
+  switch (index) {
+    case 1:
+      target = _prefs.ntp_server1;
+      break;
+    case 2:
+      target = _prefs.ntp_server2;
+      break;
+    case 3:
+      target = _prefs.ntp_server3;
+      break;
+    default:
+      return false;
+  }
+
+  if (strcmp(target, server) == 0) {
+    return true;
+  }
+
+  StrHelper::strncpy(target, server, sizeof(_prefs.ntp_server1));
+  const bool ok = savePrefs();
+#if defined(ESP_PLATFORM)
+  restartTimeSync();
+#endif
+  return ok;
+}
+
+const char* NetworkService::getNtpServer(uint8_t index) const {
+  switch (index) {
+    case 1:
+      return _prefs.ntp_server1;
+    case 2:
+      return _prefs.ntp_server2;
+    case 3:
+      return _prefs.ntp_server3;
+    default:
+      return "";
+  }
 }
 
 bool NetworkService::setWifiPowerSave(const char* mode) {
@@ -240,6 +304,11 @@ void NetworkService::reconnectWifi() {
   _sntp_started = false;
   _have_time_sync = false;
   _last_wifi_attempt = 0;
+}
+
+void NetworkService::restartTimeSync() {
+  _sntp_started = false;
+  _have_time_sync = false;
 }
 
 bool NetworkService::isWifiConnected() const {
@@ -372,7 +441,7 @@ void NetworkService::updateTimeSync() {
   }
 
   if (!_sntp_started) {
-    configTzTime("UTC0", "au.pool.ntp.org", "time.google.com", "time.cloudflare.com");
+    configTzTime("UTC0", _prefs.ntp_server1, _prefs.ntp_server2, _prefs.ntp_server3);
     _sntp_started = true;
   }
 

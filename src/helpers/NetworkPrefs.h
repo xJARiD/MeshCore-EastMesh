@@ -10,6 +10,9 @@ struct NetworkPrefs {
   uint8_t reserved[2];
   char wifi_ssid[33];
   char wifi_pwd[65];
+  char ntp_server1[64];
+  char ntp_server2[64];
+  char ntp_server3[64];
 };
 
 class NetworkPrefsStore {

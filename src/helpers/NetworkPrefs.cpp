@@ -9,6 +9,10 @@
 
 namespace {
 
+constexpr const char* kDefaultNtpServer1 = "au.pool.ntp.org";
+constexpr const char* kDefaultNtpServer2 = "time.google.com";
+constexpr const char* kDefaultNtpServer3 = "time.cloudflare.com";
+
 struct LegacyWebPrefsV1 {
   uint32_t magic;
   uint8_t web_enabled;
@@ -86,6 +90,18 @@ bool saveNvsNetworkPrefs(const NetworkPrefs&) {
 }
 #endif
 
+void applyNtpDefaults(NetworkPrefs& prefs) {
+  if (prefs.ntp_server1[0] == 0) {
+    StrHelper::strncpy(prefs.ntp_server1, kDefaultNtpServer1, sizeof(prefs.ntp_server1));
+  }
+  if (prefs.ntp_server2[0] == 0) {
+    StrHelper::strncpy(prefs.ntp_server2, kDefaultNtpServer2, sizeof(prefs.ntp_server2));
+  }
+  if (prefs.ntp_server3[0] == 0) {
+    StrHelper::strncpy(prefs.ntp_server3, kDefaultNtpServer3, sizeof(prefs.ntp_server3));
+  }
+}
+
 }  // namespace
 
 void NetworkPrefsStore::setDefaults(NetworkPrefs& prefs) {
@@ -93,6 +109,7 @@ void NetworkPrefsStore::setDefaults(NetworkPrefs& prefs) {
   prefs.magic = kMagic;
   prefs.wifi_powersave = 0;
   prefs.wifi_channel = 0;
+  applyNtpDefaults(prefs);
 }
 
 bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
@@ -101,12 +118,15 @@ bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
                              const char* legacy_wifi_pwd) {
   setDefaults(prefs);
   if (fs == nullptr) {
-    loadNvsNetworkPrefs(prefs);
+    if (loadNvsNetworkPrefs(prefs)) {
+      applyNtpDefaults(prefs);
+    }
     return false;
   }
 
   if (!fs->exists(kFilename)) {
     if (loadNvsNetworkPrefs(prefs)) {
+      applyNtpDefaults(prefs);
       save(fs, prefs);
       return true;
     }
@@ -140,6 +160,7 @@ bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
   if (!ok || persisted.magic != kMagic) {
     fs->remove(kFilename);
     if (loadNvsNetworkPrefs(prefs)) {
+      applyNtpDefaults(prefs);
       save(fs, prefs);
       return true;
     }
@@ -148,6 +169,7 @@ bool NetworkPrefsStore::load(FILESYSTEM* fs, NetworkPrefs& prefs,
   }
 
   prefs = persisted;
+  applyNtpDefaults(prefs);
   if (prefs.wifi_powersave > 2) {
     prefs.wifi_powersave = 0;
   }

@@ -26,6 +26,8 @@ public:
   const char* getWifiSSID() const { return _prefs.wifi_ssid; }
   bool setWifiPowerSave(const char* mode);
   const char* getWifiPowerSave() const;
+  bool setNtpServer(uint8_t index, const char* server);
+  const char* getNtpServer(uint8_t index) const;
   void formatWifiStatusReply(char* reply, size_t reply_size) const;
   void reconnectWifi();
 
@@ -38,7 +40,9 @@ private:
   static const char* getPowerSaveLabel(uint8_t mode);
   void ensureWifi(bool network_required);
   void updateTimeSync();
+  void restartTimeSync();
 #endif
+  static bool isValidNtpServer(const char* server);
   bool savePrefs();
 
   FILESYSTEM* _fs;

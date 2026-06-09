@@ -109,6 +109,17 @@ Legacy dotted aliases are also accepted:
 - `get wifi.powersaving`: shows the current Wi-Fi power save mode.
 - `set wifi.powersaving none|min|max`: sets Wi-Fi power saving mode.
 
+### NTP Settings For Observers
+
+- `get ntp.server1`: shows the primary NTP server.
+- `get ntp.server2`: shows the secondary NTP server.
+- `get ntp.server3`: shows the tertiary NTP server.
+- `set ntp.server1 <host>`: sets the primary NTP server and restarts time sync.
+- `set ntp.server2 <host>`: sets the secondary NTP server and restarts time sync.
+- `set ntp.server3 <host>`: sets the tertiary NTP server and restarts time sync.
+
+Default servers are `au.pool.ntp.org`, `time.google.com`, and `time.cloudflare.com`.
+
 ### ESP-NOW Bridge Settings For Observer ESP-NOW Builds
 
 These commands are available on `*_repeater_observer_espnow` firmware targets.
