@@ -188,6 +188,30 @@ releases:
         text: "Hardened OTA startup by binding before reporting success and falling back to alternate ports when port 80 is still being released."
     breaking_changes: []
 
+  - track: observer-eastmesh
+    version: "2026.6.3"
+    tag: "observer-eastmesh-v2026.6.3"
+    date: "2026-06-09"
+    previous_version: "2026.6.2"
+    summary: "Adds secure WebSocket transport support for custom MQTT brokers from the Observer web panel and CLI."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added TCP/WSS transport selection for custom MQTT brokers while keeping custom broker authentication to username and password only."
+      - type: fixed
+        area: mqtt
+        text: "Verified custom MQTT WSS connections with the ESP-IDF x509 root CA bundle and the fixed `/mqtt` WebSocket path."
+      - type: fixed
+        area: mqtt
+        text: "Configured custom MQTT WSS using a full `wss://host:port/mqtt` URI so ESP-MQTT handles the WebSocket connection consistently."
+      - type: changed
+        area: cli
+        text: "Updated `get mqtt.status` to show the custom MQTT transport and state, for example `custom:wss:up`."
+      - type: docs
+        area: docs
+        text: "Documented custom MQTT TCP/WSS configuration in the web panel and custom CLI guides."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -286,4 +310,28 @@ releases:
       - type: fixed
         area: web
         text: "Hardened OTA startup by binding before reporting success and falling back to alternate ports when port 80 is still being released."
+    breaking_changes: []
+
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.6.3"
+    tag: "observer-eastmesh-bridge-espnow-v2026.6.3"
+    date: "2026-06-09"
+    previous_version: "2026.6.2"
+    summary: "Adds secure WebSocket transport support for custom MQTT brokers in Observer ESP-NOW bridge builds."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added TCP/WSS transport selection for custom MQTT brokers while keeping custom broker authentication to username and password only."
+      - type: fixed
+        area: mqtt
+        text: "Verified custom MQTT WSS connections with the ESP-IDF x509 root CA bundle and the fixed `/mqtt` WebSocket path."
+      - type: fixed
+        area: mqtt
+        text: "Configured custom MQTT WSS using a full `wss://host:port/mqtt` URI so ESP-MQTT handles the WebSocket connection consistently."
+      - type: changed
+        area: cli
+        text: "Updated `get mqtt.status` to show the custom MQTT transport and state, for example `custom:wss:up`."
+      - type: docs
+        area: docs
+        text: "Documented custom MQTT TCP/WSS configuration in the web panel and custom CLI guides."
     breaking_changes: []

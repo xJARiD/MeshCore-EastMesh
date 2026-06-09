@@ -67,6 +67,8 @@ public:
   const char* getCustomHost() const { return _prefs.custom_host; }
   bool setCustomPort(const char* port);
   uint16_t getCustomPort() const { return _prefs.custom_port; }
+  bool setCustomTransport(const char* transport);
+  const char* getCustomTransport() const;
   bool setCustomUsername(const char* username);
   const char* getCustomUsername() const { return _prefs.custom_username; }
   bool setCustomPassword(const char* password);
@@ -104,6 +106,7 @@ private:
     char username[70];
     char* token;
     char client_id[48];
+    char uri[144];
     char status_topic[128];
     char offline_payload[512];
   };
@@ -144,6 +147,8 @@ private:
   bool preflightBroker(BrokerState& broker) const;
   const char* brokerHost(const BrokerState& broker) const;
   uint16_t brokerPort(const BrokerState& broker) const;
+  bool brokerUsesWss(const BrokerState& broker) const;
+  const char* brokerUri(BrokerState& broker) const;
   bool isBrokerConfigured(const BrokerState& broker) const;
   void formatTopic(char* dst, size_t dst_size, const char* leaf) const;
   void refreshIdentityStrings();

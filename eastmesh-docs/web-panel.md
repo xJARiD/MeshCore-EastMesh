@@ -254,7 +254,7 @@ This section includes:
 - `mqtt.owner`: owner public key.
 - `mqtt.email`: owner contact email.
 - MQTT server toggles: `eastmesh-au`, `letsmesh-eu`, `letsmesh-us`, and custom MQTT.
-- custom MQTT `host:port`, username, and password fields.
+- custom MQTT `host:port`, TCP/WSS transport, username, and password fields.
 
 `UNSET - To be configured` is the default for new observer installs until a real saved value exists.
 
@@ -264,7 +264,8 @@ Notes:
 - while `mqtt.iata` is `UNSET`, enabled MQTT brokers do not attempt to connect
 - the current MQTT server states are loaded when the page opens
 - you can toggle each MQTT server on or off from this panel
-- custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication
+- custom MQTT uses the configured username and password, not JWT authentication
+- custom MQTT defaults to TCP; choose WSS for MQTT over secure WebSockets using the fixed `/mqtt` websocket path and the ESP-IDF x509 root CA bundle
 - turning off a connected MQTT server publishes retained offline status before the client disconnects
 - changing `mqtt.iata` away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path
 - at most two MQTT brokers can be enabled at once

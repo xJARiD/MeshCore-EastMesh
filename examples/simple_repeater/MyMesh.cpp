@@ -2430,6 +2430,8 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.getCustomHost()[0] ? mqtt.getCustomHost() : "-");
   } else if (strcmp(command, "get mqtt.custom.port") == 0) {
     sprintf(reply, "> %u", static_cast<unsigned>(mqtt.getCustomPort()));
+  } else if (strcmp(command, "get mqtt.custom.transport") == 0) {
+    sprintf(reply, "> %s", mqtt.getCustomTransport());
   } else if (strcmp(command, "get mqtt.custom.username") == 0) {
     sprintf(reply, "> %s", mqtt.getCustomUsername()[0] ? mqtt.getCustomUsername() : "-");
   } else if (strcmp(command, "get mqtt.custom.password") == 0) {
@@ -2499,6 +2501,12 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
       strcpy(reply, "OK");
     } else {
       strcpy(reply, "Err - bad mqtt.custom.port");
+    }
+  } else if (memcmp(command, "set mqtt.custom.transport ", 26) == 0) {
+    if (mqtt.setCustomTransport(&command[26])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad mqtt.custom.transport");
     }
   } else if (memcmp(command, "set mqtt.custom.username ", 25) == 0) {
     if (mqtt.setCustomUsername(&command[25])) {

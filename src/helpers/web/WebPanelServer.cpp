@@ -1042,6 +1042,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	                      <button id="saveCustomEndpointBtn" class="savebtn">Save</button>
 	                    </div>
 	                  </div>
+	                  <div class="field-card">
+	                    <label class="label" for="mqttCustomTransport">Transport</label>
+	                    <div class="mode-slider">
+	                      <input id="mqttCustomTransport" type="range" min="0" max="1" step="1" value="0" aria-label="Custom MQTT transport">
+	                      <div class="mode-labels two" aria-hidden="true">
+	                        <div class="mode-label" data-custom-transport-label="tcp">TCP</div>
+	                        <div class="mode-label" data-custom-transport-label="wss">WSS</div>
+	                      </div>
+	                    </div>
+	                  </div>
 	                  <div class="row">
 	                    <div class="field-card">
 	                      <label class="label" for="mqttCustomUsername">Username</label>
@@ -2841,6 +2851,30 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         input.value = host && host !== "-" ? `${host}:${port}` : "";
       }
     }
+    function refreshCustomTransportUi(transport) {
+      const mode = transport === "wss" ? "wss" : "tcp";
+      const slider = document.getElementById("mqttCustomTransport");
+      if (slider) {
+        slider.value = mode === "wss" ? "1" : "0";
+      }
+      document.querySelectorAll("[data-custom-transport-label]").forEach((label) => {
+        label.classList.toggle("active", label.dataset.customTransportLabel === mode);
+      });
+    }
+    async function loadCustomTransport(options = {}) {
+      const result = await runCommand("get mqtt.custom.transport", options);
+      if (!result.ok) return;
+      refreshCustomTransportUi(parseReplyValue(result.text));
+    }
+    async function setCustomTransport(transport) {
+      const mode = transport === "wss" ? "wss" : "tcp";
+      const result = await runCommand("set mqtt.custom.transport " + mode);
+      if (!result.ok) {
+        await loadCustomTransport({ recordHistory:false });
+        return;
+      }
+      refreshCustomTransportUi(mode);
+    }
     function parseCustomEndpoint(value) {
       const endpoint = String(value || "").trim();
       const separator = endpoint.lastIndexOf(":");
@@ -3052,6 +3086,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    }
 	    document.getElementById("refreshCustomEndpointBtn").onclick = () => loadCustomEndpoint();
 	    document.getElementById("saveCustomEndpointBtn").onclick = () => saveCustomEndpoint();
+	    const customTransportSlider = document.getElementById("mqttCustomTransport");
+	    if (customTransportSlider) {
+	      customTransportSlider.addEventListener("input", () => {
+	        customTransportSlider.value = (Number.parseInt(customTransportSlider.value, 10) || 0) >= 1 ? "1" : "0";
+	        refreshCustomTransportUi(customTransportSlider.value === "1" ? "wss" : "tcp");
+	      });
+	      customTransportSlider.addEventListener("change", () => {
+	        setCustomTransport((Number.parseInt(customTransportSlider.value, 10) || 0) >= 1 ? "wss" : "tcp");
+	      });
+	    }
 	    async function setLetsmeshMode(mode) {
 	      const eastmesh = document.getElementById("mqttEastmeshAu");
 	      if (mode === "both" && eastmesh && eastmesh.checked) {
@@ -3260,6 +3304,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet),
           () => loadBrokerState("get mqtt.custom", "mqttCustom", quiet),
           () => loadCustomEndpoint(quiet),
+          () => loadCustomTransport(quiet),
           () => loadField("get mqtt.custom.username", "mqttCustomUsername", null, quiet)
         ]);
         if (!isCurrentPageLoad(generation)) return;

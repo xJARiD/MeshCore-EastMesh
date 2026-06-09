@@ -70,6 +70,9 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
   if (prefs.custom_port == 0) {
     prefs.custom_port = 1883;
   }
+  if (prefs.custom_transport > 1) {
+    prefs.custom_transport = 0;
+  }
   prefs.status_interval_ms = kFixedStatusIntervalMs;
   prefs.enabled_mask &= 0x0F;
   return true;

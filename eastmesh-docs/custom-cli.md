@@ -34,7 +34,7 @@ No-argument `get` commands must be entered exactly as shown.
 
 ### MQTT Status And Routing
 
-- `get mqtt.status`: shows Wi-Fi, NTP, IATA, endpoint status, status publishing state, and TX state.
+- `get mqtt.status`: shows Wi-Fi, NTP, IATA, endpoint status, custom endpoint transport, status publishing state, and TX state.
 - `get mqtt.statuscfg`: shows whether periodic status messages are enabled as a simple `on` or `off` value. Most users can just use `get mqtt.status`.
 - `get mqtt.client_version`: shows the MQTT `client_version` string published by the repeater.
 - `get mqtt.client_env`: shows the PlatformIO env used to build the repeater firmware.
@@ -75,6 +75,8 @@ No-argument `get` commands must be entered exactly as shown.
 - `set mqtt.custom.host <host>`
 - `get mqtt.custom.port`
 - `set mqtt.custom.port <port>`
+- `get mqtt.custom.transport`: shows `tcp` or `wss`.
+- `set mqtt.custom.transport tcp|wss`
 - `get mqtt.custom.username`
 - `set mqtt.custom.username <username>`
 - `get mqtt.custom.password`: shows `set` when a custom password is configured.
@@ -85,7 +87,9 @@ Notes:
 - new observer installs default `mqtt.iata` to `UNSET`
 - `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
 - if `mqtt.iata` is `UNSET`, enabled MQTT brokers will not connect
-- custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication
+- custom MQTT uses the configured username and password, not JWT authentication
+- custom MQTT defaults to TCP; set `mqtt.custom.transport wss` for MQTT over secure WebSockets using the fixed `/mqtt` websocket path and the ESP-IDF x509 root CA bundle
+- in `get mqtt.status`, custom MQTT is shown as `custom:<transport>:<state>`, for example `custom:wss:up`; `conn` means connecting and `up` means connected
 - custom MQTT uses the same `meshcore/<IATA>/<device>/<leaf>` topics as the curated brokers
 - turning off a connected broker publishes a retained MQTT status update with `"status":"offline"` before the client disconnects
 - changing `mqtt.iata` away from a configured value also publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path

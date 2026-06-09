@@ -11,8 +11,9 @@
 #include <esp_idf_version.h>
 #include <esp_heap_caps.h>
 #include <esp_system.h>
-#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE) && !(defined(ARDUINO) && ESP_IDF_VERSION_MAJOR < 5)
-#include <esp_crt_bundle.h>
+#if defined(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+#include <esp_err.h>
+extern "C" esp_err_t esp_crt_bundle_attach(void* conf);
 #define MQTT_USE_CRT_BUNDLE 1
 #define MQTT_CRT_BUNDLE_ATTACH esp_crt_bundle_attach
 #endif
@@ -212,6 +213,30 @@ uint16_t MQTTUplink::brokerPort(const BrokerState& broker) const {
     return _prefs.custom_port != 0 ? _prefs.custom_port : 1883;
   }
   return 443;
+}
+
+bool MQTTUplink::brokerUsesWss(const BrokerState& broker) const {
+  if (broker.spec == nullptr) {
+    return false;
+  }
+  return !broker.spec->custom || _prefs.custom_transport == 1;
+}
+
+const char* MQTTUplink::brokerUri(BrokerState& broker) const {
+  if (broker.spec == nullptr) {
+    return "";
+  }
+  if (broker.spec->uri != nullptr) {
+    return broker.spec->uri;
+  }
+  if (brokerUsesWss(broker)) {
+    snprintf(broker.uri, sizeof(broker.uri), "wss://%s:%u/mqtt", brokerHost(broker),
+             static_cast<unsigned>(brokerPort(broker)));
+  } else {
+    snprintf(broker.uri, sizeof(broker.uri), "mqtt://%s:%u", brokerHost(broker),
+             static_cast<unsigned>(brokerPort(broker)));
+  }
+  return broker.uri;
 }
 
 bool MQTTUplink::isBrokerConfigured(const BrokerState& broker) const {
@@ -930,19 +955,27 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   }
 
   refreshBrokerState(broker);
-  MQTT_LOG("%s mqtt init host=%s port=%u path=%s client_id=%s", broker.spec->label, brokerHost(broker),
-           static_cast<unsigned>(brokerPort(broker)), broker.spec->custom ? "-" : "/mqtt", broker.client_id);
+  const char* uri = brokerUsesWss(broker) ? brokerUri(broker) : nullptr;
+  MQTT_LOG("%s mqtt init host=%s port=%u transport=%s path=%s uri=%s client_id=%s", broker.spec->label, brokerHost(broker),
+           static_cast<unsigned>(brokerPort(broker)), brokerUsesWss(broker) ? "wss" : "tcp",
+           brokerUsesWss(broker) ? "/mqtt" : "-", uri != nullptr ? uri : "-", broker.client_id);
   logMqttMemorySnapshot("init-pre", broker.spec->label);
   esp_mqtt_client_config_t cfg = {};
 #if ESP_IDF_VERSION_MAJOR >= 5
-  cfg.broker.address.hostname = brokerHost(broker);
-  cfg.broker.address.port = brokerPort(broker);
-  cfg.broker.address.transport = broker.spec->custom ? MQTT_TRANSPORT_OVER_TCP : MQTT_TRANSPORT_OVER_WSS;
-  if (!broker.spec->custom) {
-    cfg.broker.address.path = "/mqtt";
+  if (brokerUsesWss(broker)) {
+    cfg.broker.address.uri = uri;
+  } else {
+    cfg.broker.address.hostname = brokerHost(broker);
+    cfg.broker.address.port = brokerPort(broker);
+    cfg.broker.address.transport = MQTT_TRANSPORT_OVER_TCP;
   }
   if (broker.spec->custom) {
     cfg.credentials.authentication.password = _prefs.custom_password;
+    if (brokerUsesWss(broker)) {
+#if defined(MQTT_USE_CRT_BUNDLE)
+      cfg.broker.verification.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
+#endif
+    }
   } else {
 #if defined(MQTT_USE_CRT_BUNDLE)
     cfg.broker.verification.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
@@ -964,8 +997,13 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   cfg.buffer.size = 768;
   cfg.buffer.out_size = 1280;
 #else
-  cfg.host = brokerHost(broker);
-  cfg.port = brokerPort(broker);
+  if (brokerUsesWss(broker)) {
+    cfg.uri = uri;
+  } else {
+    cfg.host = brokerHost(broker);
+    cfg.port = brokerPort(broker);
+    cfg.transport = MQTT_TRANSPORT_OVER_TCP;
+  }
   cfg.username = broker.username;
   cfg.password = broker.spec->custom ? _prefs.custom_password : broker.token;
   cfg.client_id = broker.client_id;
@@ -975,14 +1013,17 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   cfg.reconnect_timeout_ms = 10000;
   cfg.network_timeout_ms = 10000;
   cfg.disable_auto_reconnect = true;
-  cfg.transport = broker.spec->custom ? MQTT_TRANSPORT_OVER_TCP : MQTT_TRANSPORT_OVER_WSS;
+  if (broker.spec->custom && brokerUsesWss(broker)) {
+#if defined(MQTT_USE_CRT_BUNDLE)
+    cfg.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
+#endif
+  }
   if (!broker.spec->custom) {
 #if defined(MQTT_USE_CRT_BUNDLE)
     cfg.crt_bundle_attach = MQTT_CRT_BUNDLE_ATTACH;
 #else
     cfg.cert_pem = brokerCaCert(*broker.spec);
 #endif
-    cfg.path = "/mqtt";
   }
   cfg.lwt_topic = broker.status_topic;
   cfg.lwt_msg = broker.offline_payload;
@@ -1163,12 +1204,13 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
   };
 
   snprintf(reply, reply_size,
-           "> wifi:%s ntp:%s iata:%s eastmesh-au:%s letsmesh-eu:%s letsmesh-us:%s custom:%s status:%s tx:%s",
+           "> wifi:%s ntp:%s iata:%s eastmesh-au:%s letsmesh-eu:%s letsmesh-us:%s custom:%s:%s status:%s tx:%s",
            (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
            (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
            _prefs.iata,
            broker_state(kEastmeshBit), broker_state(kLetsmeshEuBit), broker_state(kLetsmeshUsBit),
-           broker_state(kCustomBit), _prefs.status_enabled ? "on" : "off", _prefs.tx_enabled ? "on" : "off");
+           getCustomTransport(), broker_state(kCustomBit), _prefs.status_enabled ? "on" : "off",
+           _prefs.tx_enabled ? "on" : "off");
 }
 
 bool MQTTUplink::setEndpointEnabled(uint8_t bit, bool enabled) {
@@ -1324,6 +1366,38 @@ bool MQTTUplink::setCustomPort(const char* port) {
   }
   bool changed = _prefs.custom_port != static_cast<uint16_t>(parsed);
   _prefs.custom_port = static_cast<uint16_t>(parsed);
+  bool saved = savePrefs();
+  if (saved && changed) {
+    for (BrokerState& broker : _brokers) {
+      if (broker.spec != nullptr && broker.spec->bit == kCustomBit) {
+        destroyBroker(broker);
+      }
+    }
+  }
+  return saved;
+}
+
+const char* MQTTUplink::getCustomTransport() const {
+  return _prefs.custom_transport == 1 ? "wss" : "tcp";
+}
+
+bool MQTTUplink::setCustomTransport(const char* transport) {
+  if (transport == nullptr) {
+    return false;
+  }
+  uint8_t parsed;
+  if (strcasecmp(transport, "tcp") == 0) {
+    parsed = 0;
+  } else if (strcasecmp(transport, "wss") == 0) {
+#if !defined(MQTT_USE_CRT_BUNDLE)
+    return false;
+#endif
+    parsed = 1;
+  } else {
+    return false;
+  }
+  bool changed = _prefs.custom_transport != parsed;
+  _prefs.custom_transport = parsed;
   bool saved = savePrefs();
   if (saved && changed) {
     for (BrokerState& broker : _brokers) {

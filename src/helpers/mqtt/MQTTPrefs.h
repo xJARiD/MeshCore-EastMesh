@@ -33,7 +33,7 @@ struct MQTTPrefs {
   char custom_host[96];
   char custom_username[65];
   char custom_password[96];
-  uint8_t reserved[1];
+  uint8_t custom_transport;
 };
 
 class MQTTPrefsStore {
