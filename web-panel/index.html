@@ -1703,7 +1703,7 @@
 <li><code>mqtt.owner</code>: owner public key.</li>
 <li><code>mqtt.email</code>: owner contact email.</li>
 <li>MQTT server toggles: <code>eastmesh-au</code>, <code>letsmesh-eu</code>, <code>letsmesh-us</code>, and custom MQTT.</li>
-<li>custom MQTT <code>host:port</code>, username, and password fields.</li>
+<li>custom MQTT <code>host:port</code>, TCP/WSS transport, username, and password fields.</li>
 </ul>
 <p><code>UNSET - To be configured</code> is the default for new observer installs until a real saved value exists.</p>
 <p>Notes:</p>
@@ -1712,7 +1712,8 @@
 <li>while <code>mqtt.iata</code> is <code>UNSET</code>, enabled MQTT brokers do not attempt to connect</li>
 <li>the current MQTT server states are loaded when the page opens</li>
 <li>you can toggle each MQTT server on or off from this panel</li>
-<li>custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication</li>
+<li>custom MQTT uses the configured username and password, not JWT authentication</li>
+<li>custom MQTT defaults to TCP; choose WSS for MQTT over secure WebSockets using the fixed <code>/mqtt</code> websocket path and the ESP-IDF x509 root CA bundle</li>
 <li>turning off a connected MQTT server publishes retained offline status before the client disconnects</li>
 <li>changing <code>mqtt.iata</code> away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path</li>
 <li>at most two MQTT brokers can be enabled at once</li>

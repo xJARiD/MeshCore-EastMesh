@@ -920,7 +920,7 @@
 <p>No-argument <code>get</code> commands must be entered exactly as shown.</p>
 <h3 id="mqtt-status-and-routing">MQTT Status And Routing<a class="headerlink" href="#mqtt-status-and-routing" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get mqtt.status</code>: shows Wi-Fi, NTP, IATA, endpoint status, status publishing state, and TX state.</li>
+<li><code>get mqtt.status</code>: shows Wi-Fi, NTP, IATA, endpoint status, custom endpoint transport, status publishing state, and TX state.</li>
 <li><code>get mqtt.statuscfg</code>: shows whether periodic status messages are enabled as a simple <code>on</code> or <code>off</code> value. Most users can just use <code>get mqtt.status</code>.</li>
 <li><code>get mqtt.client_version</code>: shows the MQTT <code>client_version</code> string published by the repeater.</li>
 <li><code>get mqtt.client_env</code>: shows the PlatformIO env used to build the repeater firmware.</li>
@@ -961,6 +961,8 @@
 <li><code>set mqtt.custom.host &lt;host&gt;</code></li>
 <li><code>get mqtt.custom.port</code></li>
 <li><code>set mqtt.custom.port &lt;port&gt;</code></li>
+<li><code>get mqtt.custom.transport</code>: shows <code>tcp</code> or <code>wss</code>.</li>
+<li><code>set mqtt.custom.transport tcp|wss</code></li>
 <li><code>get mqtt.custom.username</code></li>
 <li><code>set mqtt.custom.username &lt;username&gt;</code></li>
 <li><code>get mqtt.custom.password</code>: shows <code>set</code> when a custom password is configured.</li>
@@ -971,7 +973,9 @@
 <li>new observer installs default <code>mqtt.iata</code> to <code>UNSET</code></li>
 <li><code>letsmesh-eu</code> and <code>letsmesh-us</code> remain off by default unless already configured in saved prefs</li>
 <li>if <code>mqtt.iata</code> is <code>UNSET</code>, enabled MQTT brokers will not connect</li>
-<li>custom MQTT uses normal MQTT over TCP with the configured username and password, not JWT authentication</li>
+<li>custom MQTT uses the configured username and password, not JWT authentication</li>
+<li>custom MQTT defaults to TCP; set <code>mqtt.custom.transport wss</code> for MQTT over secure WebSockets using the fixed <code>/mqtt</code> websocket path and the ESP-IDF x509 root CA bundle</li>
+<li>in <code>get mqtt.status</code>, custom MQTT is shown as <code>custom:&lt;transport&gt;:&lt;state&gt;</code>, for example <code>custom:wss:up</code>; <code>conn</code> means connecting and <code>up</code> means connected</li>
 <li>custom MQTT uses the same <code>meshcore/&lt;IATA&gt;/&lt;device&gt;/&lt;leaf&gt;</code> topics as the curated brokers</li>
 <li>turning off a connected broker publishes a retained MQTT status update with <code>"status":"offline"</code> before the client disconnects</li>
 <li>changing <code>mqtt.iata</code> away from a configured value also publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path</li>
