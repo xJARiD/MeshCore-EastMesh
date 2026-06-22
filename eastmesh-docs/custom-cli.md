@@ -65,10 +65,12 @@ No-argument `get` commands must be entered exactly as shown.
 
 - `get mqtt.eastmesh-au`
 - `set mqtt.eastmesh-au on|off`
-- `get mqtt.letsmesh-eu`
-- `set mqtt.letsmesh-eu on|off`
-- `get mqtt.letsmesh-us`
-- `set mqtt.letsmesh-us on|off`
+- `get mqtt.meshmapper`
+- `set mqtt.meshmapper on|off`
+- `get mqtt.letsmesh-eu` (retired)
+- `set mqtt.letsmesh-eu on|off` (retired)
+- `get mqtt.letsmesh-us` (retired)
+- `set mqtt.letsmesh-us on|off` (retired)
 - `get mqtt.custom`
 - `set mqtt.custom on|off`
 - `get mqtt.custom.host`
@@ -85,11 +87,13 @@ No-argument `get` commands must be entered exactly as shown.
 Notes:
 
 - new observer installs default `mqtt.iata` to `UNSET`
-- `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
+- a maximum of two MQTT brokers can be enabled at once
+- `meshmapper` is the curated global broker (`wss://mqtt.meshmapper.net:443/mqtt`); like `eastmesh-au` it uses WSS, verified TLS, and MeshCore JWT auth with the broker host as the token audience
+- `letsmesh-eu` and `letsmesh-us` are retired (LetsMesh is no longer maintained) and off by default; any saved selections are cleared once on upgrade, though the endpoints stay selectable for legacy use
 - if `mqtt.iata` is `UNSET`, enabled MQTT brokers will not connect
 - custom MQTT uses the configured username and password, not JWT authentication
 - custom MQTT defaults to TCP; set `mqtt.custom.transport wss` for MQTT over secure WebSockets using the fixed `/mqtt` websocket path and the ESP-IDF x509 root CA bundle
-- in `get mqtt.status`, custom MQTT is shown as `custom:<transport>:<state>`, for example `custom:wss:up`; `conn` means connecting and `up` means connected
+- `get mqtt.status` reports the two enabled broker slots as `p:<broker>:<state>` (primary) and `s:<broker>:<state>` (secondary), or `-` when a slot is empty; custom appears as `custom:<transport>:<state>` (for example `p:custom:wss:up`); `conn` means connecting and `up` means connected
 - custom MQTT uses the same `meshcore/<IATA>/<device>/<leaf>` topics as the curated brokers
 - turning off a connected broker publishes a retained MQTT status update with `"status":"offline"` before the client disconnects
 - changing `mqtt.iata` away from a configured value also publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path

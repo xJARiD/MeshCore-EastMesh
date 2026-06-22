@@ -23,6 +23,7 @@ void MQTTPrefsStore::setDefaults(MQTTPrefs& prefs) {
   prefs.legacy_wifi_powersave = 0;
   prefs.status_interval_ms = kFixedStatusIntervalMs;
   prefs.custom_port = 1883;
+  prefs.brokers_migrated = 1;  // Fresh installs need no LetsMesh retirement migration.
   StrHelper::strncpy(prefs.iata, MQTT_DEFAULT_IATA, sizeof(prefs.iata));
 #ifdef WIFI_SSID
   StrHelper::strncpy(prefs.legacy_wifi_ssid, WIFI_SSID, sizeof(prefs.legacy_wifi_ssid));
@@ -74,7 +75,14 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
     prefs.custom_transport = 0;
   }
   prefs.status_interval_ms = kFixedStatusIntervalMs;
-  prefs.enabled_mask &= 0x0F;
+  prefs.enabled_mask &= 0x1F;
+  if (!prefs.brokers_migrated) {
+    // LetsMesh is retired. Clear any saved EU/US selections once so dead brokers
+    // stop retrying; the endpoints remain re-selectable afterwards.
+    prefs.enabled_mask &= ~static_cast<uint8_t>(0x02 | 0x04);
+    prefs.brokers_migrated = 1;
+    save(fs, prefs);
+  }
   return true;
 }
 

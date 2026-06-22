@@ -171,7 +171,7 @@ Typical first steps after flashing:
 - set `mqtt.iata`
 - confirm `get mqtt.status`
 - optionally set `mqtt.owner` and `mqtt.email`
-- optionally enable `letsmesh-eu` or `letsmesh-us`
+- optionally enable a second broker such as `meshmapper`
 
 ### Observer ESP-NOW
 

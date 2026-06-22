@@ -34,6 +34,9 @@ struct MQTTPrefs {
   char custom_username[65];
   char custom_password[96];
   uint8_t custom_transport;
+  // Appended fields must stay at the end: older prefs files are shorter and
+  // read back as zero here, which drives one-time migrations (see load()).
+  uint8_t brokers_migrated;
 };
 
 class MQTTPrefsStore {

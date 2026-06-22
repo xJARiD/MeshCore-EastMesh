@@ -127,8 +127,10 @@ void logMqttMemorySnapshot(const char*, const char* = nullptr) {
 
 }
 
-const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[4] = {
+const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[kBrokerCount] = {
     {"eastmesh-au", "eastmesh-au", "mqtt2.eastmesh.au", "wss://mqtt2.eastmesh.au:443/mqtt", kEastmeshBit, false},
+    {"meshmapper", "meshmapper", "mqtt.meshmapper.net", "wss://mqtt.meshmapper.net:443/mqtt", kMeshmapperBit, false},
+    // Retired: LetsMesh is no longer maintained. Kept selectable for legacy nodes; new nodes should use meshmapper.
     {"letsmesh-eu", "letsmesh-eu", "mqtt-eu-v1.letsmesh.net", "wss://mqtt-eu-v1.letsmesh.net:443/mqtt",
      kLetsmeshEuBit, false},
     {"letsmesh-us", "letsmesh-us", "mqtt-us-v1.letsmesh.net", "wss://mqtt-us-v1.letsmesh.net:443/mqtt",
@@ -142,7 +144,7 @@ MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
        {
   memset(_device_id, 0, sizeof(_device_id));
   MQTTPrefsStore::setDefaults(_prefs);
-  for (size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < kBrokerCount; ++i) {
     memset(&_brokers[i], 0, sizeof(_brokers[i]));
     _brokers[i].spec = &kBrokerSpecs[i];
   }
@@ -167,7 +169,7 @@ bool MQTTUplink::isTokenRefreshInProgress() const {
 }
 
 bool MQTTUplink::hasEnabledBroker() const {
-  return (_prefs.enabled_mask & 0x0F) != 0;
+  return (_prefs.enabled_mask & kBrokerMask) != 0;
 }
 
 uint8_t MQTTUplink::countEnabledBrokers() const {
@@ -195,8 +197,10 @@ bool MQTTUplink::isUnsetIataValue(const char* iata) {
 }
 
 const char* MQTTUplink::brokerCaCert(const BrokerSpec& spec) {
-  if (spec.bit == kEastmeshBit) {
-    return mqtt_ca_certs::kEastmeshIsrgRootX1Pem;
+  // Note: ESP32 targets with the certificate bundle attach it instead of these PEMs;
+  // this fallback only applies on builds without CONFIG_MBEDTLS_CERTIFICATE_BUNDLE.
+  if (spec.bit == kEastmeshBit || spec.bit == kMeshmapperBit) {
+    return mqtt_ca_certs::kEastmeshIsrgRootX1Pem;  // Let's Encrypt ISRG Root X1
   }
   return mqtt_ca_certs::kLetsmeshWe1Pem;
 }
@@ -1056,7 +1060,7 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
 void MQTTUplink::begin(FILESYSTEM* fs) {
   _fs = fs;
   MQTTPrefsStore::load(_fs, _prefs);
-  uint8_t normalized_mask = normalizeEnabledMask(_prefs.enabled_mask & 0x0F);
+  uint8_t normalized_mask = normalizeEnabledMask(_prefs.enabled_mask & kBrokerMask);
   if (normalized_mask != _prefs.enabled_mask) {
     _prefs.enabled_mask = normalized_mask;
     savePrefs();
@@ -1203,18 +1207,47 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
     return "retry";
   };
 
+  // Only ever up to two brokers are enabled, so report the active slots instead of
+  // every broker. This keeps the reply short for LoRa and is stable as brokers are added.
+  auto format_slot = [this, &broker_state](const BrokerState* broker, char* buf, size_t buf_size) {
+    if (broker == nullptr || broker->spec == nullptr) {
+      StrHelper::strncpy(buf, "-", buf_size);
+    } else if (broker->spec->custom) {
+      snprintf(buf, buf_size, "custom:%s:%s", getCustomTransport(), broker_state(broker->spec->bit));
+    } else {
+      snprintf(buf, buf_size, "%s:%s", broker->spec->key, broker_state(broker->spec->bit));
+    }
+  };
+
+  const BrokerState* primary = nullptr;
+  const BrokerState* secondary = nullptr;
+  for (const BrokerState& broker : _brokers) {
+    if (broker.spec == nullptr || (_prefs.enabled_mask & broker.spec->bit) == 0) {
+      continue;
+    }
+    if (primary == nullptr) {
+      primary = &broker;
+    } else if (secondary == nullptr) {
+      secondary = &broker;
+      break;
+    }
+  }
+
+  char primary_slot[40];
+  char secondary_slot[40];
+  format_slot(primary, primary_slot, sizeof(primary_slot));
+  format_slot(secondary, secondary_slot, sizeof(secondary_slot));
+
   snprintf(reply, reply_size,
-           "> wifi:%s ntp:%s iata:%s eastmesh-au:%s letsmesh-eu:%s letsmesh-us:%s custom:%s:%s status:%s tx:%s",
+           "> wifi:%s ntp:%s iata:%s p:%s s:%s status:%s tx:%s",
            (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
            (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
-           _prefs.iata,
-           broker_state(kEastmeshBit), broker_state(kLetsmeshEuBit), broker_state(kLetsmeshUsBit),
-           getCustomTransport(), broker_state(kCustomBit), _prefs.status_enabled ? "on" : "off",
+           _prefs.iata, primary_slot, secondary_slot, _prefs.status_enabled ? "on" : "off",
            _prefs.tx_enabled ? "on" : "off");
 }
 
 bool MQTTUplink::setEndpointEnabled(uint8_t bit, bool enabled) {
-  uint8_t next_mask = _prefs.enabled_mask & 0x0F;
+  uint8_t next_mask = _prefs.enabled_mask & kBrokerMask;
   if (enabled) {
     next_mask = normalizeEnabledMask(next_mask | bit);
     if ((next_mask & bit) == 0) {

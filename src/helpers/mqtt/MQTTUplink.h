@@ -130,12 +130,15 @@ private:
   static constexpr uint8_t kLetsmeshEuBit = 0x02;
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
   static constexpr uint8_t kCustomBit = 0x08;
+  static constexpr uint8_t kMeshmapperBit = 0x10;
+  static constexpr uint8_t kBrokerMask = 0x1F;
   static constexpr uint8_t kMaxEnabledBrokers = 2;
-  static const BrokerSpec kBrokerSpecs[4];
+  static constexpr size_t kBrokerCount = 5;
+  static const BrokerSpec kBrokerSpecs[kBrokerCount];
   static bool isUnsetIataValue(const char* iata);
   static const char* brokerCaCert(const BrokerSpec& spec);
 
-  BrokerState _brokers[4];
+  BrokerState _brokers[kBrokerCount];
 
   static void handleMqttEvent(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
   static void scheduleBrokerRetry(BrokerState& broker, unsigned long now_ms, bool count_failure);

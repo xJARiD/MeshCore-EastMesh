@@ -142,10 +142,11 @@ uv run --group docs zensical build
 
 ### MQTT Repeater Additions
 
-- hardcoded broker support for:
+- curated broker support for:
   - `eastmesh-au`
-  - `letsmesh-eu`
-  - `letsmesh-us`
+  - `meshmapper`
+  - `letsmesh-eu` (retired)
+  - `letsmesh-us` (retired)
 - WSS transport at `/mqtt`
 - JWT auth using the device identity
 - CLI controls for:

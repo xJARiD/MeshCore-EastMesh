@@ -253,8 +253,8 @@ This section includes:
 - `mqtt.iata`: selected from a curated east-coast/south-east list.
 - `mqtt.owner`: owner public key.
 - `mqtt.email`: owner contact email.
-- MQTT server toggles: `eastmesh-au`, `letsmesh-eu`, `letsmesh-us`, and custom MQTT.
-- custom MQTT `host:port`, TCP/WSS transport, username, and password fields.
+- MQTT brokers: **Primary MQTT** and **Secondary MQTT** dropdowns, each selecting one of `eastmesh-au`, `meshmapper`, `Custom`, the retired `letsmesh-eu`/`letsmesh-us`, or `None`. The two slots enforce the two-broker maximum, and a broker chosen in one slot is disabled in the other.
+- custom MQTT `host:port`, TCP/WSS transport, username, and password fields, shown when `Custom` is selected in either slot.
 
 `UNSET - To be configured` is the default for new observer installs until a real saved value exists.
 

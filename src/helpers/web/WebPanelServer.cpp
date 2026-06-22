@@ -422,7 +422,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .placeholder-slot { display:block; width:44px; height:44px; }
     .savebtn { width:100%; background:var(--accent); color:var(--button-text); border:none; }
     .savebtn:hover { background:var(--accent-hover); }
-    .broker-stack { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:12px; align-items:start; }
+    .broker-stack { display:grid; gap:12px; align-items:start; }
+    .broker-slots { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .broker-slot { display:grid; gap:6px; align-content:start; }
     .broker-group { display:grid; gap:8px; align-content:start; }
     .broker-group.wide { grid-column:1 / -1; }
     .broker-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
@@ -530,7 +532,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       body { font-size:15px; }
       main { padding:16px; }
       .card { padding:16px; margin-bottom:14px; }
-      .row, .row3, .row-command, .metric-grid, .trend-grid, .hud-grid-1, .hud-grid-2, .hud-grid-3, .core-grid, .core-metrics, .broker-stack, .broker-grid, .broker-grid.single, .broker-grid.two, .broker-grid.one-two { grid-template-columns:1fr; }
+      .row, .row3, .row-command, .metric-grid, .trend-grid, .hud-grid-1, .hud-grid-2, .hud-grid-3, .core-grid, .core-metrics, .broker-stack, .broker-slots, .broker-grid, .broker-grid.single, .broker-grid.two, .broker-grid.one-two { grid-template-columns:1fr; }
       .inline-actions { grid-template-columns:minmax(0,1fr) auto auto; }
       .fieldline { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
       .row-command button { width:100%; }
@@ -963,76 +965,24 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        <div class="field-card">
 	          <label class="label">MQTT Servers</label>
 	          <div class="broker-stack">
-	            <div class="broker-group">
-	              <div class="broker-group-title">EastMesh</div>
-		              <div class="broker-grid single">
-	                <div class="broker-card">
-	                  <div class="broker-mode">
-	                    <div class="broker-row">
-	                      <div class="broker-copy">
-	                        <div class="broker-title">EastMesh AU</div>
-	                        <div class="broker-state" id="mqttEastmeshAuState">Off</div>
-	                      </div>
-	                    </div>
-	                    <div class="mode-slider">
-	                      <input id="mqttEastmeshMode" type="range" min="0" max="1" step="1" value="0" aria-label="EastMesh mode">
-	                      <div class="mode-labels two" aria-hidden="true">
-	                        <div class="mode-label" data-eastmesh-label="off">Off</div>
-	                        <div class="mode-label" data-eastmesh-label="on">On</div>
-	                      </div>
-	                    </div>
-	                    <input id="mqttEastmeshAu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
-	                  </div>
-	                </div>
+	            <div class="broker-slots">
+	              <div class="broker-slot">
+	                <label class="label" for="mqttPrimaryBroker">Primary MQTT</label>
+	                <select id="mqttPrimaryBroker" aria-label="Primary MQTT broker"></select>
+	              </div>
+	              <div class="broker-slot">
+	                <label class="label" for="mqttSecondaryBroker">Secondary MQTT</label>
+	                <select id="mqttSecondaryBroker" aria-label="Secondary MQTT broker"></select>
 	              </div>
 	            </div>
-	            <div class="broker-group">
-	              <div class="broker-group-title">LetsMesh</div>
-	              <div class="broker-grid single">
-	                <div class="broker-card">
-	                  <div class="broker-mode">
-	                    <div class="broker-row">
-	                      <div class="broker-copy">
-	                        <div class="broker-title">LetsMesh Mode</div>
-	                        <div class="broker-state" id="mqttLetsmeshModeState">Off</div>
-	                      </div>
-	                    </div>
-	                    <div class="mode-slider">
-	                      <input id="mqttLetsmeshMode" type="range" min="0" max="3" step="1" value="0" aria-label="LetsMesh mode">
-	                      <div class="mode-labels" aria-hidden="true">
-	                        <div class="mode-label" data-letsmesh-label="off">Off</div>
-	                        <div class="mode-label" data-letsmesh-label="eu">EU</div>
-	                        <div class="mode-label" data-letsmesh-label="us">US</div>
-	                        <div class="mode-label" data-letsmesh-label="both">Both</div>
-	                      </div>
-	                    </div>
-	                    <input id="mqttLetsmeshEu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
-	                    <input id="mqttLetsmeshUs" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
-	                  </div>
-	                </div>
-	              </div>
-	            </div>
-	            <div class="broker-group wide">
-	              <div class="broker-group-title">Custom</div>
-	              <div class="broker-grid one-two">
-	                <div class="broker-card">
-	                  <div class="broker-mode">
-	                    <div class="broker-row">
-	                      <div class="broker-copy">
-	                        <div class="broker-title">Custom MQTT</div>
-	                        <div class="broker-state" id="mqttCustomState">Off</div>
-	                      </div>
-	                    </div>
-	                    <div class="mode-slider">
-	                      <input id="mqttCustomMode" type="range" min="0" max="1" step="1" value="0" aria-label="Custom MQTT mode">
-	                      <div class="mode-labels two" aria-hidden="true">
-	                        <div class="mode-label" data-custom-mqtt-label="off">Off</div>
-	                        <div class="mode-label" data-custom-mqtt-label="on">On</div>
-	                      </div>
-	                    </div>
-	                    <input id="mqttCustom" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
-	                  </div>
-	                </div>
+	            <input id="mqttEastmeshAu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	            <input id="mqttMeshmapper" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	            <input id="mqttLetsmeshEu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	            <input id="mqttLetsmeshUs" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	            <input id="mqttCustom" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	            <div class="broker-group wide" id="mqttCustomConfig" style="display:none">
+	              <div class="broker-group-title">Custom MQTT settings</div>
+	              <div class="broker-grid">
 	                <div class="broker-card">
 	                  <div class="field-card">
 	                    <label class="label" for="mqttCustomEndpoint">Host:Port</label>
@@ -2752,88 +2702,71 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return null;
       }
     }
-	    function getLetsmeshMode() {
-	      const eu = document.getElementById("mqttLetsmeshEu");
-	      const us = document.getElementById("mqttLetsmeshUs");
-	      const euOn = eu && eu.checked;
-	      const usOn = us && us.checked;
-	      if (euOn && usOn) return "both";
-	      if (euOn) return "eu";
-	      if (usOn) return "us";
-	      return "off";
-	    }
-	    function refreshEastmeshModeUi() {
-	      const input = document.getElementById("mqttEastmeshAu");
-	      const enabled = !!(input && input.checked);
-	      const slider = document.getElementById("mqttEastmeshMode");
-	      if (slider) {
-	        slider.value = enabled ? "1" : "0";
-	      }
-	      document.querySelectorAll("[data-eastmesh-label]").forEach((label) => {
-	        label.classList.toggle("active", label.dataset.eastmeshLabel === (enabled ? "on" : "off"));
-	      });
-	    }
-	    function refreshCustomMqttModeUi() {
-	      const input = document.getElementById("mqttCustom");
-	      const enabled = !!(input && input.checked);
-	      const slider = document.getElementById("mqttCustomMode");
-	      if (slider) {
-	        slider.value = enabled ? "1" : "0";
-	      }
-	      document.querySelectorAll("[data-custom-mqtt-label]").forEach((label) => {
-	        label.classList.toggle("active", label.dataset.customMqttLabel === (enabled ? "on" : "off"));
-	      });
-	    }
-	    function getLetsmeshModeIndex(mode) {
-	      const order = { off:0, eu:1, us:2, both:3 };
-	      return Object.prototype.hasOwnProperty.call(order, mode) ? order[mode] : 0;
-	    }
-	    function clampLetsmeshModeIndex(index) {
-	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
-	      const bounded = Math.max(0, Math.min(3, index));
-	      return eastmeshEnabled && bounded === 3 ? 1 : bounded;
-	    }
-	    function refreshLetsmeshModeUi() {
-	      const mode = getLetsmeshMode();
-	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
-	      const state = document.getElementById("mqttLetsmeshModeState");
-	      const labels = { off:"Off", eu:"EU", us:"US", both:"Both" };
-	      if (state) {
-	        state.textContent = labels[mode] || "Off";
-	        state.classList.toggle("on", mode !== "off");
-	      }
-	      const slider = document.getElementById("mqttLetsmeshMode");
-	      if (slider) {
-	        slider.max = "3";
-	        slider.value = String(clampLetsmeshModeIndex(getLetsmeshModeIndex(mode)));
-	      }
-	      document.querySelectorAll("[data-letsmesh-label]").forEach((label) => {
-	        const labelMode = label.dataset.letsmeshLabel;
-	        label.classList.toggle("active", labelMode === mode);
-	        label.classList.toggle("disabled", eastmeshEnabled && labelMode === "both");
-	      });
-	    }
-	    function setBrokerToggle(inputId, state) {
-	      const input = document.getElementById(inputId);
-	      if (!input) return;
-	      const enabled = state === "on";
-	      input.checked = enabled;
-	      const label = document.getElementById(inputId + "State");
-	      if (label) {
-	        label.textContent = enabled ? "On" : "Off";
-	        label.classList.toggle("on", enabled);
-	      }
-	      if (inputId === "mqttLetsmeshEu" || inputId === "mqttLetsmeshUs") {
-	        refreshLetsmeshModeUi();
-	      } else if (inputId === "mqttEastmeshAu") {
-	        refreshEastmeshModeUi();
-	        refreshLetsmeshModeUi();
-	      } else if (inputId === "mqttCustom") {
-	        refreshCustomMqttModeUi();
-	      }
-	    }
+    const MQTT_BROKERS = [
+      { key:"eastmesh-au", input:"mqttEastmeshAu", label:"EastMesh AU", set:"set mqtt.eastmesh-au" },
+      { key:"meshmapper", input:"mqttMeshmapper", label:"MeshMapper", set:"set mqtt.meshmapper" },
+      { key:"custom", input:"mqttCustom", label:"Custom", set:"set mqtt.custom", custom:true },
+      { key:"letsmesh-eu", input:"mqttLetsmeshEu", label:"LetsMesh EU (retired)", set:"set mqtt.letsmesh-eu" },
+      { key:"letsmesh-us", input:"mqttLetsmeshUs", label:"LetsMesh US (retired)", set:"set mqtt.letsmesh-us" }
+    ];
+    const MQTT_SLOT_IDS = ["mqttPrimaryBroker", "mqttSecondaryBroker"];
+    function brokerByKey(key) {
+      return MQTT_BROKERS.find((broker) => broker.key === key) || null;
+    }
+    function isBrokerChecked(broker) {
+      const input = document.getElementById(broker.input);
+      return !!(input && input.checked);
+    }
+    function enabledBrokerKeys() {
+      return MQTT_BROKERS.filter(isBrokerChecked).map((broker) => broker.key);
+    }
+    function buildBrokerSlotOptions() {
+      const optionsHtml = ['<option value="">None</option>']
+        .concat(MQTT_BROKERS.map((broker) => `<option value="${broker.key}">${broker.label}</option>`))
+        .join("");
+      MQTT_SLOT_IDS.forEach((slotId) => {
+        const select = document.getElementById(slotId);
+        if (select) select.innerHTML = optionsHtml;
+      });
+    }
+    function refreshBrokerSlotOptionStates() {
+      const selected = MQTT_SLOT_IDS.map((id) => {
+        const select = document.getElementById(id);
+        return select ? select.value : "";
+      });
+      MQTT_SLOT_IDS.forEach((slotId, idx) => {
+        const select = document.getElementById(slotId);
+        if (!select) return;
+        const other = selected[idx === 0 ? 1 : 0];
+        Array.from(select.options).forEach((option) => {
+          option.disabled = option.value !== "" && option.value === other;
+        });
+      });
+    }
+    function refreshCustomConfigVisibility() {
+      const config = document.getElementById("mqttCustomConfig");
+      if (!config) return;
+      const customSelected = MQTT_SLOT_IDS.some((id) => {
+        const select = document.getElementById(id);
+        return !!(select && select.value === "custom");
+      });
+      config.style.display = customSelected ? "" : "none";
+    }
+    function refreshBrokerSlotsFromState() {
+      const enabled = enabledBrokerKeys();
+      MQTT_SLOT_IDS.forEach((slotId, idx) => {
+        const select = document.getElementById(slotId);
+        if (select) select.value = enabled[idx] || "";
+      });
+      refreshBrokerSlotOptionStates();
+      refreshCustomConfigVisibility();
+    }
+    function setBrokerToggle(inputId, state) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.checked = state === "on";
+      refreshBrokerSlotsFromState();
+    }
     async function loadBrokerState(cmd, inputId, options = {}) {
       const result = await runCommand(cmd, options);
       if (!result.ok) return;
@@ -3043,47 +2976,43 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    }
 	    buildRegionStateOptions();
 	    document.getElementById("saveRegionBtn").onclick = () => saveRegionSelection();
-	    async function setEastmeshMode(enabled) {
-	      if (enabled && getLetsmeshMode() === "both") {
-	        await setLetsmeshMode("eu");
-	      }
-	      const result = await runCommand(enabled ? "set mqtt.eastmesh-au on" : "set mqtt.eastmesh-au off");
-	      if (!result.ok) {
-	        refreshEastmeshModeUi();
-	        refreshLetsmeshModeUi();
-	        return;
-	      }
-	      setBrokerToggle("mqttEastmeshAu", enabled ? "on" : "off");
-	      refreshEastmeshModeUi();
-	      refreshLetsmeshModeUi();
-	    }
-	    const eastmeshModeSlider = document.getElementById("mqttEastmeshMode");
-	    if (eastmeshModeSlider) {
-	      eastmeshModeSlider.addEventListener("input", () => {
-	        eastmeshModeSlider.value = (Number.parseInt(eastmeshModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
-	      });
-	      eastmeshModeSlider.addEventListener("change", () => {
-	        setEastmeshMode((Number.parseInt(eastmeshModeSlider.value, 10) || 0) >= 1);
-	      });
-	    }
-	    async function setCustomMqttMode(enabled) {
-	      const result = await runCommand(enabled ? "set mqtt.custom on" : "set mqtt.custom off");
-	      if (!result.ok) {
-	        refreshCustomMqttModeUi();
-	        return;
-	      }
-	      setBrokerToggle("mqttCustom", enabled ? "on" : "off");
-	      refreshCustomMqttModeUi();
-	    }
-	    const customMqttModeSlider = document.getElementById("mqttCustomMode");
-	    if (customMqttModeSlider) {
-	      customMqttModeSlider.addEventListener("input", () => {
-	        customMqttModeSlider.value = (Number.parseInt(customMqttModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
-	      });
-	      customMqttModeSlider.addEventListener("change", () => {
-	        setCustomMqttMode((Number.parseInt(customMqttModeSlider.value, 10) || 0) >= 1);
-	      });
-	    }
+    buildBrokerSlotOptions();
+    async function applyBrokerSlots() {
+      const desired = MQTT_SLOT_IDS.map((id) => {
+        const sel = document.getElementById(id);
+        return sel ? sel.value : "";
+      });
+      if (desired[0] && desired[0] === desired[1]) {
+        refreshBrokerSlotsFromState();
+        return;
+      }
+      const desiredKeys = desired.filter((value) => value);
+      const current = enabledBrokerKeys();
+      const toDisable = current.filter((key) => !desiredKeys.includes(key));
+      const toEnable = desiredKeys.filter((key) => !current.includes(key));
+      // Disable removed brokers first so we never exceed the firmware's two-broker limit mid-swap.
+      for (const key of toDisable) {
+        const broker = brokerByKey(key);
+        const result = await runCommand(broker.set + " off");
+        if (!result.ok) { refreshBrokerSlotsFromState(); return; }
+        const input = document.getElementById(broker.input);
+        if (input) input.checked = false;
+      }
+      for (const key of toEnable) {
+        const broker = brokerByKey(key);
+        const result = await runCommand(broker.set + " on");
+        if (!result.ok) { refreshBrokerSlotsFromState(); return; }
+        const input = document.getElementById(broker.input);
+        if (input) input.checked = true;
+      }
+      refreshBrokerSlotsFromState();
+    }
+    MQTT_SLOT_IDS.forEach((slotId) => {
+      const select = document.getElementById(slotId);
+      if (select) {
+        select.addEventListener("change", () => applyBrokerSlots());
+      }
+    });
 	    document.getElementById("refreshCustomEndpointBtn").onclick = () => loadCustomEndpoint();
 	    document.getElementById("saveCustomEndpointBtn").onclick = () => saveCustomEndpoint();
 	    const customTransportSlider = document.getElementById("mqttCustomTransport");
@@ -3094,44 +3023,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      });
 	      customTransportSlider.addEventListener("change", () => {
 	        setCustomTransport((Number.parseInt(customTransportSlider.value, 10) || 0) >= 1 ? "wss" : "tcp");
-	      });
-	    }
-	    async function setLetsmeshMode(mode) {
-	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      if (mode === "both" && eastmesh && eastmesh.checked) {
-	        refreshLetsmeshModeUi();
-	        return;
-	      }
-	      const desired = {
-	        eu: mode === "eu" || mode === "both",
-	        us: mode === "us" || mode === "both"
-	      };
-	      const currentEu = document.getElementById("mqttLetsmeshEu").checked;
-	      const currentUs = document.getElementById("mqttLetsmeshUs").checked;
-	      const commands = [];
-	      if (currentEu && !desired.eu) commands.push(["mqttLetsmeshEu", "set mqtt.letsmesh-eu off", "off"]);
-	      if (currentUs && !desired.us) commands.push(["mqttLetsmeshUs", "set mqtt.letsmesh-us off", "off"]);
-	      if (!currentEu && desired.eu) commands.push(["mqttLetsmeshEu", "set mqtt.letsmesh-eu on", "on"]);
-	      if (!currentUs && desired.us) commands.push(["mqttLetsmeshUs", "set mqtt.letsmesh-us on", "on"]);
-	      for (const [inputId, command, nextState] of commands) {
-	        const result = await runCommand(command);
-	        if (!result.ok) {
-	          refreshLetsmeshModeUi();
-	          return;
-	        }
-	        setBrokerToggle(inputId, nextState);
-	      }
-	      refreshLetsmeshModeUi();
-	    }
-	    const letsmeshModeSlider = document.getElementById("mqttLetsmeshMode");
-	    if (letsmeshModeSlider) {
-	      letsmeshModeSlider.addEventListener("input", () => {
-	        letsmeshModeSlider.value = String(clampLetsmeshModeIndex(Number.parseInt(letsmeshModeSlider.value, 10) || 0));
-	      });
-	      letsmeshModeSlider.addEventListener("change", () => {
-	        const modes = ["off", "eu", "us", "both"];
-	        const index = clampLetsmeshModeIndex(Number.parseInt(letsmeshModeSlider.value, 10) || 0);
-	        setLetsmeshMode(modes[index] || "off");
 	      });
 	    }
 	    document.getElementById("saveOwnerInfo").onclick = () => {
@@ -3300,6 +3191,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get mqtt.owner", "mqttOwner", null, quiet),
           () => loadField("get mqtt.email", "mqttEmail", null, quiet),
           () => loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu", quiet),
+          () => loadBrokerState("get mqtt.meshmapper", "mqttMeshmapper", quiet),
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
           () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet),
           () => loadBrokerState("get mqtt.custom", "mqttCustom", quiet),
@@ -3317,8 +3209,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       if (isCurrentPageLoad(generation)) loadRadioPresets();
 	    }
-	    refreshEastmeshModeUi();
-	    refreshLetsmeshModeUi();
+	    refreshBrokerSlotsFromState();
 	    navigateToPage(isStatsPage ? "/stats" : "/app", { replace:true });
   </script>
 </body>
