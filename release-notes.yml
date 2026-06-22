@@ -212,6 +212,35 @@ releases:
         text: "Documented custom MQTT TCP/WSS configuration in the web panel and custom CLI guides."
     breaking_changes: []
 
+  - track: observer-eastmesh
+    version: "2026.6.4"
+    tag: "observer-eastmesh-v2026.6.4"
+    date: "2026-06-23"
+    previous_version: "2026.6.3"
+    summary: "Replaces the retired LetsMesh brokers with the MeshMapper broker and reworks broker selection into Primary and Secondary slots."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added the `meshmapper` curated broker (`wss://mqtt.meshmapper.net:443/mqtt`) using WSS, verified TLS, and MeshCore JWT authentication with the broker host as the token audience."
+      - type: added
+        area: cli
+        text: "Added `get mqtt.meshmapper` and `set mqtt.meshmapper on|off` to toggle the MeshMapper broker."
+      - type: changed
+        area: mqtt
+        text: "Retired the unmaintained LetsMesh EU/US brokers: they remain selectable but are marked retired, and saved selections are cleared once on upgrade so dead brokers stop retrying."
+      - type: changed
+        area: web
+        text: "Replaced the EastMesh and LetsMesh sliders and the custom MQTT toggle with Primary and Secondary broker dropdowns that enforce the two-broker maximum and reveal custom host, username, and password fields when Custom is selected."
+      - type: changed
+        area: cli
+        text: "Shortened `get mqtt.status` to report the two active broker slots as `p:<broker>:<state>` and `s:<broker>:<state>` so the reply stays within the LoRa text limit."
+      - type: docs
+        area: docs
+        text: "Updated the README, web panel, and custom CLI guides for MeshMapper and the Primary/Secondary broker layout."
+    breaking_changes:
+      - "`get mqtt.status` output changed from per-broker fields to `p:`/`s:` broker slots; anything parsing the previous format must be updated."
+      - "Saved LetsMesh EU/US broker selections are cleared once on upgrade; re-enable a broker such as MeshMapper if a second uplink is required."
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -335,3 +364,32 @@ releases:
         area: docs
         text: "Documented custom MQTT TCP/WSS configuration in the web panel and custom CLI guides."
     breaking_changes: []
+
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.6.4"
+    tag: "observer-eastmesh-bridge-espnow-v2026.6.4"
+    date: "2026-06-23"
+    previous_version: "2026.6.3"
+    summary: "Replaces the retired LetsMesh brokers with the MeshMapper broker and reworks broker selection into Primary and Secondary slots in Observer ESP-NOW bridge builds."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added the `meshmapper` curated broker (`wss://mqtt.meshmapper.net:443/mqtt`) using WSS, verified TLS, and MeshCore JWT authentication with the broker host as the token audience."
+      - type: added
+        area: cli
+        text: "Added `get mqtt.meshmapper` and `set mqtt.meshmapper on|off` to toggle the MeshMapper broker."
+      - type: changed
+        area: mqtt
+        text: "Retired the unmaintained LetsMesh EU/US brokers: they remain selectable but are marked retired, and saved selections are cleared once on upgrade so dead brokers stop retrying."
+      - type: changed
+        area: web
+        text: "Replaced the EastMesh and LetsMesh sliders and the custom MQTT toggle with Primary and Secondary broker dropdowns that enforce the two-broker maximum and reveal custom host, username, and password fields when Custom is selected."
+      - type: changed
+        area: cli
+        text: "Shortened `get mqtt.status` to report the two active broker slots as `p:<broker>:<state>` and `s:<broker>:<state>` so the reply stays within the LoRa text limit."
+      - type: docs
+        area: docs
+        text: "Updated the README, web panel, and custom CLI guides for MeshMapper and the Primary/Secondary broker layout."
+    breaking_changes:
+      - "`get mqtt.status` output changed from per-broker fields to `p:`/`s:` broker slots; anything parsing the previous format must be updated."
+      - "Saved LetsMesh EU/US broker selections are cleared once on upgrade; re-enable a broker such as MeshMapper if a second uplink is required."
