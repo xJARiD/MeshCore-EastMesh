@@ -1702,8 +1702,8 @@
 <li><code>mqtt.iata</code>: selected from a curated east-coast/south-east list.</li>
 <li><code>mqtt.owner</code>: owner public key.</li>
 <li><code>mqtt.email</code>: owner contact email.</li>
-<li>MQTT server toggles: <code>eastmesh-au</code>, <code>letsmesh-eu</code>, <code>letsmesh-us</code>, and custom MQTT.</li>
-<li>custom MQTT <code>host:port</code>, TCP/WSS transport, username, and password fields.</li>
+<li>MQTT brokers: <strong>Primary MQTT</strong> and <strong>Secondary MQTT</strong> dropdowns, each selecting one of <code>eastmesh-au</code>, <code>meshmapper</code>, <code>Custom</code>, the retired <code>letsmesh-eu</code>/<code>letsmesh-us</code>, or <code>None</code>. The two slots enforce the two-broker maximum, and a broker chosen in one slot is disabled in the other.</li>
+<li>custom MQTT <code>host:port</code>, TCP/WSS transport, username, and password fields, shown when <code>Custom</code> is selected in either slot.</li>
 </ul>
 <p><code>UNSET - To be configured</code> is the default for new observer installs until a real saved value exists.</p>
 <p>Notes:</p>

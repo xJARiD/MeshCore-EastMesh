@@ -564,6 +564,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ntp-settings-for-observers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NTP Settings For Observers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#esp-now-bridge-settings-for-observer-esp-now-builds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -783,6 +794,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ntp-settings-for-observers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NTP Settings For Observers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#esp-now-bridge-settings-for-observer-esp-now-builds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -951,10 +973,12 @@
 <ul>
 <li><code>get mqtt.eastmesh-au</code></li>
 <li><code>set mqtt.eastmesh-au on|off</code></li>
-<li><code>get mqtt.letsmesh-eu</code></li>
-<li><code>set mqtt.letsmesh-eu on|off</code></li>
-<li><code>get mqtt.letsmesh-us</code></li>
-<li><code>set mqtt.letsmesh-us on|off</code></li>
+<li><code>get mqtt.meshmapper</code></li>
+<li><code>set mqtt.meshmapper on|off</code></li>
+<li><code>get mqtt.letsmesh-eu</code> (retired)</li>
+<li><code>set mqtt.letsmesh-eu on|off</code> (retired)</li>
+<li><code>get mqtt.letsmesh-us</code> (retired)</li>
+<li><code>set mqtt.letsmesh-us on|off</code> (retired)</li>
 <li><code>get mqtt.custom</code></li>
 <li><code>set mqtt.custom on|off</code></li>
 <li><code>get mqtt.custom.host</code></li>
@@ -971,11 +995,13 @@
 <p>Notes:</p>
 <ul>
 <li>new observer installs default <code>mqtt.iata</code> to <code>UNSET</code></li>
-<li><code>letsmesh-eu</code> and <code>letsmesh-us</code> remain off by default unless already configured in saved prefs</li>
+<li>a maximum of two MQTT brokers can be enabled at once</li>
+<li><code>meshmapper</code> is the curated global broker (<code>wss://mqtt.meshmapper.net:443/mqtt</code>); like <code>eastmesh-au</code> it uses WSS, verified TLS, and MeshCore JWT auth with the broker host as the token audience</li>
+<li><code>letsmesh-eu</code> and <code>letsmesh-us</code> are retired (LetsMesh is no longer maintained) and off by default; any saved selections are cleared once on upgrade, though the endpoints stay selectable for legacy use</li>
 <li>if <code>mqtt.iata</code> is <code>UNSET</code>, enabled MQTT brokers will not connect</li>
 <li>custom MQTT uses the configured username and password, not JWT authentication</li>
 <li>custom MQTT defaults to TCP; set <code>mqtt.custom.transport wss</code> for MQTT over secure WebSockets using the fixed <code>/mqtt</code> websocket path and the ESP-IDF x509 root CA bundle</li>
-<li>in <code>get mqtt.status</code>, custom MQTT is shown as <code>custom:&lt;transport&gt;:&lt;state&gt;</code>, for example <code>custom:wss:up</code>; <code>conn</code> means connecting and <code>up</code> means connected</li>
+<li><code>get mqtt.status</code> reports the two enabled broker slots as <code>p:&lt;broker&gt;:&lt;state&gt;</code> (primary) and <code>s:&lt;broker&gt;:&lt;state&gt;</code> (secondary), or <code>-</code> when a slot is empty; custom appears as <code>custom:&lt;transport&gt;:&lt;state&gt;</code> (for example <code>p:custom:wss:up</code>); <code>conn</code> means connecting and <code>up</code> means connected</li>
 <li>custom MQTT uses the same <code>meshcore/&lt;IATA&gt;/&lt;device&gt;/&lt;leaf&gt;</code> topics as the curated brokers</li>
 <li>turning off a connected broker publishes a retained MQTT status update with <code>"status":"offline"</code> before the client disconnects</li>
 <li>changing <code>mqtt.iata</code> away from a configured value also publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path</li>
@@ -995,6 +1021,16 @@
 <li><code>get wifi.powersaving</code>: shows the current Wi-Fi power save mode.</li>
 <li><code>set wifi.powersaving none|min|max</code>: sets Wi-Fi power saving mode.</li>
 </ul>
+<h3 id="ntp-settings-for-observers">NTP Settings For Observers<a class="headerlink" href="#ntp-settings-for-observers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>get ntp.server1</code>: shows the primary NTP server.</li>
+<li><code>get ntp.server2</code>: shows the secondary NTP server.</li>
+<li><code>get ntp.server3</code>: shows the tertiary NTP server.</li>
+<li><code>set ntp.server1 &lt;host&gt;</code>: sets the primary NTP server and restarts time sync.</li>
+<li><code>set ntp.server2 &lt;host&gt;</code>: sets the secondary NTP server and restarts time sync.</li>
+<li><code>set ntp.server3 &lt;host&gt;</code>: sets the tertiary NTP server and restarts time sync.</li>
+</ul>
+<p>Default servers are <code>au.pool.ntp.org</code>, <code>time.google.com</code>, and <code>time.cloudflare.com</code>.</p>
 <h3 id="esp-now-bridge-settings-for-observer-esp-now-builds">ESP-NOW Bridge Settings For Observer ESP-NOW Builds<a class="headerlink" href="#esp-now-bridge-settings-for-observer-esp-now-builds" title="Permanent link">&para;</a></h3>
 <p>These commands are available on <code>*_repeater_observer_espnow</code> firmware targets.</p>
 <p>Bridge commands are for local ESP-NOW bridge use between nearby repeaters, such as linking repeaters on <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>. They are not MQTT-over-WAN, VPN, or internet bridge controls.</p>
