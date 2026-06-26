@@ -975,6 +975,8 @@
 <li><code>set mqtt.eastmesh-au on|off</code></li>
 <li><code>get mqtt.meshmapper</code></li>
 <li><code>set mqtt.meshmapper on|off</code></li>
+<li><code>get mqtt.waev</code></li>
+<li><code>set mqtt.waev on|off</code></li>
 <li><code>get mqtt.letsmesh-eu</code> (retired)</li>
 <li><code>set mqtt.letsmesh-eu on|off</code> (retired)</li>
 <li><code>get mqtt.letsmesh-us</code> (retired)</li>
@@ -997,6 +999,7 @@
 <li>new observer installs default <code>mqtt.iata</code> to <code>UNSET</code></li>
 <li>a maximum of two MQTT brokers can be enabled at once</li>
 <li><code>meshmapper</code> is the curated global broker (<code>wss://mqtt.meshmapper.net:443/mqtt</code>); like <code>eastmesh-au</code> it uses WSS, verified TLS, and MeshCore JWT auth with the broker host as the token audience</li>
+<li><code>waev</code> is a curated broker (<code>wss://mqtt.waev.app:443/mqtt</code>); like <code>eastmesh-au</code> it uses WSS, verified TLS, and MeshCore JWT auth with the broker host as the token audience, but enforces a 1-hour auth token lifetime (the firmware mints a shorter-lived token for it automatically)</li>
 <li><code>letsmesh-eu</code> and <code>letsmesh-us</code> are retired (LetsMesh is no longer maintained) and off by default; any saved selections are cleared once on upgrade, though the endpoints stay selectable for legacy use</li>
 <li>if <code>mqtt.iata</code> is <code>UNSET</code>, enabled MQTT brokers will not connect</li>
 <li>custom MQTT uses the configured username and password, not JWT authentication</li>
