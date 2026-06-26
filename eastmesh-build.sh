@@ -37,6 +37,7 @@ Commands:
   build-repeater-bridge-espnow-firmwares: Build all repeater ESP-NOW bridge firmwares for all build targets.
   build-observer-firmwares: Build all observer firmwares for all build targets.
   build-observer-espnow-firmwares: Build all observer ESP-NOW firmwares for all build targets.
+  build-observer-mqtt-bridge-firmwares: Build all observer MQTT bridge firmwares for all build targets.
   build-room-server-firmwares: Build all chat room server firmwares for all build targets.
 
 Examples:
@@ -63,6 +64,9 @@ $ sh eastmesh-build.sh build-observer-firmwares
 
 Build all observer ESP-NOW firmwares
 $ sh eastmesh-build.sh build-observer-espnow-firmwares
+
+Build all observer MQTT bridge firmwares
+$ sh eastmesh-build.sh build-observer-mqtt-bridge-firmwares
 
 Build all chat room server firmwares
 $ sh eastmesh-build.sh build-room-server-firmwares
@@ -327,6 +331,12 @@ build_repeater_observer_espnow_firmwares() {
 
 }
 
+build_repeater_observer_mqtt_bridge_firmwares() {
+
+  build_all_firmwares_by_suffix "_repeater_observer_mqtt_bridge"
+
+}
+
 build_room_server_firmwares() {
 
 #  # build specific room server firmwares
@@ -380,6 +390,8 @@ elif [[ $1 == "build-observer-firmwares" ]]; then
   build_repeater_observer_firmwares
 elif [[ $1 == "build-observer-espnow-firmwares" ]]; then
   build_repeater_observer_espnow_firmwares
+elif [[ $1 == "build-observer-mqtt-bridge-firmwares" ]]; then
+  build_repeater_observer_mqtt_bridge_firmwares
 elif [[ $1 == "build-room-server-firmwares" ]]; then
   build_room_server_firmwares
 fi

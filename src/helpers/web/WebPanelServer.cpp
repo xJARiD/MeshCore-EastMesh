@@ -1027,6 +1027,32 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	          <div class="panel-note">A maximum of two MQTT brokers can be enabled at once.</div>
 	          <div id="mqttBrokerWarning" class="panel-warning"></div>
 	        </div>
+	        <div class="field-card" id="bridgePeerConfig" style="display:none">
+	          <label class="label" for="bridgePeerEndpoint">Mesh bridge peer MQTT host:port</label>
+	          <div class="inline-actions">
+	            <input id="bridgePeerEndpoint" placeholder="192.168.1.10:1883" maxlength="80">
+	            <button id="refreshBridgePeerEndpointBtn" class="iconbtn" title="Refresh bridge peer MQTT host and port">&#8635;</button>
+	            <button id="saveBridgePeerEndpointBtn" class="savebtn">Save</button>
+	          </div>
+	          <div class="panel-note">Both bridge nodes must use the same peer broker, port, credentials, and bridge secret.</div>
+	          <div class="row">
+	            <div class="field-card">
+	              <label class="label" for="bridgePeerUsername">Username</label>
+	              <div class="inline-actions">
+	                <input id="bridgePeerUsername" placeholder="optional" maxlength="64">
+	                <button class="iconbtn" data-load-cmd="get bridge.peer.username" data-load-input="bridgePeerUsername" title="Refresh bridge peer MQTT username">&#8635;</button>
+	                <button class="savebtn" data-prefix="set bridge.peer.username " data-input="bridgePeerUsername">Save</button>
+	              </div>
+	            </div>
+	            <div class="field-card">
+	              <label class="label" for="bridgePeerPassword">Password</label>
+	              <div class="inline-actions two-actions">
+	                <input id="bridgePeerPassword" type="password" placeholder="optional" maxlength="95">
+	                <button class="savebtn" data-prefix="set bridge.peer.password " data-input="bridgePeerPassword">Save</button>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
 	      </div>
 	    </section>
 
@@ -1222,6 +1248,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function parseClientEnv(clientEnv) {
       const env = String(clientEnv || "").trim();
       const suffixes = [
+        { suffix:"_repeater_observer_mqtt_bridge", firmware:"repeater_observer_mqtt_bridge" },
         { suffix:"_repeater_observer_espnow", firmware:"repeater_observer_espnow" },
         { suffix:"_repeater_observer", firmware:"repeater_observer" },
         { suffix:"_repeater_bridge_espnow", firmware:"repeater_bridge_espnow" },
@@ -2835,6 +2862,40 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (!portResult.ok) return;
       input.value = `${parsed.host}:${parsed.port}`;
     }
+    async function loadBridgePeerEndpoint(options = {}) {
+      const config = document.getElementById("bridgePeerConfig");
+      if (!config) return;
+      const typeResult = await runCommand("get bridge.type", options);
+      if (!typeResult.ok || parseReplyValue(typeResult.text) !== "mqtt") {
+        config.style.display = "none";
+        return;
+      }
+      config.style.display = "";
+      const hostResult = await runCommand("get bridge.peer.host", options);
+      if (!hostResult.ok) return;
+      const portResult = await runCommand("get bridge.peer.port", options);
+      if (!portResult.ok) return;
+      const host = parseReplyValue(hostResult.text);
+      const port = parseReplyValue(portResult.text);
+      const input = document.getElementById("bridgePeerEndpoint");
+      if (!input) return;
+      input.value = host ? `${host}:${port}` : "";
+      await loadField("get bridge.peer.username", "bridgePeerUsername", null, options);
+    }
+    async function saveBridgePeerEndpoint() {
+      const input = document.getElementById("bridgePeerEndpoint");
+      if (!input) return;
+      const parsed = parseCustomEndpoint(input.value);
+      if (!parsed) {
+        statusEl.textContent = "Use host:port, for example 192.168.1.10:1883";
+        return;
+      }
+      const hostResult = await runCommand("set bridge.peer.host " + parsed.host);
+      if (!hostResult.ok) return;
+      const portResult = await runCommand("set bridge.peer.port " + parsed.port);
+      if (!portResult.ok) return;
+      input.value = `${parsed.host}:${parsed.port}`;
+    }
     async function loadRadioConfig(options = {}) {
       const result = await runCommand("get radio", options);
       if (!result.ok) {
@@ -3017,6 +3078,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     });
 	    document.getElementById("refreshCustomEndpointBtn").onclick = () => loadCustomEndpoint();
 	    document.getElementById("saveCustomEndpointBtn").onclick = () => saveCustomEndpoint();
+	    const refreshBridgePeerEndpointBtn = document.getElementById("refreshBridgePeerEndpointBtn");
+	    if (refreshBridgePeerEndpointBtn) {
+	      refreshBridgePeerEndpointBtn.onclick = () => loadBridgePeerEndpoint();
+	    }
+	    const saveBridgePeerEndpointBtn = document.getElementById("saveBridgePeerEndpointBtn");
+	    if (saveBridgePeerEndpointBtn) {
+	      saveBridgePeerEndpointBtn.onclick = () => saveBridgePeerEndpoint();
+	    }
 	    const customTransportSlider = document.getElementById("mqttCustomTransport");
 	    if (customTransportSlider) {
 	      customTransportSlider.addEventListener("input", () => {
@@ -3200,7 +3269,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadBrokerState("get mqtt.custom", "mqttCustom", quiet),
           () => loadCustomEndpoint(quiet),
           () => loadCustomTransport(quiet),
-          () => loadField("get mqtt.custom.username", "mqttCustomUsername", null, quiet)
+          () => loadField("get mqtt.custom.username", "mqttCustomUsername", null, quiet),
+          () => loadBridgePeerEndpoint(quiet)
         ]);
         if (!isCurrentPageLoad(generation)) return;
         statusEl.textContent = "Ready";

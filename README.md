@@ -18,6 +18,8 @@ CoreScope (<https://core.eastmesh.au>) offers visibility into the network, inclu
   - native WiFi
   - MQTT over WSS with JWT auth
   - optional local HTTPS config panel on supported ESP32 targets
+- `*_repeater_observer_mqtt_bridge` firmware targets that add a **bidirectional MQTT mesh bridge** to a peer broker (separate from MQTT uplink)
+- `*_repeater_observer_espnow` firmware targets that add a local ESP-NOW mesh bridge
 - `*_companion_radio_wifi` firmware targets for WiFi-connected companion devices
 - EastMesh-specific release workflows and versioning on top of upstream MeshCore releases
 - docs and release guidance for EastMesh users instead of the full upstream MeshCore docs set
@@ -127,6 +129,8 @@ uv run --group docs zensical build
   - shared EastMesh observer env definitions
 - [`examples/simple_repeater/MyMesh.cpp`](./examples/simple_repeater/MyMesh.cpp)
   - repeater CLI wiring, MQTT command surface, and web allowlist integration
+- [`src/helpers/bridges/MQTTBridge.cpp`](./src/helpers/bridges/MQTTBridge.cpp)
+  - bidirectional MQTT mesh bridge (peer broker TCP, topic `meshcore/bridge/packets`)
 - [`src/helpers/mqtt/MQTTUplink.cpp`](./src/helpers/mqtt/MQTTUplink.cpp)
   - MQTT uplink implementation, HTTPS web panel, WSS/JWT handling, and repeater WiFi control
 - [`examples/companion_radio`](./examples/companion_radio)
@@ -158,6 +162,121 @@ uv run --group docs zensical build
   - MQTT packet and raw publishing
   - owner public key and email
   - local web panel enablement
+
+### MQTT Mesh Bridge (Observer)
+
+The `observer-eastmesh-bridge-mqtt` release track (`*_repeater_observer_mqtt_bridge`) bridges **raw mesh packets** between repeaters through a **peer MQTT broker you run** (for example Mosquitto on a LAN PC). This is **not** the same as MQTT uplink to EastMesh/MeshMapper:
+
+| | MQTT uplink (observer) | MQTT mesh bridge |
+| --- | --- | --- |
+| Purpose | Publish JSON telemetry to curated brokers | Forward encrypted mesh packets between radios |
+| Brokers | `eastmesh-au`, `meshmapper`, custom WSS | Your peer broker (`host:port`, TCP) |
+| Topic | `meshcore/<iata>/...` (per IATA) | `meshcore/bridge/packets` (fixed) |
+| Default on bridge builds | Off by default (enable in web panel / CLI) | On when `bridge.enabled` is on |
+
+**First supported target:** `Xiao_S3_WIO_repeater_observer_mqtt_bridge`
+
+**Related track:** `observer-eastmesh-bridge-espnow` (`*_repeater_observer_espnow`) uses ESP-NOW instead of MQTT for local bridging.
+
+Build example:
+
+```bash
+uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge
+```
+
+Flash (update):
+
+```bash
+uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge -t upload --upload-port COM10
+```
+
+After a **full flash erase**, flash the merged image at `0x0` instead of only `firmware.bin`:
+
+```bash
+uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge -t mergebin
+uv run pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port COM10 write_flash 0x0 .pio/build/Xiao_S3_WIO_repeater_observer_mqtt_bridge/firmware-merged.bin
+```
+
+#### Peer Mosquitto broker (LAN)
+
+Each bridge node connects to the **same** peer broker with the **same** credentials and `bridge.secret`.
+
+1. Install [Mosquitto](https://mosquitto.org/download/) on a machine reachable from both repeaters (for example `192.168.1.145`).
+2. Edit `mosquitto.conf` (Windows service install: `C:\Program Files\Mosquitto\mosquitto.conf`) and add:
+
+```conf
+listener 1883 0.0.0.0
+allow_anonymous false
+password_file C:\Program Files\Mosquitto\passwd
+```
+
+For lab/testing only, `allow_anonymous true` works without a password file.
+
+3. Create a user (admin CMD):
+
+```cmd
+cd "C:\Program Files\Mosquitto"
+mosquitto_passwd -c passwd bridgeuser
+```
+
+4. Restart the **service** (do not run a second `mosquitto -v` while the service owns port 1883):
+
+```powershell
+Restart-Service mosquitto
+```
+
+5. Confirm LAN listen and open the firewall:
+
+```cmd
+netstat -ano | findstr ":1883"
+```
+
+Expect `0.0.0.0:1883`, not only `127.0.0.1:1883`.
+
+6. Test from another machine:
+
+```cmd
+mosquitto_pub -h 192.168.1.145 -p 1883 -u bridgeuser -P your-password -t test -m hello
+mosquitto_sub -h 192.168.1.145 -p 1883 -u bridgeuser -P your-password -t meshcore/bridge/packets -v
+```
+
+Binary garbage on `meshcore/bridge/packets` is normal — payloads are XOR-encrypted mesh frames, not text.
+
+#### Repeater configuration
+
+Configure **both** bridge nodes identically for broker access; use the same `bridge.secret` on every node in the bridge group.
+
+Serial or web panel CLI:
+
+```text
+set wifi.ssid YourNetwork
+set wifi.pwd YourWiFiPassword
+set bridge.peer.host 192.168.1.145
+set bridge.peer.port 1883
+set bridge.peer.username bridgeuser
+set bridge.peer.password your-password
+set bridge.secret your-shared-bridge-secret
+```
+
+Web panel: **MQTT Settings** → **Mesh bridge peer MQTT** (`host:port`, username, password). The section appears when `get bridge.type` returns `mqtt`.
+
+Useful checks:
+
+```text
+get bridge.type
+get bridge.peer.host
+get bridge.enabled
+```
+
+Default admin password on dev builds is usually `password` unless you changed it.
+
+Packets use magic `0xC03E`, a Fletcher checksum, XOR encryption with `bridge.secret`, then publish/subscribe on `meshcore/bridge/packets`. Duplicate detection limits loops when both nodes see the same traffic.
+
+More detail:
+
+- [Custom CLI — MQTT bridge settings](./eastmesh-docs/custom-cli.md)
+- [Web panel — MQTT settings and bridge peer fields](./eastmesh-docs/web-panel.md)
+- [Releases — track comparison](./eastmesh-docs/releases.md)
 
 ### Local Web Panel
 
@@ -198,6 +317,7 @@ These rescue commands are only available after entering `CLI Rescue`:
 - `.github/workflows/eastmesh-build-observer-firmwares.yml`
 - `.github/workflows/eastmesh-build-repeater-bridge-espnow-firmwares.yml`
 - `.github/workflows/eastmesh-build-observer-espnow-firmwares.yml`
+- `.github/workflows/eastmesh-build-observer-mqtt-bridge-firmwares.yml`
 - `.github/workflows/eastmesh-pr-build-check.yml`
 - `.github/workflows/eastmesh-push-build-check.yml`
 - `.github/workflows/eastmesh-github-pages.yml`
@@ -210,6 +330,7 @@ The current release workflows intentionally focus only on:
 - `repeater-bridge-espnow`
 - `observer-eastmesh`
 - `observer-eastmesh-bridge-espnow`
+- `observer-eastmesh-bridge-mqtt`
 
 ## Release Tags
 
@@ -220,6 +341,7 @@ git tag companion-wifi-v1.14.1
 git tag repeater-bridge-espnow-v1.15.0
 git tag observer-eastmesh-v2026.5.1
 git tag observer-eastmesh-bridge-espnow-v2026.5.1
+git tag observer-eastmesh-bridge-mqtt-v2026.7.0
 ```
 
 Companion WiFi uses the upstream MeshCore version in the tag.
@@ -243,3 +365,4 @@ Current docs pages:
 - [Download and Flash Releases](./eastmesh-docs/releases.md)
 - [Build Locally With uv](./eastmesh-docs/local-builds.md)
 - [Custom CLI Commands](./eastmesh-docs/custom-cli.md)
+- [Web Panel](./eastmesh-docs/web-panel.md)

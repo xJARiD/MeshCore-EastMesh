@@ -6,7 +6,7 @@
 #include <helpers/ClientACL.h>
 #include <helpers/RegionMap.h>
 
-#if defined(WITH_RS232_BRIDGE) || defined(WITH_ESPNOW_BRIDGE)
+#if defined(WITH_RS232_BRIDGE) || defined(WITH_ESPNOW_BRIDGE) || defined(WITH_MQTT_BRIDGE)
 #define WITH_BRIDGE
 #endif
 
@@ -50,7 +50,7 @@ struct NodePrefs { // persisted to file
   uint8_t bridge_pkt_src; // 0 = logTx, 1 = logRx (default logTx)
   uint32_t bridge_baud;   // 9600, 19200, 38400, 57600, 115200 (default 115200)
   uint8_t bridge_channel; // 1-14 (ESP-NOW only)
-  char bridge_secret[16]; // for XOR encryption of bridge packets (ESP-NOW only)
+  char bridge_secret[16]; // for XOR encryption of bridge packets (ESP-NOW / MQTT)
   // Power setting
   uint8_t powersaving_enabled; // boolean
   // Gps settings
@@ -65,6 +65,10 @@ struct NodePrefs { // persisted to file
   uint8_t loop_detect;
   uint8_t fan_mode;
   uint16_t fan_timeout_secs;
+  char bridge_peer_host[64]; // peer MQTT broker host (MQTT bridge only)
+  uint16_t bridge_peer_port;   // peer MQTT broker port (MQTT bridge only, default 1883)
+  char bridge_peer_username[65]; // peer MQTT broker username (MQTT bridge only)
+  char bridge_peer_password[96]; // peer MQTT broker password (MQTT bridge only)
 };
 
 class CommonCLICallbacks {

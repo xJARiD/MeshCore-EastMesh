@@ -23,6 +23,11 @@
 #define WITH_BRIDGE
 #endif
 
+#ifdef WITH_MQTT_BRIDGE
+#include "helpers/bridges/MQTTBridge.h"
+#define WITH_BRIDGE
+#endif
+
 #ifdef WITH_MQTT_UPLINK
 #include <helpers/mqtt/MQTTUplink.h>
 #endif
@@ -170,6 +175,8 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public WebPanelComm
   RS232Bridge bridge;
 #elif defined(WITH_ESPNOW_BRIDGE)
   ESPNowBridge bridge;
+#elif defined(WITH_MQTT_BRIDGE)
+  MQTTBridge bridge;
 #endif
 #ifdef WITH_MQTT_UPLINK
   MQTTUplink mqtt;

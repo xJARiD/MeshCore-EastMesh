@@ -4,6 +4,7 @@ tracks:
   - repeater-bridge-espnow
   - observer-eastmesh
   - observer-eastmesh-bridge-espnow
+  - observer-eastmesh-bridge-mqtt
 generated_from: "Adjacent git tag comparisons plus non-merge commit subjects."
 
 releases:
@@ -418,6 +419,30 @@ releases:
       - "`get mqtt.status` output changed from per-broker fields to `p:`/`s:` broker slots; anything parsing the previous format must be updated."
       - "Saved LetsMesh EU/US broker selections are cleared once on upgrade; re-enable a broker such as MeshMapper if a second uplink is required."
 
+<<<<<<< HEAD
+  - track: observer-eastmesh-bridge-mqtt
+    version: "2026.7.0"
+    tag: "observer-eastmesh-bridge-mqtt-v2026.7.0"
+    date: "2026-06-24"
+    previous_version: null
+    summary: "Introduces the observer-eastmesh-bridge-mqtt release track with bidirectional MQTT mesh bridging and web-panel peer broker configuration."
+    changes:
+      - type: added
+        area: bridge
+        text: "Added `WITH_MQTT_BRIDGE` and `MQTTBridge` for bidirectional mesh packet transport over a shared MQTT topic at a peer broker."
+      - type: added
+        area: cli
+        text: "Added `get/set bridge.peer.host` and `get/set bridge.peer.port` for configuring the peer MQTT broker used by the mesh bridge."
+      - type: added
+        area: web
+        text: "Added mesh bridge peer MQTT host:port controls to the web panel on MQTT bridge builds."
+      - type: added
+        area: release
+        text: "Added the `observer-eastmesh-bridge-mqtt-v*` release tag format, PlatformIO `*_repeater_observer_mqtt_bridge` environments, and CI build workflow."
+      - type: added
+        area: boards
+        text: "Added `Xiao_S3_WIO_repeater_observer_mqtt_bridge` as the first supported observer MQTT bridge target."
+=======
   - track: observer-eastmesh-bridge-espnow
     version: "2026.6.5"
     tag: "observer-eastmesh-bridge-espnow-v2026.6.5"
@@ -440,4 +465,5 @@ releases:
       - type: docs
         area: docs
         text: "Documented the Waev broker in the README and custom CLI guides."
+>>>>>>> cdf2cc6fa283615a04c488ca3ad324a33b72966d
     breaking_changes: []

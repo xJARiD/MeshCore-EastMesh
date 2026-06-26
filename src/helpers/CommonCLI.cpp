@@ -103,7 +103,19 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {
     if (file.available() >= (int)sizeof(_prefs->flood_max_advert)) {
       file.read((uint8_t *)&_prefs->flood_max_advert, sizeof(_prefs->flood_max_advert));          // 295
     }
-    // next: 296
+    if (file.available() >= (int)sizeof(_prefs->bridge_peer_host)) {
+      file.read((uint8_t *)&_prefs->bridge_peer_host, sizeof(_prefs->bridge_peer_host));          // 296
+    }
+    if (file.available() >= (int)sizeof(_prefs->bridge_peer_port)) {
+      file.read((uint8_t *)&_prefs->bridge_peer_port, sizeof(_prefs->bridge_peer_port));          // 360
+    }
+    if (file.available() >= (int)sizeof(_prefs->bridge_peer_username)) {
+      file.read((uint8_t *)&_prefs->bridge_peer_username, sizeof(_prefs->bridge_peer_username));  // 362
+    }
+    if (file.available() >= (int)sizeof(_prefs->bridge_peer_password)) {
+      file.read((uint8_t *)&_prefs->bridge_peer_password, sizeof(_prefs->bridge_peer_password));  // 427
+    }
+    // next: 523
 
     // sanitise bad pref values
     _prefs->rx_delay_base = constrain(_prefs->rx_delay_base, 0, 20.0f);
@@ -125,6 +137,9 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {
     _prefs->bridge_pkt_src = constrain(_prefs->bridge_pkt_src, 0, 1);
     _prefs->bridge_baud = constrain(_prefs->bridge_baud, 9600, BRIDGE_MAX_BAUD);
     _prefs->bridge_channel = constrain(_prefs->bridge_channel, 0, 14);
+    if (_prefs->bridge_peer_port > 65535) {
+      _prefs->bridge_peer_port = 1883;
+    }
 
     _prefs->powersaving_enabled = constrain(_prefs->powersaving_enabled, 0, 1);
 
@@ -200,7 +215,11 @@ void CommonCLI::savePrefs(FILESYSTEM* fs) {
     file.write((uint8_t *)&_prefs->fan_mode, sizeof(_prefs->fan_mode));                            // 292
     file.write((uint8_t *)&_prefs->fan_timeout_secs, sizeof(_prefs->fan_timeout_secs));            // 293
     file.write((uint8_t *)&_prefs->flood_max_advert, sizeof(_prefs->flood_max_advert));            // 295
-    // next: 296
+    file.write((uint8_t *)&_prefs->bridge_peer_host, sizeof(_prefs->bridge_peer_host));            // 296
+    file.write((uint8_t *)&_prefs->bridge_peer_port, sizeof(_prefs->bridge_peer_port));            // 360
+    file.write((uint8_t *)&_prefs->bridge_peer_username, sizeof(_prefs->bridge_peer_username));    // 362
+    file.write((uint8_t *)&_prefs->bridge_peer_password, sizeof(_prefs->bridge_peer_password));    // 427
+    // next: 523
 
     file.close();
   }
@@ -771,6 +790,52 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     savePrefs();
     strcpy(reply, "OK");
 #endif
+#ifdef WITH_MQTT_BRIDGE
+  } else if (memcmp(config, "bridge.peer.host ", 17) == 0) {
+    const char* host = &config[17];
+    size_t oi = 0;
+    char cleaned[sizeof(_prefs->bridge_peer_host)];
+    memset(cleaned, 0, sizeof(cleaned));
+    for (size_t i = 0; host[i] != 0 && oi + 1 < sizeof(cleaned); ++i) {
+      unsigned char c = static_cast<unsigned char>(host[i]);
+      if (c <= ' ' || c == '/' || c == ':' || c == '\\') {
+        strcpy(reply, "Error: invalid host");
+        return;
+      }
+      cleaned[oi++] = static_cast<char>(c);
+    }
+    cleaned[oi] = 0;
+    StrHelper::strncpy(_prefs->bridge_peer_host, cleaned, sizeof(_prefs->bridge_peer_host));
+    _callbacks->restartBridge();
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "bridge.peer.port ", 17) == 0) {
+    char* end = nullptr;
+    unsigned long parsed = strtoul(&config[17], &end, 10);
+    if (end == &config[17] || *end != 0 || parsed == 0 || parsed > 65535UL) {
+      strcpy(reply, "Error: port must be 1-65535");
+      return;
+    }
+    _prefs->bridge_peer_port = static_cast<uint16_t>(parsed);
+    _callbacks->restartBridge();
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "bridge.peer.username ", 21) == 0) {
+    StrHelper::strncpy(_prefs->bridge_peer_username, &config[21], sizeof(_prefs->bridge_peer_username));
+    _callbacks->restartBridge();
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "bridge.peer.password ", 21) == 0) {
+    StrHelper::strncpy(_prefs->bridge_peer_password, &config[21], sizeof(_prefs->bridge_peer_password));
+    _callbacks->restartBridge();
+    savePrefs();
+    strcpy(reply, "OK");
+  } else if (memcmp(config, "bridge.secret ", 14) == 0) {
+    StrHelper::strncpy(_prefs->bridge_secret, &config[14], sizeof(_prefs->bridge_secret));
+    _callbacks->restartBridge();
+    savePrefs();
+    strcpy(reply, "OK");
+#endif
   } else if (memcmp(config, "adc.multiplier ", 15) == 0) {
     _prefs->adc_multiplier = atof(&config[15]);
     if (_board->setAdcMultiplier(_prefs->adc_multiplier)) {
@@ -884,6 +949,8 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
             "rs232"
 #elif WITH_ESPNOW_BRIDGE
             "espnow"
+#elif WITH_MQTT_BRIDGE
+            "mqtt"
 #else
             "none"
 #endif
@@ -903,6 +970,18 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
 #ifdef WITH_ESPNOW_BRIDGE
   } else if (memcmp(config, "bridge.channel", 14) == 0) {
     sprintf(reply, "> %d", (uint32_t)_prefs->bridge_channel);
+  } else if (memcmp(config, "bridge.secret", 13) == 0) {
+    sprintf(reply, "> %s", _prefs->bridge_secret);
+#endif
+#ifdef WITH_MQTT_BRIDGE
+  } else if (memcmp(config, "bridge.peer.host", 16) == 0) {
+    sprintf(reply, "> %s", _prefs->bridge_peer_host);
+  } else if (memcmp(config, "bridge.peer.port", 16) == 0) {
+    sprintf(reply, "> %u", _prefs->bridge_peer_port != 0 ? _prefs->bridge_peer_port : 1883);
+  } else if (memcmp(config, "bridge.peer.username", 20) == 0) {
+    sprintf(reply, "> %s", _prefs->bridge_peer_username[0] ? _prefs->bridge_peer_username : "-");
+  } else if (memcmp(config, "bridge.peer.password", 20) == 0) {
+    sprintf(reply, "> %s", _prefs->bridge_peer_password[0] ? "set" : "-");
   } else if (memcmp(config, "bridge.secret", 13) == 0) {
     sprintf(reply, "> %s", _prefs->bridge_secret);
 #endif
