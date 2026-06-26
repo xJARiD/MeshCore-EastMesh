@@ -241,6 +241,30 @@ releases:
       - "`get mqtt.status` output changed from per-broker fields to `p:`/`s:` broker slots; anything parsing the previous format must be updated."
       - "Saved LetsMesh EU/US broker selections are cleared once on upgrade; re-enable a broker such as MeshMapper if a second uplink is required."
 
+  - track: observer-eastmesh
+    version: "2026.6.5"
+    tag: "observer-eastmesh-v2026.6.5"
+    date: "2026-06-26"
+    previous_version: "2026.6.4"
+    summary: "Adds the Waev curated MQTT broker and makes the Custom MQTT settings panel full width when Custom is selected."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added the `waev` curated broker (`wss://mqtt.waev.app:443/mqtt`) using WSS, verified TLS, and MeshCore JWT authentication with the broker host as the token audience."
+      - type: added
+        area: cli
+        text: "Added `get mqtt.waev` and `set mqtt.waev on|off` to toggle the Waev broker."
+      - type: added
+        area: mqtt
+        text: "Added per-broker JWT token lifetimes so Waev receives a 1-hour token to match its shorter maximum token lifetime."
+      - type: fixed
+        area: web
+        text: "Made the Custom MQTT settings panel span the full width of the MQTT Servers card when Custom is selected."
+      - type: docs
+        area: docs
+        text: "Documented the Waev broker in the README and custom CLI guides."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -393,3 +417,27 @@ releases:
     breaking_changes:
       - "`get mqtt.status` output changed from per-broker fields to `p:`/`s:` broker slots; anything parsing the previous format must be updated."
       - "Saved LetsMesh EU/US broker selections are cleared once on upgrade; re-enable a broker such as MeshMapper if a second uplink is required."
+
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.6.5"
+    tag: "observer-eastmesh-bridge-espnow-v2026.6.5"
+    date: "2026-06-26"
+    previous_version: "2026.6.4"
+    summary: "Adds the Waev curated MQTT broker and makes the Custom MQTT settings panel full width in Observer ESP-NOW bridge builds."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added the `waev` curated broker (`wss://mqtt.waev.app:443/mqtt`) using WSS, verified TLS, and MeshCore JWT authentication with the broker host as the token audience."
+      - type: added
+        area: cli
+        text: "Added `get mqtt.waev` and `set mqtt.waev on|off` to toggle the Waev broker."
+      - type: added
+        area: mqtt
+        text: "Added per-broker JWT token lifetimes so Waev receives a 1-hour token to match its shorter maximum token lifetime."
+      - type: fixed
+        area: web
+        text: "Made the Custom MQTT settings panel span the full width of the MQTT Servers card when Custom is selected."
+      - type: docs
+        area: docs
+        text: "Documented the Waev broker in the README and custom CLI guides."
+    breaking_changes: []

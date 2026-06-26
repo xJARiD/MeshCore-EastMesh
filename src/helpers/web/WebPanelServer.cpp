@@ -977,12 +977,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	            </div>
 	            <input id="mqttEastmeshAu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	            <input id="mqttMeshmapper" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	            <input id="mqttWaev" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	            <input id="mqttLetsmeshEu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	            <input id="mqttLetsmeshUs" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	            <input id="mqttCustom" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	            <div class="broker-group wide" id="mqttCustomConfig" style="display:none">
 	              <div class="broker-group-title">Custom MQTT settings</div>
-	              <div class="broker-grid">
+	              <div class="broker-grid single">
 	                <div class="broker-card">
 	                  <div class="field-card">
 	                    <label class="label" for="mqttCustomEndpoint">Host:Port</label>
@@ -2705,6 +2706,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     const MQTT_BROKERS = [
       { key:"eastmesh-au", input:"mqttEastmeshAu", label:"EastMesh AU", set:"set mqtt.eastmesh-au" },
       { key:"meshmapper", input:"mqttMeshmapper", label:"MeshMapper", set:"set mqtt.meshmapper" },
+      { key:"waev", input:"mqttWaev", label:"Waev", set:"set mqtt.waev" },
       { key:"custom", input:"mqttCustom", label:"Custom", set:"set mqtt.custom", custom:true },
       { key:"letsmesh-eu", input:"mqttLetsmeshEu", label:"LetsMesh EU (retired)", set:"set mqtt.letsmesh-eu" },
       { key:"letsmesh-us", input:"mqttLetsmeshUs", label:"LetsMesh US (retired)", set:"set mqtt.letsmesh-us" }
@@ -3192,6 +3194,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get mqtt.email", "mqttEmail", null, quiet),
           () => loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu", quiet),
           () => loadBrokerState("get mqtt.meshmapper", "mqttMeshmapper", quiet),
+          () => loadBrokerState("get mqtt.waev", "mqttWaev", quiet),
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
           () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet),
           () => loadBrokerState("get mqtt.custom", "mqttCustom", quiet),

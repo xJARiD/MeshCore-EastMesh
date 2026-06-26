@@ -75,7 +75,7 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
     prefs.custom_transport = 0;
   }
   prefs.status_interval_ms = kFixedStatusIntervalMs;
-  prefs.enabled_mask &= 0x1F;
+  prefs.enabled_mask &= 0x3F;
   if (!prefs.brokers_migrated) {
     // LetsMesh is retired. Clear any saved EU/US selections once so dead brokers
     // stop retrying; the endpoints remain re-selectable afterwards.

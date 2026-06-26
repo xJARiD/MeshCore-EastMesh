@@ -145,6 +145,7 @@ uv run --group docs zensical build
 - curated broker support for:
   - `eastmesh-au`
   - `meshmapper`
+  - `waev`
   - `letsmesh-eu` (retired)
   - `letsmesh-us` (retired)
 - WSS transport at `/mqtt`

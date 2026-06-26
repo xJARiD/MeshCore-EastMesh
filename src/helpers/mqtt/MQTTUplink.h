@@ -89,6 +89,9 @@ private:
     const char* uri;
     uint8_t bit;
     bool custom;
+    // Per-broker JWT lifetime in seconds; 0 = use the default kTokenLifetimeSecs. waev enforces a
+    // shorter max token lifetime than the curated default, so it gets its own (matches its config).
+    uint32_t token_ttl_secs;
   };
 
   struct BrokerState {
@@ -131,9 +134,10 @@ private:
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
   static constexpr uint8_t kCustomBit = 0x08;
   static constexpr uint8_t kMeshmapperBit = 0x10;
-  static constexpr uint8_t kBrokerMask = 0x1F;
+  static constexpr uint8_t kWaevBit = 0x20;
+  static constexpr uint8_t kBrokerMask = 0x3F;
   static constexpr uint8_t kMaxEnabledBrokers = 2;
-  static constexpr size_t kBrokerCount = 5;
+  static constexpr size_t kBrokerCount = 6;
   static const BrokerSpec kBrokerSpecs[kBrokerCount];
   static bool isUnsetIataValue(const char* iata);
   static const char* brokerCaCert(const BrokerSpec& spec);

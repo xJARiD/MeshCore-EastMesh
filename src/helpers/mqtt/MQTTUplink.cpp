@@ -128,14 +128,16 @@ void logMqttMemorySnapshot(const char*, const char* = nullptr) {
 }
 
 const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[kBrokerCount] = {
-    {"eastmesh-au", "eastmesh-au", "mqtt2.eastmesh.au", "wss://mqtt2.eastmesh.au:443/mqtt", kEastmeshBit, false},
-    {"meshmapper", "meshmapper", "mqtt.meshmapper.net", "wss://mqtt.meshmapper.net:443/mqtt", kMeshmapperBit, false},
+    {"eastmesh-au", "eastmesh-au", "mqtt2.eastmesh.au", "wss://mqtt2.eastmesh.au:443/mqtt", kEastmeshBit, false, 0},
+    {"meshmapper", "meshmapper", "mqtt.meshmapper.net", "wss://mqtt.meshmapper.net:443/mqtt", kMeshmapperBit, false, 0},
+    // waev enforces a shorter max token lifetime than the curated default; match its documented config.
+    {"waev", "waev", "mqtt.waev.app", "wss://mqtt.waev.app:443/mqtt", kWaevBit, false, 3600},
     // Retired: LetsMesh is no longer maintained. Kept selectable for legacy nodes; new nodes should use meshmapper.
     {"letsmesh-eu", "letsmesh-eu", "mqtt-eu-v1.letsmesh.net", "wss://mqtt-eu-v1.letsmesh.net:443/mqtt",
-     kLetsmeshEuBit, false},
+     kLetsmeshEuBit, false, 0},
     {"letsmesh-us", "letsmesh-us", "mqtt-us-v1.letsmesh.net", "wss://mqtt-us-v1.letsmesh.net:443/mqtt",
-     kLetsmeshUsBit, false},
-    {"custom", "custom", nullptr, nullptr, kCustomBit, true},
+     kLetsmeshUsBit, false, 0},
+    {"custom", "custom", nullptr, nullptr, kCustomBit, true, 0},
 };
 
 MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
@@ -202,7 +204,8 @@ const char* MQTTUplink::brokerCaCert(const BrokerSpec& spec) {
   if (spec.bit == kEastmeshBit || spec.bit == kMeshmapperBit) {
     return mqtt_ca_certs::kEastmeshIsrgRootX1Pem;  // Let's Encrypt ISRG Root X1
   }
-  return mqtt_ca_certs::kLetsmeshWe1Pem;
+  // waev (mqtt.waev.app) presents a Google Trust Services WE1 chain, same issuer as LetsMesh.
+  return mqtt_ca_certs::kLetsmeshWe1Pem;  // Google Trust Services WE1
 }
 
 const char* MQTTUplink::brokerHost(const BrokerState& broker) const {
@@ -572,7 +575,8 @@ bool MQTTUplink::refreshToken(BrokerState& broker) {
     }
   }
 
-  time_t expires_at = now + kTokenLifetimeSecs;
+  time_t ttl = broker.spec->token_ttl_secs != 0 ? static_cast<time_t>(broker.spec->token_ttl_secs) : kTokenLifetimeSecs;
+  time_t expires_at = now + ttl;
   const char* owner = _prefs.owner_public_key[0] ? _prefs.owner_public_key : nullptr;
   const char* email = _prefs.owner_email[0] ? _prefs.owner_email : nullptr;
   if (!JWTHelper::createAuthToken(*_identity, brokerHost(broker), now, expires_at, broker.token, kBrokerTokenSize,
@@ -583,8 +587,9 @@ bool MQTTUplink::refreshToken(BrokerState& broker) {
     return false;
   }
   broker.token_expires_at = expires_at;
-  MQTT_LOG("%s token ready exp=%lu owner=%s email=%s", broker.spec->label,
-           static_cast<unsigned long>(expires_at), owner != nullptr ? "yes" : "no", email != nullptr ? "yes" : "no");
+  MQTT_LOG("%s token ready exp=%lu ttl=%ld owner=%s email=%s", broker.spec->label,
+           static_cast<unsigned long>(expires_at), static_cast<long>(ttl),
+           owner != nullptr ? "yes" : "no", email != nullptr ? "yes" : "no");
   return true;
 }
 
