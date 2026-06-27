@@ -27,7 +27,6 @@ For bridge repeaters, think local radio linking between nearby repeaters:
 - pure ESP-NOW bridge repeaters do not need MQTT, the EastMesh web panel, or a screen
 - prioritise stable power, suitable antennas, and placement over display features
 - use `observer-eastmesh-bridge-espnow` only when the same repeater also needs MQTT uplink and a local ESP-NOW bridge; otherwise `repeater-bridge-espnow` keeps the role simpler
-- use `observer-eastmesh-bridge-mqtt` when the same repeater needs MQTT uplink and bidirectional MQTT mesh bridging through a peer broker
 
 Other notes:
 
@@ -53,7 +52,6 @@ The tables below are built from the repo's PlatformIO board metadata and variant
 - `companion-wifi` boards are for app-connected companion devices.
 - `observer-eastmesh` boards are for Wi-Fi repeaters that publish to MQTT.
 - `repeater-bridge-espnow` and `observer-eastmesh-bridge-espnow` boards are for local ESP-NOW bridge use between nearby repeaters on different MeshCore radio configs.
-- `observer-eastmesh-bridge-mqtt` boards bridge mesh packets through a shared MQTT topic at a peer broker you configure.
 
 Bridge firmware is not MQTT-over-WAN or VPN bridging. Use it when two local repeaters need to exchange traffic across radio configs such as `Australia (Narrow)` and `Australia (Mid)`.
 

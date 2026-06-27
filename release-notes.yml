@@ -4,7 +4,6 @@ tracks:
   - repeater-bridge-espnow
   - observer-eastmesh
   - observer-eastmesh-bridge-espnow
-  - observer-eastmesh-bridge-mqtt
 generated_from: "Adjacent git tag comparisons plus non-merge commit subjects."
 
 releases:
@@ -465,28 +464,4 @@ releases:
       - type: added
         area: mqtt
         text: "Added `packets_sent` and `packets_received` counters to the MQTT `status` payload `stats` object, reporting cumulative radio TX/RX packet totals to align with the Waev/MeshMapper status schema."
-    breaking_changes: []
-
-  - track: observer-eastmesh-bridge-mqtt
-    version: "2026.7.0"
-    tag: "observer-eastmesh-bridge-mqtt-v2026.7.0"
-    date: "2026-07-01"
-    previous_version: null
-    summary: "Introduces the observer-eastmesh-bridge-mqtt release track with bidirectional MQTT mesh bridging and web-panel peer broker configuration."
-    changes:
-      - type: added
-        area: mqtt
-        text: "Added `WITH_MQTT_BRIDGE` and `MQTTBridge` for bidirectional mesh packet transport over a shared MQTT topic at a peer broker."
-      - type: added
-        area: cli
-        text: "Added `get/set bridge.peer.host` and `get/set bridge.peer.port` for configuring the peer MQTT broker used by the mesh bridge."
-      - type: added
-        area: web
-        text: "Added mesh bridge peer MQTT host:port controls to the web panel on MQTT bridge builds."
-      - type: added
-        area: release
-        text: "Added the `observer-eastmesh-bridge-mqtt-v*` release tag format, PlatformIO `*_repeater_observer_mqtt_bridge` environments, and CI build workflow."
-      - type: added
-        area: board
-        text: "Added `Xiao_S3_WIO_repeater_observer_mqtt_bridge` as the first supported observer MQTT bridge target."
     breaking_changes: []

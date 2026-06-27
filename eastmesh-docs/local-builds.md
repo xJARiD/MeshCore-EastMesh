@@ -146,13 +146,9 @@ T_Beam_S3_Supreme_SX1262_repeater_observer_espnow
 
 ## Supported `repeater_observer_mqtt_bridge` Boards
 
-At present only the Xiao S3 WIO observer MQTT bridge target is defined:
+An `mqtt_bridge` build variant is defined for each observer board.
 
-```text
-Xiao_S3_WIO_repeater_observer_mqtt_bridge
-```
-
-List all observer MQTT bridge targets:
+List the available targets:
 
 ```bash
 bash eastmesh-build.sh list | grep '_repeater_observer_mqtt_bridge'
