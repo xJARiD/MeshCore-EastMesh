@@ -125,7 +125,7 @@ uv run --group docs zensical build
   - Python tooling and docs dependencies
 - [`platformio.ini`](./platformio.ini)
   - root PlatformIO config and ESP32 helper scripts
-- [`variants/eastmesh_mqtt/platformio.ini`](./variants/eastmesh_mqtt/platformio.ini)
+- [`variants/eastmesh/platformio.ini`](./variants/eastmesh/platformio.ini)
   - shared EastMesh observer env definitions
 - [`examples/simple_repeater/MyMesh.cpp`](./examples/simple_repeater/MyMesh.cpp)
   - repeater CLI wiring, MQTT command surface, and web allowlist integration

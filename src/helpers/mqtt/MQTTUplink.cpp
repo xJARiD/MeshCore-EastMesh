@@ -669,13 +669,16 @@ int MQTTUplink::buildStatusJson(char* buffer, size_t buffer_size, bool online) c
                   "{\"status\":\"%s\",\"timestamp\":\"%s\",\"origin\":\"%s\",\"origin_id\":\"%s\","
                   "\"model\":\"%s\",\"firmware_version\":\"%s\",\"radio\":\"%s\",\"client_version\":\"%s\","
                   "\"repeat\":\"%s\",\"stats\":{\"battery_mv\":%d,\"uptime_secs\":%lu,\"errors\":%u,\"queue_len\":%u,"
-                  "\"noise_floor\":%d,\"tx_air_secs\":%lu,\"rx_air_secs\":%lu,\"recv_errors\":%lu}}",
+                  "\"noise_floor\":%d,\"tx_air_secs\":%lu,\"rx_air_secs\":%lu,\"recv_errors\":%lu,"
+                  "\"packets_sent\":%lu,\"packets_received\":%lu}}",
                   online ? "online" : "offline", ts, origin, _device_id, model, FIRMWARE_VERSION, radio_info, client_version,
                   _last_status.repeat_enabled ? "on" : "off", _last_status.battery_mv,
                   static_cast<unsigned long>(_last_status.uptime_secs), _last_status.error_flags, _last_status.queue_len,
                   _last_status.noise_floor, static_cast<unsigned long>(_last_status.tx_air_secs),
                   static_cast<unsigned long>(_last_status.rx_air_secs),
-                  static_cast<unsigned long>(_last_status.recv_errors));
+                  static_cast<unsigned long>(_last_status.recv_errors),
+                  static_cast<unsigned long>(_last_status.packets_sent),
+                  static_cast<unsigned long>(_last_status.packets_received));
 }
 
 int MQTTUplink::buildPacketJson(char* buffer, size_t buffer_size, const mesh::Packet& packet, bool is_tx, int rssi,

@@ -114,7 +114,7 @@ uv run pio run -e T_Beam_S3_Supreme_SX1262_repeater_observer -t upload --upload-
 - `eastmesh-build.sh` — EastMesh build wrapper
 - `build.sh` — upstream MeshCore build wrapper retained for merge hygiene
 - `platformio.ini`
-- `variants/eastmesh_mqtt/platformio.ini`
+- `variants/eastmesh/platformio.ini`
 - `examples/simple_repeater/MyMesh.cpp`
 - `src/helpers/mqtt/MQTTUplink.cpp`
 - `eastmesh-docs/*.md`

@@ -109,7 +109,7 @@ If you are deciding between otherwise similar boards, these target-level setting
 
 ## `repeater_observer` Boards
 
-This table includes all observer targets currently defined in `variants/eastmesh_mqtt/platformio.ini`.
+This table includes all observer targets currently defined in `variants/eastmesh/platformio.ini`.
 
 | Target                   | MCU     | RAM    | PSRAM | Flash | LoRa   | Display         | GPS | SD  |
 | ------------------------ | ------- | ------ | ----- | ----- | ------ | --------------- | --- | --- |

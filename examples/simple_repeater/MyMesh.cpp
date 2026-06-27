@@ -3015,6 +3015,8 @@ void MyMesh::loop() {
   mqtt_status.tx_air_secs = static_cast<uint32_t>(getTotalAirTime() / 1000);
   mqtt_status.rx_air_secs = static_cast<uint32_t>(getReceiveAirTime() / 1000);
   mqtt_status.recv_errors = radio_driver.getPacketsRecvErrors();
+  mqtt_status.packets_sent = radio_driver.getPacketsSent();
+  mqtt_status.packets_received = radio_driver.getPacketsRecv();
   mqtt_status.radio_freq = _prefs.freq;
   mqtt_status.radio_bw = _prefs.bw;
   mqtt_status.radio_sf = _prefs.sf;

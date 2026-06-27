@@ -266,6 +266,18 @@ releases:
         text: "Documented the Waev broker in the README and custom CLI guides."
     breaking_changes: []
 
+  - track: observer-eastmesh
+    version: "2026.6.6"
+    tag: "observer-eastmesh-v2026.6.6"
+    date: "2026-06-27"
+    previous_version: "2026.6.5"
+    summary: "Adds cumulative packet counters to the MQTT status payload so brokers receive radio TX/RX totals."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added `packets_sent` and `packets_received` counters to the MQTT `status` payload `stats` object, reporting cumulative radio TX/RX packet totals to align with the Waev/MeshMapper status schema."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -443,10 +455,22 @@ releases:
         text: "Documented the Waev broker in the README and custom CLI guides."
     breaking_changes: []
 
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.6.6"
+    tag: "observer-eastmesh-bridge-espnow-v2026.6.6"
+    date: "2026-06-27"
+    previous_version: "2026.6.5"
+    summary: "Adds cumulative packet counters to the MQTT status payload so brokers receive radio TX/RX totals."
+    changes:
+      - type: added
+        area: mqtt
+        text: "Added `packets_sent` and `packets_received` counters to the MQTT `status` payload `stats` object, reporting cumulative radio TX/RX packet totals to align with the Waev/MeshMapper status schema."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-mqtt
     version: "2026.7.0"
     tag: "observer-eastmesh-bridge-mqtt-v2026.7.0"
-    date: "2026-06-24"
+    date: "2026-07-01"
     previous_version: null
     summary: "Introduces the observer-eastmesh-bridge-mqtt release track with bidirectional MQTT mesh bridging and web-panel peer broker configuration."
     changes:
