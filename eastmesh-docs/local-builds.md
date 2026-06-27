@@ -29,6 +29,7 @@ uv run pio run -e heltec_v4_repeater_observer
 uv run pio run -e heltec_v4_companion_radio_wifi
 uv run pio run -e heltec_v4_repeater_bridge_espnow
 uv run pio run -e heltec_v4_repeater_observer_espnow
+uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge
 ```
 
 Flash a target:
@@ -82,7 +83,7 @@ This produces versioned artifacts in `out/`.
 Versioning rule:
 
 - `companion-wifi` and `repeater-bridge-espnow` use the upstream MeshCore version as `FIRMWARE_VERSION`
-- `observer-eastmesh` and `observer-eastmesh-bridge-espnow` use the upstream MeshCore version as `FIRMWARE_VERSION` plus the EastMesh release version as `EASTMESH_VERSION`
+- `observer-eastmesh`, `observer-eastmesh-bridge-espnow`, and `observer-eastmesh-bridge-mqtt` use the upstream MeshCore version as `FIRMWARE_VERSION` plus the EastMesh release version as `EASTMESH_VERSION`
 
 ## Supported `repeater_observer` Boards
 
@@ -141,6 +142,20 @@ Station_G2_repeater_bridge_espnow
 Station_G2_repeater_observer_espnow
 T_Beam_S3_Supreme_SX1262_repeater_bridge_espnow
 T_Beam_S3_Supreme_SX1262_repeater_observer_espnow
+```
+
+## Supported `repeater_observer_mqtt_bridge` Boards
+
+At present only the Xiao S3 WIO observer MQTT bridge target is defined:
+
+```text
+Xiao_S3_WIO_repeater_observer_mqtt_bridge
+```
+
+List all observer MQTT bridge targets:
+
+```bash
+bash eastmesh-build.sh list | grep '_repeater_observer_mqtt_bridge'
 ```
 
 Bridge firmware is for local ESP-NOW bridge use between nearby repeaters. It is not MQTT-over-WAN or VPN bridging.

@@ -255,6 +255,7 @@ This section includes:
 - `mqtt.email`: owner contact email.
 - MQTT brokers: **Primary MQTT** and **Secondary MQTT** dropdowns, each selecting one of `eastmesh-au`, `meshmapper`, `Custom`, the retired `letsmesh-eu`/`letsmesh-us`, or `None`. The two slots enforce the two-broker maximum, and a broker chosen in one slot is disabled in the other.
 - custom MQTT `host:port`, TCP/WSS transport, username, and password fields, shown when `Custom` is selected in either slot.
+- mesh bridge peer MQTT `host:port`, optional username and password, shown on MQTT bridge builds (`get bridge.type` returns `mqtt`). This is separate from MQTT uplink brokers and points at the shared peer broker used for bidirectional mesh packet bridging.
 
 `UNSET - To be configured` is the default for new observer installs until a real saved value exists.
 
@@ -269,6 +270,7 @@ Notes:
 - turning off a connected MQTT server publishes retained offline status before the client disconnects
 - changing `mqtt.iata` away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path
 - at most two MQTT brokers can be enabled at once
+- on MQTT bridge builds, both bridge nodes must use the same peer broker host, port, credentials, and `bridge.secret`
 
 ## `/stats` Overview
 

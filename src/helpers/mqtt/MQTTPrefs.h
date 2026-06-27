@@ -37,6 +37,7 @@ struct MQTTPrefs {
   // Appended fields must stay at the end: older prefs files are shorter and
   // read back as zero here, which drives one-time migrations (see load()).
   uint8_t brokers_migrated;
+  uint8_t mqtt_bridge_uplink_migrated;
 };
 
 class MQTTPrefsStore {

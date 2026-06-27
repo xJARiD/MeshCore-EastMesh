@@ -1,17 +1,20 @@
 # MeshCore EastMesh Docs
 
-MeshCore-EastMesh keeps the upstream MeshCore firmware intact and publishes four firmware tracks, depending on how the device needs to connect:
+MeshCore-EastMesh keeps the upstream MeshCore firmware intact and publishes five firmware tracks, depending on how the device needs to connect:
 
 - `companion-wifi`: use this for Wi-Fi-connected companion devices. It stays closest to upstream MeshCore and adds the EastMesh Wi-Fi rescue/configuration commands.
 - `repeater-bridge-espnow`: use this when you need a plain upstream-style repeater ESP-NOW bridge without MQTT uplink or the EastMesh web panel.
 - `observer-eastmesh`: use this for a Wi-Fi repeater that should publish to an MQTT broker and, on supported ESP32 boards, offer the optional local web panel for setup and troubleshooting.
 - `observer-eastmesh-bridge-espnow`: use this when one repeater needs both MQTT uplink and ESP-NOW bridge duties, including bridge channel/secret controls for keeping the bridge aligned with Wi-Fi.
+- `observer-eastmesh-bridge-mqtt`: use this when one repeater needs both MQTT uplink and bidirectional MQTT mesh bridging through a peer broker you configure in the web panel or CLI.
 
 !!! note "Bridge tracks are local radio bridges"
 
-    The bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example one repeater on `Australia (Narrow)` and another on `Australia (Mid)`.
+    The ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example one repeater on `Australia (Narrow)` and another on `Australia (Mid)`.
 
-    They are not MQTT-over-WAN, VPN, or internet bridge releases. MQTT is still the uplink/visibility path for MQTT firmware; it is not used to tunnel mesh traffic between distant sites.
+    The MQTT bridge track uses a shared topic at a peer MQTT broker for mesh packet bridging. It is separate from MQTT uplink publishing to EastMesh or MeshMapper.
+
+    Bridge tracks are not MQTT-over-WAN, VPN, or internet tunnel releases.
 
 If you want guidance first, start with:
 

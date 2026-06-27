@@ -44,6 +44,7 @@ runs:
     #   companion-wifi-v1.15.0
     #   repeater-bridge-espnow-v1.15.0
     #   observer-eastmesh-bridge-espnow-v2026.5.1
+    #   observer-eastmesh-bridge-mqtt-v2026.7.0
     #   observer-eastmesh-v2026.5.1
     # with OFFICIAL_MESHCORE_VERSION=v1.15.0 configured as a GitHub variable.
     #
@@ -80,6 +81,12 @@ runs:
           fi
           EASTMESH_VERSION="${BASH_REMATCH[1]}"
         elif [[ "$GIT_TAG_NAME" =~ ^observer-eastmesh-bridge-espnow-(v[[:alnum:]._-]+)$ ]]; then
+          if [[ -z "$STATIC_OFFICIAL_VERSION" ]]; then
+            echo "OFFICIAL_MESHCORE_VERSION must be set for EastMesh release tags" >&2
+            exit 1
+          fi
+          EASTMESH_VERSION="${BASH_REMATCH[1]}"
+        elif [[ "$GIT_TAG_NAME" =~ ^observer-eastmesh-bridge-mqtt-(v[[:alnum:]._-]+)$ ]]; then
           if [[ -z "$STATIC_OFFICIAL_VERSION" ]]; then
             echo "OFFICIAL_MESHCORE_VERSION must be set for EastMesh release tags" >&2
             exit 1

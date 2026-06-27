@@ -22,6 +22,8 @@ struct MQTTStatusSnapshot {
   uint32_t tx_air_secs;
   uint32_t rx_air_secs;
   uint32_t recv_errors;
+  uint32_t packets_sent;
+  uint32_t packets_received;
   float radio_freq;
   float radio_bw;
   uint8_t radio_sf;

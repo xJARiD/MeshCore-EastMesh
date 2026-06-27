@@ -19,11 +19,13 @@ Push one or more of the following tag formats to trigger the matching firmware r
 - `companion-wifi-v1.15.0`
 - `repeater-bridge-espnow-v1.15.0`
 - `observer-eastmesh-bridge-espnow-v2026.5.1`
+- `observer-eastmesh-bridge-mqtt-v2026.7.0`
 - `observer-eastmesh-v2026.5.1`
 
 Use the upstream MeshCore version in `companion-wifi-v1.15.0`.
 Use the upstream MeshCore version in `repeater-bridge-espnow-v1.15.0`.
 Use the EastMesh release version in `observer-eastmesh-bridge-espnow-v2026.5.1`.
+Use the EastMesh release version in `observer-eastmesh-bridge-mqtt-v2026.7.0`.
 Use the EastMesh release version in `observer-eastmesh-v2026.5.1`.
 
 Each tag triggers a separate workflow:
@@ -31,6 +33,7 @@ Each tag triggers a separate workflow:
 - `companion-wifi-v*` builds companion WiFi firmware
 - `repeater-bridge-espnow-v*` builds repeater ESP-NOW bridge firmware
 - `observer-eastmesh-bridge-espnow-v*` builds Observer ESP-NOW firmware
+- `observer-eastmesh-bridge-mqtt-v*` builds Observer MQTT bridge firmware
 - `observer-eastmesh-v*` builds Observer firmware
 
 You can push one, or more tags on the same commit, and they will all build separately.
@@ -42,6 +45,7 @@ During the GitHub Actions build:
 - `companion-wifi` uses the version in the tag as `FIRMWARE_VERSION`
 - `repeater-bridge-espnow` uses the version in the tag as `FIRMWARE_VERSION`
 - `observer-eastmesh-bridge-espnow` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
+- `observer-eastmesh-bridge-mqtt` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
 - `observer-eastmesh` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
 
 The resulting version string depends on the workflow:
@@ -49,6 +53,7 @@ The resulting version string depends on the workflow:
 - `companion-wifi`: `v1.15.0-<commit>`
 - `repeater-bridge-espnow`: `v1.15.0-<commit>`
 - `observer-eastmesh-bridge-espnow`: `v1.15.0-eastmesh-v2026.5.1-<commit>`
+- `observer-eastmesh-bridge-mqtt`: `v1.15.0-eastmesh-v2026.7.0-<commit>`
 - `observer-eastmesh`: `v1.15.0-eastmesh-v2026.5.1-<commit>`
 
 Example:
@@ -76,8 +81,9 @@ Example:
 git tag companion-wifi-v1.15.0
 git tag repeater-bridge-espnow-v1.15.0
 git tag observer-eastmesh-bridge-espnow-v2026.5.1
+git tag observer-eastmesh-bridge-mqtt-v2026.7.0
 git tag observer-eastmesh-v2026.5.1
-git push origin companion-wifi-v1.15.0 repeater-bridge-espnow-v1.15.0 observer-eastmesh-bridge-espnow-v2026.5.1 observer-eastmesh-v2026.5.1
+git push origin companion-wifi-v1.15.0 repeater-bridge-espnow-v1.15.0 observer-eastmesh-bridge-espnow-v2026.5.1 observer-eastmesh-bridge-mqtt-v2026.7.0 observer-eastmesh-v2026.5.1
 ```
 
 ## Supported Tags
@@ -85,4 +91,5 @@ git push origin companion-wifi-v1.15.0 repeater-bridge-espnow-v1.15.0 observer-e
 - `companion-wifi-v1.15.0`
 - `repeater-bridge-espnow-v1.15.0`
 - `observer-eastmesh-bridge-espnow-v2026.5.1`
+- `observer-eastmesh-bridge-mqtt-v2026.7.0`
 - `observer-eastmesh-v2026.5.1`

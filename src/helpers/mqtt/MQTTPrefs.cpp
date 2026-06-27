@@ -13,7 +13,12 @@ constexpr uint32_t kFixedStatusIntervalMs = 300000;
 void MQTTPrefsStore::setDefaults(MQTTPrefs& prefs) {
   memset(&prefs, 0, sizeof(prefs));
   prefs.magic = kMagic;
+#if defined(WITH_MQTT_BRIDGE)
+  prefs.enabled_mask = 0x00;
+  prefs.mqtt_bridge_uplink_migrated = 1;
+#else
   prefs.enabled_mask = 0x01;
+#endif
   prefs.packets_enabled = 1;
   prefs.raw_enabled = 0;
   prefs.status_enabled = 1;
@@ -83,6 +88,13 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
     prefs.brokers_migrated = 1;
     save(fs, prefs);
   }
+#if defined(WITH_MQTT_BRIDGE)
+  if (!prefs.mqtt_bridge_uplink_migrated) {
+    prefs.enabled_mask = 0;
+    prefs.mqtt_bridge_uplink_migrated = 1;
+    save(fs, prefs);
+  }
+#endif
   return true;
 }
 
