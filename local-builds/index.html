@@ -834,30 +834,28 @@
 </span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>T_Beam_S3_Supreme_SX1262_repeater_observer_espnow
 </span></code></pre></div>
 <h2 id="supported-repeater_observer_mqtt_bridge-boards">Supported <code>repeater_observer_mqtt_bridge</code> Boards<a class="headerlink" href="#supported-repeater_observer_mqtt_bridge-boards" title="Permanent link">&para;</a></h2>
-<p>At present only the Xiao S3 WIO observer MQTT bridge target is defined:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Xiao_S3_WIO_repeater_observer_mqtt_bridge
-</span></code></pre></div>
-<p>List all observer MQTT bridge targets:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>bash<span class="w"> </span>eastmesh-build.sh<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;_repeater_observer_mqtt_bridge&#39;</span>
+<p>An <code>mqtt_bridge</code> build variant is defined for each observer board.</p>
+<p>List the available targets:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>bash<span class="w"> </span>eastmesh-build.sh<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;_repeater_observer_mqtt_bridge&#39;</span>
 </span></code></pre></div>
 <p>Bridge firmware is for local ESP-NOW bridge use between nearby repeaters. It is not MQTT-over-WAN or VPN bridging.</p>
 <h2 id="supported-companion_radio_wifi-boards">Supported <code>companion_radio_wifi</code> Boards<a class="headerlink" href="#supported-companion_radio_wifi-boards" title="Permanent link">&para;</a></h2>
 <p>These are the full PlatformIO env names used for local source builds and release artifact naming.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>heltec_tracker_v2_companion_radio_wifi
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>Heltec_v2_companion_radio_wifi
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>Heltec_v3_companion_radio_wifi
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>heltec_v4_companion_radio_wifi
-</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>heltec_v4_tft_companion_radio_wifi
-</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>Heltec_WSL3_companion_radio_wifi
-</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>LilyGo_TBeam_1W_companion_radio_wifi
-</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>LilyGo_TLora_V2_1_1_6_companion_radio_wifi
-</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>nibble_screen_connect_companion_radio_wifi
-</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>RAK_3112_companion_radio_wifi
-</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>Station_G2_companion_radio_wifi
-</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>T_Beam_S3_Supreme_SX1262_companion_radio_wifi
-</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>ThinkNode_M2_companion_radio_wifi
-</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>ThinkNode_M5_companion_radio_wifi
-</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>Xiao_S3_WIO_companion_radio_wifi
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>heltec_tracker_v2_companion_radio_wifi
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Heltec_v2_companion_radio_wifi
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Heltec_v3_companion_radio_wifi
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>heltec_v4_companion_radio_wifi
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>heltec_v4_tft_companion_radio_wifi
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>Heltec_WSL3_companion_radio_wifi
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>LilyGo_TBeam_1W_companion_radio_wifi
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>LilyGo_TLora_V2_1_1_6_companion_radio_wifi
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>nibble_screen_connect_companion_radio_wifi
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>RAK_3112_companion_radio_wifi
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>Station_G2_companion_radio_wifi
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>T_Beam_S3_Supreme_SX1262_companion_radio_wifi
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>ThinkNode_M2_companion_radio_wifi
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>ThinkNode_M5_companion_radio_wifi
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>Xiao_S3_WIO_companion_radio_wifi
 </span></code></pre></div>
 <h2 id="companion-wi-fi-cli">Companion Wi-Fi CLI<a class="headerlink" href="#companion-wi-fi-cli" title="Permanent link">&para;</a></h2>
 <p>Current companion Wi-Fi builds support persisted Wi-Fi rescue commands:</p>
@@ -868,12 +866,12 @@
 <li>wait for <code>========= CLI Rescue =========</code></li>
 <li>then run the Wi-Fi rescue commands below from the serial monitor</li>
 </ul>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>get wifi.status
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>get wifi.ssid
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>get wifi.powersaving
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>set wifi.ssid &lt;ssid&gt;
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>set wifi.pwd &lt;password&gt;
-</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>set wifi.powersaving none|min|max
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>get wifi.status
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>get wifi.ssid
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>get wifi.powersaving
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>set wifi.ssid &lt;ssid&gt;
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>set wifi.pwd &lt;password&gt;
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>set wifi.powersaving none|min|max
 </span></code></pre></div>
 
 

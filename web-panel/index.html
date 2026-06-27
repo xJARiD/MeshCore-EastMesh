@@ -1704,7 +1704,6 @@
 <li><code>mqtt.email</code>: owner contact email.</li>
 <li>MQTT brokers: <strong>Primary MQTT</strong> and <strong>Secondary MQTT</strong> dropdowns, each selecting one of <code>eastmesh-au</code>, <code>meshmapper</code>, <code>Custom</code>, the retired <code>letsmesh-eu</code>/<code>letsmesh-us</code>, or <code>None</code>. The two slots enforce the two-broker maximum, and a broker chosen in one slot is disabled in the other.</li>
 <li>custom MQTT <code>host:port</code>, TCP/WSS transport, username, and password fields, shown when <code>Custom</code> is selected in either slot.</li>
-<li>mesh bridge peer MQTT <code>host:port</code>, optional username and password, shown on MQTT bridge builds (<code>get bridge.type</code> returns <code>mqtt</code>). This is separate from MQTT uplink brokers and points at the shared peer broker used for bidirectional mesh packet bridging.</li>
 </ul>
 <p><code>UNSET - To be configured</code> is the default for new observer installs until a real saved value exists.</p>
 <p>Notes:</p>
@@ -1718,7 +1717,6 @@
 <li>turning off a connected MQTT server publishes retained offline status before the client disconnects</li>
 <li>changing <code>mqtt.iata</code> away from a configured value publishes retained offline status to the old status topic, restarts connected broker clients, and reconnects under the new topic path</li>
 <li>at most two MQTT brokers can be enabled at once</li>
-<li>on MQTT bridge builds, both bridge nodes must use the same peer broker host, port, credentials, and <code>bridge.secret</code></li>
 </ul>
 <h2 id="stats-overview"><code>/stats</code> Overview<a class="headerlink" href="#stats-overview" title="Permanent link">&para;</a></h2>
 <p>The stats page is loaded separately from <code>/app</code> and is intended to keep the main admin page lighter.</p>
