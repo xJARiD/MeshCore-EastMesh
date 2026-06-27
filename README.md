@@ -18,8 +18,8 @@ CoreScope (<https://core.eastmesh.au>) offers visibility into the network, inclu
   - native WiFi
   - MQTT over WSS with JWT auth
   - optional local HTTPS config panel on supported ESP32 targets
-- `*_repeater_observer_mqtt_bridge` firmware targets that add a **bidirectional MQTT mesh bridge** to a peer broker (separate from MQTT uplink)
 - `*_repeater_observer_espnow` firmware targets that add a local ESP-NOW mesh bridge
+- `*_repeater_bridge_espnow` firmware targets for a plain upstream-style repeater ESP-NOW bridge, without MQTT uplink or the EastMesh web panel
 - `*_companion_radio_wifi` firmware targets for WiFi-connected companion devices
 - EastMesh-specific release workflows and versioning on top of upstream MeshCore releases
 - docs and release guidance for EastMesh users instead of the full upstream MeshCore docs set
