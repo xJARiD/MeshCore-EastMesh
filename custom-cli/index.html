@@ -586,6 +586,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mqtt-bridge-settings-for-observer-mqtt-bridge-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MQTT Bridge Settings For Observer MQTT Bridge Builds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#web-panel-controls" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -816,6 +827,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mqtt-bridge-settings-for-observer-mqtt-bridge-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MQTT Bridge Settings For Observer MQTT Bridge Builds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#web-panel-controls" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1035,7 +1057,7 @@
 </ul>
 <p>Default servers are <code>au.pool.ntp.org</code>, <code>time.google.com</code>, and <code>time.cloudflare.com</code>.</p>
 <h3 id="esp-now-bridge-settings-for-observer-esp-now-builds">ESP-NOW Bridge Settings For Observer ESP-NOW Builds<a class="headerlink" href="#esp-now-bridge-settings-for-observer-esp-now-builds" title="Permanent link">&para;</a></h3>
-<p>These commands are available on <code>*_repeater_observer_espnow</code> firmware targets.</p>
+<p>These commands are available on <code>*_repeater_observer_espnow</code> firmware targets that use the ESP-NOW bridge transport.</p>
 <p>Bridge commands are for local ESP-NOW bridge use between nearby repeaters, such as linking repeaters on <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>. They are not MQTT-over-WAN, VPN, or internet bridge controls.</p>
 <ul>
 <li><code>get bridge.channel</code>: shows the configured ESP-NOW bridge channel.</li>
@@ -1059,6 +1081,33 @@
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>&gt; 1
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>&gt; set bridge.channel 6
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>OK
+</span></code></pre></div>
+<h3 id="mqtt-bridge-settings-for-observer-mqtt-bridge-builds">MQTT Bridge Settings For Observer MQTT Bridge Builds<a class="headerlink" href="#mqtt-bridge-settings-for-observer-mqtt-bridge-builds" title="Permanent link">&para;</a></h3>
+<p>These commands are available on <code>*_repeater_observer_mqtt_bridge</code> firmware targets (release track <code>observer-eastmesh-bridge-mqtt</code>).</p>
+<p>The MQTT bridge forwards raw mesh packets over a shared topic at a peer MQTT broker. It is separate from MQTT uplink publishing to EastMesh or MeshMapper brokers.</p>
+<ul>
+<li><code>get bridge.type</code>: returns <code>mqtt</code> on MQTT bridge builds.</li>
+<li><code>get bridge.peer.host</code>: shows the configured peer MQTT broker host.</li>
+<li><code>set bridge.peer.host &lt;host&gt;</code>: sets the peer MQTT broker host and restarts the bridge.</li>
+<li><code>get bridge.peer.port</code>: shows the configured peer MQTT broker port (defaults to <code>1883</code> when unset).</li>
+<li><code>set bridge.peer.port &lt;port&gt;</code>: sets the peer MQTT broker port and restarts the bridge.</li>
+<li><code>get bridge.peer.username</code> / <code>set bridge.peer.username &lt;username&gt;</code>: optional peer MQTT broker username.</li>
+<li><code>get bridge.peer.password</code> / <code>set bridge.peer.password &lt;password&gt;</code>: optional peer MQTT broker password (<code>get</code> returns <code>set</code> or <code>-</code>, not the stored value).</li>
+<li><code>get bridge.secret</code> / <code>set bridge.secret &lt;secret&gt;</code>: shared XOR key used by all bridge nodes on the same bridge network.</li>
+</ul>
+<p>Both bridge nodes must use the same peer broker address, port, credentials, and <code>bridge.secret</code>.</p>
+<p>On <code>*_repeater_observer_mqtt_bridge</code> builds, MQTT uplink brokers are <strong>disabled by default</strong> so the mesh bridge client is not competing with EastMesh/MeshMapper WSS uplink at boot. Enable uplink brokers manually in MQTT Settings when needed.</p>
+<p>Example:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&gt; set bridge.peer.host 192.168.1.10
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>OK
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>&gt; set bridge.peer.port 1883
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>OK
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>&gt; set bridge.peer.username meshbridge
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>OK
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>&gt; set bridge.peer.password your-mqtt-password
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>OK
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>&gt; set bridge.secret my-shared-secret
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>OK
 </span></code></pre></div>
 <h3 id="web-panel-controls">Web Panel Controls<a class="headerlink" href="#web-panel-controls" title="Permanent link">&para;</a></h3>
 <ul>

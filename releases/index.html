@@ -509,6 +509,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#observer-mqtt-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observer MQTT Bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#repeater-esp-now-bridge" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -875,6 +886,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#observer-mqtt-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observer MQTT Bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#repeater-esp-now-bridge" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -944,7 +966,7 @@
 </ol>
 <p>If you are not sure which track you need, start with <code>companion-wifi</code> for app-connected companion devices or <code>observer-eastmesh</code> for a fixed repeater that should publish to MQTT.</p>
 <h2 id="pick-your-track">Pick Your Track<a class="headerlink" href="#pick-your-track" title="Permanent link">&para;</a></h2>
-<p>EastMesh publishes four release tracks:</p>
+<p>EastMesh publishes five release tracks:</p>
 <table>
 <thead>
 <tr>
@@ -974,12 +996,18 @@
 <td>You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties.</td>
 <td><code>*_repeater_observer_espnow</code></td>
 </tr>
+<tr>
+<td><code>observer-eastmesh-bridge-mqtt</code></td>
+<td>You want one repeater to provide both MQTT uplink and bidirectional MQTT mesh bridging to a peer broker.</td>
+<td><code>*_repeater_observer_mqtt_bridge</code></td>
+</tr>
 </tbody>
 </table>
 <div class="admonition note">
 <p class="admonition-title">Bridge firmware is not a WAN bridge</p>
-<p>Bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>.</p>
-<p>They do not use MQTT to tunnel mesh traffic over the internet, WAN links, or VPNs.</p>
+<p>ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>.</p>
+<p>The MQTT bridge track forwards mesh packets through a shared topic at a peer MQTT broker you configure. It is separate from MQTT uplink publishing to EastMesh or MeshMapper.</p>
+<p>Bridge tracks do not use MQTT uplink brokers to tunnel mesh traffic over the internet, WAN links, or VPNs.</p>
 </div>
 <h2 id="pick-the-right-asset">Pick The Right Asset<a class="headerlink" href="#pick-the-right-asset" title="Permanent link">&para;</a></h2>
 <p>Download the asset that matches your board and firmware type.</p>
@@ -990,6 +1018,7 @@
 <li><code>heltec_v4_repeater_observer-v1.15.0-eastmesh-v2026.5.1-abcdef-merged.bin</code></li>
 <li><code>heltec_v4_repeater_bridge_espnow-v1.15.0-abcdef.bin</code></li>
 <li><code>heltec_v4_repeater_observer_espnow-v1.15.0-eastmesh-v2026.5.1-abcdef.bin</code></li>
+<li><code>Xiao_S3_WIO_repeater_observer_mqtt_bridge-v1.15.0-eastmesh-v2026.7.0-abcdef.bin</code></li>
 </ul>
 <p>The important part is the board/env prefix:</p>
 <ul>
@@ -997,6 +1026,7 @@
 <li><code>*_repeater_observer</code></li>
 <li><code>*_repeater_bridge_espnow</code></li>
 <li><code>*_repeater_observer_espnow</code></li>
+<li><code>*_repeater_observer_mqtt_bridge</code></li>
 </ul>
 <h2 id="which-file-to-flash">Which File To Flash<a class="headerlink" href="#which-file-to-flash" title="Permanent link">&para;</a></h2>
 <p>If you are using <a href="https://flasher.eastmesh.au/">https://flasher.eastmesh.au/</a>, choose the image type in the flasher:</p>
@@ -1107,6 +1137,17 @@
 <li>check <code>get wifi.status</code> and note the connected Wi-Fi channel</li>
 <li>set <code>bridge.channel</code> to match that Wi-Fi channel</li>
 <li>set the same <code>bridge.secret</code> on every local ESP-NOW bridge node that should talk together</li>
+</ul>
+<h3 id="observer-mqtt-bridge">Observer MQTT Bridge<a class="headerlink" href="#observer-mqtt-bridge" title="Permanent link">&para;</a></h3>
+<p><code>repeater_observer_mqtt_bridge</code> builds combine the observer role with bidirectional MQTT mesh bridging.</p>
+<p>Typical first steps after flashing:</p>
+<ul>
+<li>set <code>wifi.ssid</code></li>
+<li>set <code>wifi.pwd</code></li>
+<li>set <code>mqtt.iata</code></li>
+<li>confirm <code>get mqtt.status</code></li>
+<li>set <code>bridge.peer.host</code> and <code>bridge.peer.port</code> to your peer MQTT broker</li>
+<li>set the same <code>bridge.secret</code> on every MQTT bridge node that should talk together</li>
 </ul>
 <h3 id="repeater-esp-now-bridge">Repeater ESP-NOW Bridge<a class="headerlink" href="#repeater-esp-now-bridge" title="Permanent link">&para;</a></h3>
 <p><code>repeater_bridge_espnow</code> builds are for local ESP-NOW bridge nodes without MQTT uplink.</p>
