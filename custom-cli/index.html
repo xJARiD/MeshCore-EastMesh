@@ -665,6 +665,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Companion Wi-Fi Rescue Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recovery-access-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery Access Point
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -894,6 +911,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Companion Wi-Fi Rescue Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recovery-access-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery Access Point
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1160,6 +1194,60 @@
 <li><code>rm ...</code></li>
 <li><code>reboot</code></li>
 </ul>
+<h3 id="recovery-access-point">Recovery Access Point<a class="headerlink" href="#recovery-access-point" title="Permanent link">&para;</a></h3>
+<p>When a companion Wi-Fi device has no Wi-Fi credentials configured, or cannot connect
+to its configured network for 60 seconds, it broadcasts its own <code>EastMesh-WiFi</code>
+access point so it can be rescued without a serial cable.</p>
+<p><strong>The AP password is the device pin, zero-padded to 8 digits</strong> (WPA2 requires at
+least 8 characters). The pin follows the same rules as the Bluetooth pairing pin on
+BLE builds:</p>
+<table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Active pin</th>
+<th><code>EastMesh-WiFi</code> password</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Has a screen, no pin set</td>
+<td>random 6-digit pin each boot, shown as <code>Pin:NNNNNN</code> on the home screen</td>
+<td><code>00NNNNNN</code> — read it off the screen</td>
+</tr>
+<tr>
+<td>No screen, no pin set</td>
+<td><code>123456</code> (default)</td>
+<td><code>00123456</code></td>
+</tr>
+<tr>
+<td>Pin set via <code>set pin &lt;pin&gt;</code></td>
+<td>your configured pin (any device)</td>
+<td>your pin zero-padded to 8 digits, e.g. pin <code>4242</code> → <code>00004242</code></td>
+</tr>
+</tbody>
+</table>
+<p>Notes on the pin:</p>
+<ul>
+<li>on devices with a screen, the pin is only random while no pin has been saved; run
+  <code>set pin &lt;pin&gt;</code> for a fixed password (takes effect next boot)</li>
+<li>headless devices in public areas should always get a custom pin — <code>00123456</code> is a
+  documented default, so treat it like a default router password</li>
+</ul>
+<p>Recovery steps:</p>
+<ol>
+<li>join the <code>EastMesh-WiFi</code> network with the password from the table above</li>
+<li>open the rescue CLI with <code>telnet 192.168.4.1</code> (or <code>nc 192.168.4.1 23</code>) — all
+   rescue commands above are available</li>
+<li><code>set wifi.ssid &lt;ssid&gt;</code>, then <code>set wifi.pwd &lt;password&gt;</code> — the device immediately
+   retries the network with the new credentials</li>
+<li><code>reboot</code> (or just wait — see below)</li>
+</ol>
+<p>While the AP is up the device keeps retrying its configured network in the
+background; as soon as the station connection succeeds, the recovery AP shuts down
+automatically (this also drops your rescue session — that's the sign it worked).
+The MeshCore app can also reach the device through the AP on the usual companion
+TCP port.</p>
 
 
 
