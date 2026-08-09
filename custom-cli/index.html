@@ -679,6 +679,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#using-the-companion-app-over-the-ap-roaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the Companion App over the AP (Roaming)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -920,6 +931,17 @@
     <span class="md-ellipsis">
       
         Recovery Access Point
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-companion-app-over-the-ap-roaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the Companion App over the AP (Roaming)
       
     </span>
   </a>
@@ -1243,11 +1265,29 @@ BLE builds:</p>
    retries the network with the new credentials</li>
 <li><code>reboot</code> (or just wait — see below)</li>
 </ol>
-<p>While the AP is up the device keeps retrying its configured network in the
-background; as soon as the station connection succeeds, the recovery AP shuts down
-automatically (this also drops your rescue session — that's the sign it worked).
-The MeshCore app can also reach the device through the AP on the usual companion
-TCP port.</p>
+<p>While the AP is up the device keeps retrying its configured network about once a
+minute (expect a brief AP hiccup at each attempt); as soon as the station
+connection succeeds, the recovery AP shuts down automatically (this also drops
+your rescue session — that's the sign it worked).</p>
+<h3 id="using-the-companion-app-over-the-ap-roaming">Using the Companion App over the AP (Roaming)<a class="headerlink" href="#using-the-companion-app-over-the-ap-roaming" title="Permanent link">&para;</a></h3>
+<p>The recovery AP is not just for fixing credentials — the full companion protocol
+is available through it, which makes it a roaming access mode when the device is
+away from its configured network:</p>
+<ol>
+<li>join <code>EastMesh-WiFi</code> with the pin-derived password (see the table above)</li>
+<li>in the MeshCore companion app, add/connect a Wi-Fi device with host
+   <code>192.168.4.1</code> and port <code>5000</code></li>
+<li>use the app normally — messages, contacts, channels all work over the AP</li>
+</ol>
+<p>Notes for roaming use:</p>
+<ul>
+<li>run <code>set pin &lt;pin&gt;</code> once so the AP password stays fixed across reboots;
+  otherwise devices with a screen pick a new random pin every boot</li>
+<li>the AP appears about 60 seconds after boot (the device tries its configured
+  network first), and stays up for as long as that network is unreachable</li>
+<li>back in range of its configured network, the device joins it and shuts the AP
+  down automatically — reconnect the app via the LAN address instead</li>
+</ul>
 
 
 
