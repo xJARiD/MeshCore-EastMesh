@@ -1073,13 +1073,15 @@
 </ul>
 <h3 id="wi-fi-settings-for-observers">Wi-Fi Settings For Observers<a class="headerlink" href="#wi-fi-settings-for-observers" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get wifi.status</code>: shows SSID, connection state, raw Wi-Fi status code, IP, channel, and signal when connected.</li>
+<li><code>get wifi.status</code>: shows SSID, connection state, raw Wi-Fi status code, IP, channel, and signal when connected, plus gateway health (<code>gw:ok|lost</code>) and the watchdog reconnect count (<code>wd:&lt;n&gt;</code>).</li>
 <li><code>get wifi.ssid</code>: shows the configured Wi-Fi SSID.</li>
 <li><code>set wifi.ssid &lt;ssid&gt;</code>: sets the Wi-Fi SSID.</li>
 <li><code>set wifi.pwd &lt;password&gt;</code>: sets the Wi-Fi password.</li>
 <li><code>get wifi.powersaving</code>: shows the current Wi-Fi power save mode.</li>
 <li><code>set wifi.powersaving none|min|max</code>: sets Wi-Fi power saving mode.</li>
+<li><code>wifi reconnect</code>: drops the current association and rejoins from a full channel scan. Use when a node reports connected but is unreachable over the network.</li>
 </ul>
+<p>Observers also run a connectivity watchdog: while Wi-Fi reports connected, the node ARP-probes its gateway every 30 seconds. If the gateway stays silent for 3 minutes (for example, an AP that keeps beaconing after losing its wired uplink), the node forces a full reconnect on its own, backing off up to 48 minutes between attempts while the outage persists. <code>wd:&lt;n&gt;</code> in <code>get wifi.status</code> counts these forced reconnects since boot.</p>
 <h3 id="ntp-settings-for-observers">NTP Settings For Observers<a class="headerlink" href="#ntp-settings-for-observers" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get ntp.server1</code>: shows the primary NTP server.</li>
@@ -1110,7 +1112,7 @@
 </ol>
 <p>Example:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>&gt; get wifi.status
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&gt; ssid:EastMesh-IoT status:connected code:3 state:connected ip:192.168.1.50 channel:6 rssi:-61 quality:78% signal:good
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&gt; ssid:EastMesh-IoT status:connected code:3 state:connected ip:192.168.1.50 channel:6 rssi:-61 quality:78% signal:good gw:ok wd:0
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>&gt; get bridge.channel
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>&gt; 1
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>&gt; set bridge.channel 6
