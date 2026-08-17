@@ -182,6 +182,7 @@ These are the Wi-Fi companion targets that rely on the companion app as the prim
 | ----------- | ------- | ------ | ----- | ----- | ------ | --- |
 | Heltec_WSL3 | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
 | RAK_3112    | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
+| Xiao_S3_LoRa2021F33-2G4 | ESP32S3 | 512 KB | No    | 8 MB  | LR2021 |     |
 | Xiao_S3_WIO | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
 
 ## Practical Picks
