@@ -121,6 +121,7 @@ Tbeam_SX1262_repeater_observer
 Tbeam_SX1276_repeater_observer
 WHY2025_badge_repeater_observer
 Xiao_C6_repeater_observer
+Xiao_S3_LoRa2021F33-2G4_repeater_observer
 Xiao_S3_WIO_repeater_observer
 ```
 

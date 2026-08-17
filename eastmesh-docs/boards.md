@@ -101,6 +101,7 @@ If you are deciding between otherwise similar boards, these target-level setting
 | ThinkNode_M5             | default | 22 dBm cfg   | ADC batt  |           |
 | WHY2025_badge            | default | 22 dBm cfg   | none      |           |
 | Xiao_C6                  | default | 22 dBm cfg   | none      | RF switch |
+| Xiao_S3_LoRa2021F33-2G4  | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Xiao_S3_WIO              | default | 22 dBm cfg   | none      | RF switch |
 
 \* These targets use a PA or RF front-end, so effective output can be much higher than the configured `LORA_TX_POWER`.
@@ -145,6 +146,7 @@ This table includes all observer targets currently defined in `variants/eastmesh
 | ThinkNode_M5             | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | E-paper (GxEPD) | ✅  |     |
 | WHY2025_badge            | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
 | Xiao_C6                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| Xiao_S3_LoRa2021F33-2G4  | ESP32S3 | 512 KB | No    | 8 MB  | LR2021 | None            |     |     |
 | Xiao_S3_WIO              | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |     |
 
 SD notes:
