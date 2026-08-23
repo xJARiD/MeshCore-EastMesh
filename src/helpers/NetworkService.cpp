@@ -299,12 +299,11 @@ void NetworkService::formatWifiStatusReply(char* reply, size_t reply_size) const
 
   if (wifi_status == WL_CONNECTED) {
     const int rssi_dbm = WiFi.RSSI();
-    const unsigned long gateway_silence_ms = millis() - _wd_last_gateway_ok;
     snprintf(reply, reply_size,
              "> ssid:%s status:%s code:%d state:%s ip:%s channel:%d rssi:%d quality:%d%% signal:%s gw:%s wd:%u",
              _prefs.wifi_ssid, status, static_cast<int>(wifi_status), state, WiFi.localIP().toString().c_str(),
              WiFi.channel(), rssi_dbm, getWifiQualityPercent(rssi_dbm), getWifiQualityLabel(rssi_dbm),
-             gateway_silence_ms < (kWatchdogProbeMillis * 3) ? "ok" : "lost", _wd_reconnect_count);
+             isGatewayReachable() ? "ok" : "lost", _wd_reconnect_count);
   } else {
     snprintf(reply, reply_size, "> ssid:%s status:%s code:%d state:%s", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-",
              status, static_cast<int>(wifi_status), state);
@@ -326,6 +325,22 @@ void NetworkService::reconnectWifi() {
   _sntp_started = false;
   _have_time_sync = false;
   _last_wifi_attempt = 0;
+}
+
+bool NetworkService::isGatewayReachable() const {
+#if defined(ESP_PLATFORM)
+  return millis() - _wd_last_gateway_ok < (kWatchdogProbeMillis * 3);
+#else
+  return false;
+#endif
+}
+
+uint16_t NetworkService::getWatchdogReconnectCount() const {
+#if defined(ESP_PLATFORM)
+  return _wd_reconnect_count;
+#else
+  return 0;
+#endif
 }
 
 void NetworkService::forceReconnect() {

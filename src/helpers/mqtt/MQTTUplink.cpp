@@ -142,7 +142,7 @@ const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[kBrokerCount] = {
 
 MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
     : _fs(nullptr), _rtc(&rtc), _identity(&identity), _running(false), _last_status_publish(0),
-      _token_refresh_count(0), _token_refresh_active_until_ms(0), _last_status{}, _node_name(nullptr), _network(nullptr)
+      _token_refresh_count(0), _abandoned_client_count(0), _token_refresh_active_until_ms(0), _last_status{}, _node_name(nullptr), _network(nullptr)
        {
   memset(_device_id, 0, sizeof(_device_id));
   MQTTPrefsStore::setDefaults(_prefs);
@@ -615,6 +615,7 @@ void MQTTUplink::destroyBroker(BrokerState& broker, bool reset_retry_state) {
         MQTT_LOG("%s destroy broker client rc=0x%x", broker.spec->label, destroy_rc);
       } else {
         // Avoid freeing through esp-mqtt after the IDF 4.4 WSS transport has already poisoned the heap.
+        _abandoned_client_count++;
         MQTT_LOG("%s abandon stopped broker client: heap corrupt", broker.spec->label);
       }
     } else {
@@ -623,6 +624,7 @@ void MQTTUplink::destroyBroker(BrokerState& broker, bool reset_retry_state) {
         esp_err_t destroy_rc = esp_mqtt_client_destroy(broker.client);
         MQTT_LOG("%s destroy broker client rc=0x%x", broker.spec->label, destroy_rc);
       } else {
+        _abandoned_client_count++;
         MQTT_LOG("%s abandon broker client: heap corrupt", broker.spec->label);
       }
     }
@@ -1249,11 +1251,11 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
   format_slot(secondary, secondary_slot, sizeof(secondary_slot));
 
   snprintf(reply, reply_size,
-           "> wifi:%s ntp:%s iata:%s p:%s s:%s status:%s tx:%s",
+           "> wifi:%s ntp:%s iata:%s p:%s s:%s status:%s tx:%s leaked:%lu",
            (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
            (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
            _prefs.iata, primary_slot, secondary_slot, _prefs.status_enabled ? "on" : "off",
-           _prefs.tx_enabled ? "on" : "off");
+           _prefs.tx_enabled ? "on" : "off", static_cast<unsigned long>(_abandoned_client_count));
 }
 
 bool MQTTUplink::setEndpointEnabled(uint8_t bit, bool enabled) {
@@ -1521,7 +1523,7 @@ const char* MQTTUplink::getAggregateBrokerState() const {
 
 MQTTUplink::MQTTUplink(mesh::RTCClock&, mesh::LocalIdentity&)
     : _fs(nullptr), _rtc(nullptr), _identity(nullptr), _running(false), _last_status_publish(0),
-      _token_refresh_count(0), _token_refresh_active_until_ms(0), _last_status{}, _node_name(nullptr), _network(nullptr) {
+      _token_refresh_count(0), _abandoned_client_count(0), _token_refresh_active_until_ms(0), _last_status{}, _node_name(nullptr), _network(nullptr) {
   MQTTPrefsStore::setDefaults(_prefs);
 }
 

@@ -32,6 +32,7 @@ public:
 private:
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
   void ensureWebServer();
+  void healIfStarved(unsigned long now_ms);
 #endif
   bool savePrefs();
 
@@ -41,4 +42,7 @@ private:
   NetworkStateProvider* _network;
   WebPanelServer _panel;
   bool _suspended_for_ota;
+  unsigned long _last_start_attempt_ms;
+  unsigned long _last_heal_ms;
+  unsigned long _last_heal_check_ms;
 };

@@ -46,6 +46,18 @@ public:
   bool hasSessionToken() const;
   bool shouldAutoLock(unsigned long now_ms) const;
   void lockSession();
+  // True when no request has touched the panel for quiet_ms (or ever).
+  bool isIdle(unsigned long now_ms, unsigned long quiet_ms) const;
+  // True when the largest internal heap block can no longer fit a TLS handshake.
+  static bool isHeapStarved();
+  void noteRestart();
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  unsigned int startDeferredCount() const { return _start_deferred_count; }
+  unsigned int restartCount() const { return _restart_count; }
+#else
+  unsigned int startDeferredCount() const { return 0; }
+  unsigned int restartCount() const { return 0; }
+#endif
 
 private:
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
@@ -58,6 +70,8 @@ private:
   httpd_handle_t _redirect_server;
   char _token[33];
   unsigned long _last_activity_ms;
+  unsigned int _start_deferred_count;
+  unsigned int _restart_count;
   RouteContext _route_context;
 
   static esp_err_t handleIndex(httpd_req_t* req);

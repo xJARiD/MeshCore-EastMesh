@@ -458,6 +458,30 @@ releases:
         text: "Adopted upstream's SH1106 display address fallback (0x3C/0x3D) so board revisions with the other SA0 strap setting still get a working display, while keeping the EastMesh T-Beam S3 Supreme bring-up order and headless fallback."
     breaking_changes: []
 
+  - track: observer-eastmesh
+    version: "2026.8.3"
+    tag: "observer-eastmesh-v2026.8.3"
+    date: "2026-08-23"
+    previous_version: "2026.8.2"
+    summary: "Fixes the web panel going unreachable after long uptimes due to internal heap fragmentation, adds web panel self-healing and heap-health CLI counters, and fixes the stats page Channel/Gateway cells."
+    changes:
+      - type: fixed
+        area: web
+        text: "Fixed the web panel becoming unreachable after days of uptime while LoRa and MQTT kept working: browser page-load bursts were evicting live HTTPS sessions and forcing repeated TLS handshakes, fragmenting internal RAM until no handshake could be allocated. One-shot responses (pages, favicon, login, redirect, 401s) now release their socket immediately, while the authenticated API connection keeps keep-alive."
+      - type: added
+        area: web
+        text: "Added web panel self-healing: the HTTPS server now refuses to start without enough internal heap headroom (retrying every 15 seconds), and restarts itself when idle if the largest free block shrinks below what a TLS handshake needs."
+      - type: changed
+        area: cli
+        text: "Extended `get web.status` with `heals:<n>` and `deferred:<n>`, and `get mqtt.status` with `leaked:<n>` (MQTT clients abandoned after a heap-integrity failure), so heap-related failures are visible over LoRa."
+      - type: fixed
+        area: web
+        text: "Fixed the Channel and Gateway cells on the web panel stats page always showing `--`; the stats summary now carries the Wi-Fi channel, gateway health, and watchdog reconnect count."
+      - type: added
+        area: tools
+        text: "Added `eastmesh-tools/web-heap-check.sh` to read heap and service health over the HTTPS API and optionally stress the web panel with browser-style bursts."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -729,3 +753,27 @@ releases:
         area: board
         text: "Adopted upstream's SH1106 display address fallback (0x3C/0x3D) so board revisions with the other SA0 strap setting still get a working display, while keeping the EastMesh T-Beam S3 Supreme bring-up order and headless fallback."
     breaking_changes: []
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.8.3"
+    tag: "observer-eastmesh-bridge-espnow-v2026.8.3"
+    date: "2026-08-23"
+    previous_version: "2026.8.2"
+    summary: "Fixes the web panel going unreachable after long uptimes due to internal heap fragmentation, adds web panel self-healing and heap-health CLI counters, and fixes the stats page Channel/Gateway cells."
+    changes:
+      - type: fixed
+        area: web
+        text: "Fixed the web panel becoming unreachable after days of uptime while LoRa and MQTT kept working: browser page-load bursts were evicting live HTTPS sessions and forcing repeated TLS handshakes, fragmenting internal RAM until no handshake could be allocated. One-shot responses (pages, favicon, login, redirect, 401s) now release their socket immediately, while the authenticated API connection keeps keep-alive."
+      - type: added
+        area: web
+        text: "Added web panel self-healing: the HTTPS server now refuses to start without enough internal heap headroom (retrying every 15 seconds), and restarts itself when idle if the largest free block shrinks below what a TLS handshake needs."
+      - type: changed
+        area: cli
+        text: "Extended `get web.status` with `heals:<n>` and `deferred:<n>`, and `get mqtt.status` with `leaked:<n>` (MQTT clients abandoned after a heap-integrity failure), so heap-related failures are visible over LoRa."
+      - type: fixed
+        area: web
+        text: "Fixed the Channel and Gateway cells on the web panel stats page always showing `--`; the stats summary now carries the Wi-Fi channel, gateway health, and watchdog reconnect count."
+      - type: added
+        area: tools
+        text: "Added `eastmesh-tools/web-heap-check.sh` to read heap and service health over the HTTPS API and optionally stress the web panel with browser-style bursts."
+    breaking_changes: []
+

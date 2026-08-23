@@ -80,6 +80,7 @@ public:
   const char* getAggregateBrokerState() const;
   void setNetworkStateProvider(NetworkStateProvider* network) { _network = network; }
   uint32_t getTokenRefreshCount() const { return _token_refresh_count; }
+  uint32_t getAbandonedClientCount() const { return _abandoned_client_count; }
   bool isTokenRefreshInProgress() const;
 
 private:
@@ -124,6 +125,9 @@ private:
   bool _running;
   unsigned long _last_status_publish;
   uint32_t _token_refresh_count;
+  // Clients never freed because heap_caps_check_integrity_all() failed at teardown.
+  // Each one leaks its TLS context and task stack (~45KB of internal RAM).
+  uint32_t _abandoned_client_count;
   unsigned long _token_refresh_active_until_ms;
   MQTTStatusSnapshot _last_status;
   char _device_id[65];

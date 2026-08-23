@@ -54,6 +54,33 @@ void freeScratchBuffer(void* ptr) {
   }
 }
 
+// Internal (DMA-capable) heap headroom needed before we start an HTTPS listener.
+// A single mbedTLS session needs ~40KB of internal RAM in one piece; starting the
+// server when that cannot be satisfied just leaves a listener that resets every
+// handshake. Mirrors the dual-broker gate in MQTTUplink.
+constexpr size_t kWebMinFreeHeap = 56U * 1024U;
+constexpr size_t kWebMinLargestHeap = 32U * 1024U;
+// Below this largest-block size a TLS handshake can no longer be satisfied; the
+// listener is alive but every connect resets. Tear it down and re-create it so
+// its pools are returned and coalesced.
+constexpr size_t kWebHealLargestHeap = 24U * 1024U;
+
+// Mark a one-shot response so the socket is released as soon as it is sent.
+// Page loads open several parallel connections; with a 2-socket pool and LRU
+// purge each one otherwise evicts a live session and forces a fresh TLS
+// handshake. The authenticated polling connection keeps keep-alive.
+void markCloseAfterSend(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Connection", "close");
+}
+
+esp_err_t finishAndClose(httpd_req_t* req, esp_err_t rc) {
+  int fd = httpd_req_to_sockfd(req);
+  if (fd >= 0) {
+    httpd_sess_trigger_close(req->handle, fd);
+  }
+  return rc;
+}
+
 void rebootAfterFirmwareUpdateTask(void*) {
   vTaskDelay(pdMS_TO_TICKS(1200));
   esp_restart();
@@ -1971,7 +1998,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           ${renderMetric("State", wifi.state || "--")}
           ${renderMetric("SSID", wifi.ssid || "-")}
           ${renderMetric("IP", wifi.ip || "--")}
-          ${renderMetric("Channel", wifi.channel == null ? "--" : wifi.channel)}
+          ${renderMetric("Channel", wifi.channel ? wifi.channel : "--")}
           ${renderMetric("Gateway", wifi.gateway ? wifi.gateway + (wifi.watchdog_count ? " (wd " + wifi.watchdog_count + ")" : "") : "--")}
           ${renderMetric("Power Save", powersave || "--")}
           ${renderMetric("Code", wifi.code == null ? "--" : wifi.code)}
@@ -3299,7 +3326,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 }  // namespace
 
 WebPanelServer::WebPanelServer()
-    : _runner(nullptr), _server(nullptr), _redirect_server(nullptr), _token{0}, _last_activity_ms(0), _route_context{this} {
+    : _runner(nullptr), _server(nullptr), _redirect_server(nullptr), _token{0}, _last_activity_ms(0),
+      _start_deferred_count(0), _restart_count(0), _route_context{this} {
 }
 
 void WebPanelServer::setCommandRunner(WebPanelCommandRunner* runner) {
@@ -3309,6 +3337,16 @@ void WebPanelServer::setCommandRunner(WebPanelCommandRunner* runner) {
 bool WebPanelServer::start() {
   if (_server != nullptr || _runner == nullptr) {
     return _server != nullptr;
+  }
+
+  const size_t free_heap = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  const size_t largest_heap = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  if (free_heap < kWebMinFreeHeap || largest_heap < kWebMinLargestHeap) {
+    _start_deferred_count++;
+    WEB_PANEL_LOG("server start deferred: heap_free=%u heap_max=%u need=%u/%u", static_cast<unsigned>(free_heap),
+                  static_cast<unsigned>(largest_heap), static_cast<unsigned>(kWebMinFreeHeap),
+                  static_cast<unsigned>(kWebMinLargestHeap));
+    return false;
   }
 
   noteActivity();
@@ -3412,6 +3450,18 @@ bool WebPanelServer::hasSessionToken() const {
   return _token[0] != 0;
 }
 
+bool WebPanelServer::isIdle(unsigned long now_ms, unsigned long quiet_ms) const {
+  return _last_activity_ms == 0 || now_ms - _last_activity_ms >= quiet_ms;
+}
+
+bool WebPanelServer::isHeapStarved() {
+  return heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) < kWebHealLargestHeap;
+}
+
+void WebPanelServer::noteRestart() {
+  _restart_count++;
+}
+
 void WebPanelServer::stopRedirectServer() {
   if (_redirect_server != nullptr) {
     httpd_handle_t redirect_server = _redirect_server;
@@ -3441,15 +3491,17 @@ esp_err_t WebPanelServer::handleIndex(httpd_req_t* req) {
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  return sendProgmemChunked(req, kWebPanelLoginHtml);
+  markCloseAfterSend(req);
+  return finishAndClose(req, sendProgmemChunked(req, kWebPanelLoginHtml));
 }
 
 esp_err_t WebPanelServer::handleFavicon(httpd_req_t* req) {
   httpd_resp_set_type(req, "image/png");
   httpd_resp_set_hdr(req, "Cache-Control", "max-age=86400");
-  return httpd_resp_send(req,
-                         reinterpret_cast<const char*>(eastmesh_web_assets::kFaviconPng),
-                         eastmesh_web_assets::kFaviconPngLen);
+  markCloseAfterSend(req);
+  return finishAndClose(req, httpd_resp_send(req,
+                                             reinterpret_cast<const char*>(eastmesh_web_assets::kFaviconPng),
+                                             eastmesh_web_assets::kFaviconPngLen));
 }
 
 esp_err_t WebPanelServer::handleHttpRedirect(httpd_req_t* req) {
@@ -3464,7 +3516,8 @@ esp_err_t WebPanelServer::handleHttpRedirect(httpd_req_t* req) {
   httpd_resp_set_status(req, "302 Found");
   httpd_resp_set_hdr(req, "Location", location);
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  return httpd_resp_send(req, "", 0);
+  markCloseAfterSend(req);
+  return finishAndClose(req, httpd_resp_send(req, "", 0));
 }
 
 esp_err_t WebPanelServer::handleApp(httpd_req_t* req) {
@@ -3475,7 +3528,8 @@ esp_err_t WebPanelServer::handleApp(httpd_req_t* req) {
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  return sendProgmemChunked(req, kWebPanelAppHtml);
+  markCloseAfterSend(req);
+  return finishAndClose(req, sendProgmemChunked(req, kWebPanelAppHtml));
 }
 
 esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
@@ -3486,10 +3540,11 @@ esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  markCloseAfterSend(req);
   if (ctx->self->_runner != nullptr && !ctx->self->_runner->isWebStatsEnabled()) {
-    return sendProgmemChunked(req, kWebPanelStatsDisabledHtml);
+    return finishAndClose(req, sendProgmemChunked(req, kWebPanelStatsDisabledHtml));
   }
-  return sendProgmemChunked(req, kWebPanelAppHtml);
+  return finishAndClose(req, sendProgmemChunked(req, kWebPanelAppHtml));
 }
 
 esp_err_t WebPanelServer::handleLogin(httpd_req_t* req) {
@@ -3511,7 +3566,8 @@ esp_err_t WebPanelServer::handleLogin(httpd_req_t* req) {
   if (strcmp(password, ctx->self->_runner->getWebAdminPassword()) != 0) {
     freeScratchBuffer(password);
     WEB_PANEL_LOG("login denied");
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Bad password");
+    markCloseAfterSend(req);
+    return finishAndClose(req, httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Bad password"));
   }
 
   freeScratchBuffer(password);
@@ -3520,7 +3576,8 @@ esp_err_t WebPanelServer::handleLogin(httpd_req_t* req) {
   WEB_PANEL_LOG("login accepted");
   httpd_resp_set_type(req, "text/plain; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  return httpd_resp_sendstr(req, ctx->self->_token);
+  markCloseAfterSend(req);
+  return finishAndClose(req, httpd_resp_sendstr(req, ctx->self->_token));
 }
 
 esp_err_t WebPanelServer::handleSession(httpd_req_t* req) {
@@ -3529,7 +3586,8 @@ esp_err_t WebPanelServer::handleSession(httpd_req_t* req) {
     return httpd_resp_send_500(req);
   }
   if (!ctx->self->isAuthorized(req)) {
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+    markCloseAfterSend(req);
+    return finishAndClose(req, httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized"));
   }
 
   ctx->self->noteActivity();
@@ -3544,7 +3602,8 @@ esp_err_t WebPanelServer::handleCommand(httpd_req_t* req) {
     return httpd_resp_send_500(req);
   }
   if (!ctx->self->isAuthorized(req)) {
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+    markCloseAfterSend(req);
+    return finishAndClose(req, httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized"));
   }
 
   char* command = allocScratchBuffer(kWebCommandBufferSize);
@@ -3578,7 +3637,8 @@ esp_err_t WebPanelServer::handleFirmwareUpdate(httpd_req_t* req) {
     return httpd_resp_send_500(req);
   }
   if (!ctx->self->isAuthorized(req)) {
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+    markCloseAfterSend(req);
+    return finishAndClose(req, httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized"));
   }
   if (req->content_len <= 0) {
     return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing firmware body");
@@ -3647,7 +3707,8 @@ esp_err_t WebPanelServer::handleStats(httpd_req_t* req) {
     return httpd_resp_send_500(req);
   }
   if (!ctx->self->isAuthorized(req)) {
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+    markCloseAfterSend(req);
+    return finishAndClose(req, httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized"));
   }
 
   ctx->self->noteActivity();
@@ -3764,6 +3825,17 @@ bool WebPanelServer::shouldAutoLock(unsigned long) const {
 }
 
 void WebPanelServer::lockSession() {
+}
+
+bool WebPanelServer::isIdle(unsigned long, unsigned long) const {
+  return true;
+}
+
+bool WebPanelServer::isHeapStarved() {
+  return false;
+}
+
+void WebPanelServer::noteRestart() {
 }
 
 #endif
