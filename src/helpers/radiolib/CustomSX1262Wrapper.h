@@ -23,7 +23,16 @@ public:
     ((CustomSX1262 *)_radio)->setMaxPayloadMillis(pm.payloadMillis);
   }
 
-  bool isReceivingPacket() override { 
+#ifdef SX126X_PA_RAMP_TIME
+  void setTxPower(int8_t dbm) override {
+    RadioLibWrapper::setTxPower(dbm);
+    // SX126x::setOutputPower() hardcodes a 200us PA ramp; boards with an
+    // external PA need a longer ramp, so re-apply it after every power change.
+    ((CustomSX1262 *)_radio)->setPaRampTime(SX126X_PA_RAMP_TIME);
+  }
+#endif
+
+  bool isReceivingPacket() override {
     return ((CustomSX1262 *)_radio)->isReceiving();
   }
   float getCurrentRSSI() override {

@@ -22,7 +22,7 @@
 # for the password. Tokens are never written to disk.
 #
 # Example:
-#   REPEATER_PASSWORD=... eastmesh-tools/web-heap-check.sh 10.33.135.208 --stress
+#   REPEATER_PASSWORD=... eastmesh-tools/web-heap-check.sh 192.168.1.50 --stress
 set -euo pipefail
 
 host="${1:-}"
