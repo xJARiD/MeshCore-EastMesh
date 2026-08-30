@@ -24,12 +24,12 @@ If you are not sure which track you need, start with `companion-wifi` for app-co
 
 EastMesh publishes four release tracks:
 
-| Track | Use it when | Firmware filename suffix |
-| ----- | ----------- | ------------------------ |
-| `companion-wifi` | You want a companion device that connects over Wi-Fi instead of BLE or USB. | `*_companion_radio_wifi` |
-| `observer-eastmesh` | You want a repeater with Wi-Fi and MQTT uplink, usually feeding broker visibility such as EastMesh/CoreScope. | `*_repeater_observer` |
-| `repeater-bridge-espnow` | You want a local ESP-NOW bridge between nearby repeaters, without MQTT uplink or the EastMesh web panel. | `*_repeater_bridge_espnow` |
-| `observer-eastmesh-bridge-espnow` | You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties. | `*_repeater_observer_espnow` |
+| Track                             | Use it when                                                                                                   | Firmware filename suffix     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `companion-wifi`                  | You want a companion device that connects over Wi-Fi instead of BLE or USB.                                   | `*_companion_radio_wifi`     |
+| `observer-eastmesh`               | You want a repeater with Wi-Fi and MQTT uplink, usually feeding broker visibility such as EastMesh/CoreScope. | `*_repeater_observer`        |
+| `repeater-bridge-espnow`          | You want a local ESP-NOW bridge between nearby repeaters, without MQTT uplink or the EastMesh web panel.      | `*_repeater_bridge_espnow`   |
+| `observer-eastmesh-bridge-espnow` | You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties.                            | `*_repeater_observer_espnow` |
 
 !!! note "Bridge firmware is not a WAN bridge"
 

@@ -178,12 +178,12 @@ These are the Wi-Fi companion targets that have a display configured for local s
 
 These are the Wi-Fi companion targets that rely on the companion app as the primary interface. For many users, this is the best everyday option.
 
-| Target      | MCU     | RAM    | PSRAM | Flash | LoRa   | GPS |
-| ----------- | ------- | ------ | ----- | ----- | ------ | --- |
-| Heltec_WSL3 | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
-| RAK_3112    | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
+| Target                  | MCU     | RAM    | PSRAM | Flash | LoRa   | GPS |
+| ----------------------- | ------- | ------ | ----- | ----- | ------ | --- |
+| Heltec_WSL3             | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
+| RAK_3112                | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
 | Xiao_S3_LoRa2021F33-2G4 | ESP32S3 | 512 KB | No    | 8 MB  | LR2021 |     |
-| Xiao_S3_WIO | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
+| Xiao_S3_WIO             | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
 
 ## Practical Picks
 

@@ -463,7 +463,7 @@ releases:
     tag: "observer-eastmesh-v2026.8.3"
     date: "2026-08-23"
     previous_version: "2026.8.2"
-    summary: "Fixes the web panel going unreachable after long uptimes due to internal heap fragmentation, adds web panel self-healing and heap-health CLI counters, and fixes the stats page Channel/Gateway cells."
+    summary: "Fixes the web panel going unreachable after long uptimes due to internal heap fragmentation, adds web panel self-healing and heap-health CLI counters, fixes the stats page Channel/Gateway cells, and keeps the T-Beam 1W external PA ramp time from being reset by TX power changes."
     changes:
       - type: fixed
         area: web
@@ -477,6 +477,9 @@ releases:
       - type: fixed
         area: web
         text: "Fixed the Channel and Gateway cells on the web panel stats page always showing `--`; the stats summary now carries the Wi-Fi channel, gateway health, and watchdog reconnect count."
+      - type: fixed
+        area: radio
+        text: "Fixed the LilyGo T-Beam 1W external PA ramp time being silently reset from 800 µs back to RadioLib's 200 µs default whenever TX power was applied (at boot and via `set tx`); every power change now re-applies the 800 µs ramp the external PA requires."
       - type: added
         area: tools
         text: "Added `eastmesh-tools/web-heap-check.sh` to read heap and service health over the HTTPS API and optionally stress the web panel with browser-style bursts."
@@ -758,7 +761,7 @@ releases:
     tag: "observer-eastmesh-bridge-espnow-v2026.8.3"
     date: "2026-08-23"
     previous_version: "2026.8.2"
-    summary: "Fixes the web panel going unreachable after long uptimes due to internal heap fragmentation, adds web panel self-healing and heap-health CLI counters, and fixes the stats page Channel/Gateway cells."
+    summary: "Fixes the web panel going unreachable after long uptimes due to internal heap fragmentation, adds web panel self-healing and heap-health CLI counters, fixes the stats page Channel/Gateway cells, and keeps the T-Beam 1W external PA ramp time from being reset by TX power changes."
     changes:
       - type: fixed
         area: web
@@ -772,6 +775,9 @@ releases:
       - type: fixed
         area: web
         text: "Fixed the Channel and Gateway cells on the web panel stats page always showing `--`; the stats summary now carries the Wi-Fi channel, gateway health, and watchdog reconnect count."
+      - type: fixed
+        area: radio
+        text: "Fixed the LilyGo T-Beam 1W external PA ramp time being silently reset from 800 µs back to RadioLib's 200 µs default whenever TX power was applied (at boot and via `set tx`); every power change now re-applies the 800 µs ramp the external PA requires."
       - type: added
         area: tools
         text: "Added `eastmesh-tools/web-heap-check.sh` to read heap and service health over the HTTPS API and optionally stress the web panel with browser-style bursts."

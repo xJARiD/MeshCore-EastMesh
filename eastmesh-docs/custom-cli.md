@@ -274,11 +274,11 @@ access point so it can be rescued without a serial cable.
 least 8 characters). The pin follows the same rules as the Bluetooth pairing pin on
 BLE builds:
 
-| Device | Active pin | `EastMesh-WiFi` password |
-| --- | --- | --- |
-| Has a screen, no pin set | random 6-digit pin each boot, shown as `Pin:NNNNNN` on the home screen | `00NNNNNN` — read it off the screen |
-| No screen, no pin set | `123456` (default) | `00123456` |
-| Pin set via `set pin <pin>` | your configured pin (any device) | your pin zero-padded to 8 digits, e.g. pin `4242` → `00004242` |
+| Device                      | Active pin                                                             | `EastMesh-WiFi` password                                       |
+| --------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Has a screen, no pin set    | random 6-digit pin each boot, shown as `Pin:NNNNNN` on the home screen | `00NNNNNN` — read it off the screen                            |
+| No screen, no pin set       | `123456` (default)                                                     | `00123456`                                                     |
+| Pin set via `set pin <pin>` | your configured pin (any device)                                       | your pin zero-padded to 8 digits, e.g. pin `4242` → `00004242` |
 
 Notes on the pin:
 
