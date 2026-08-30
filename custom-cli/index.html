@@ -695,6 +695,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#heap-health-check-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heap Health Check Script
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -953,6 +964,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#heap-health-check-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heap Health Check Script
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -998,7 +1020,7 @@
 <p>No-argument <code>get</code> commands must be entered exactly as shown.</p>
 <h3 id="mqtt-status-and-routing">MQTT Status And Routing<a class="headerlink" href="#mqtt-status-and-routing" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get mqtt.status</code>: shows Wi-Fi, NTP, IATA, endpoint status, custom endpoint transport, status publishing state, and TX state.</li>
+<li><code>get mqtt.status</code>: shows Wi-Fi, NTP, IATA, endpoint status, custom endpoint transport, status publishing state, TX state, and <code>leaked:&lt;n&gt;</code> (MQTT clients intentionally left unfreed after a heap-integrity failure at teardown; should stay <code>0</code>).</li>
 <li><code>get mqtt.statuscfg</code>: shows whether periodic status messages are enabled as a simple <code>on</code> or <code>off</code> value. Most users can just use <code>get mqtt.status</code>.</li>
 <li><code>get mqtt.client_version</code>: shows the MQTT <code>client_version</code> string published by the repeater.</li>
 <li><code>get mqtt.client_env</code>: shows the PlatformIO env used to build the repeater firmware.</li>
@@ -1121,7 +1143,7 @@
 <h3 id="web-panel-controls">Web Panel Controls<a class="headerlink" href="#web-panel-controls" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get web</code></li>
-<li><code>get web.status</code>: shows whether the local HTTPS panel is available.</li>
+<li><code>get web.status</code>: shows whether the local HTTPS panel is available, plus <code>heals:&lt;n&gt;</code> (times the panel was restarted because internal heap was too fragmented for a TLS handshake) and <code>deferred:&lt;n&gt;</code> (start attempts postponed until heap headroom recovered).</li>
 <li><code>get web.stats.status</code>: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-active boards also record per-minute satellites samples for the <code>/stats</code> history view. If archive access drops while stats remain enabled, the repeater retries the SD mount periodically.</li>
 <li>At boot, archive-backed stats restore uses bounded reads of the latest summary, events, and neighbour snapshots so malformed or unexpectedly large archive files do not delay MQTT or web startup.</li>
 <li><code>set web on|off</code></li>
@@ -1290,6 +1312,8 @@ away from its configured network:</p>
 <li>back in range of its configured network, the device joins it and shuts the AP
   down automatically — reconnect the app via the LAN address instead</li>
 </ul>
+<h2 id="heap-health-check-script">Heap Health Check Script<a class="headerlink" href="#heap-health-check-script" title="Permanent link">&para;</a></h2>
+<p><code>eastmesh-tools/web-heap-check.sh &lt;host&gt; [--stress] [--rounds N]</code> reads <code>memory</code>, <code>get web.status</code>, <code>get mqtt.status</code> and <code>get wifi.status</code> over the HTTPS API and, with <code>--stress</code>, simulates browser page-load bursts before re-reading <code>memory</code>. Authenticate with <code>REPEATER_PASSWORD</code> or <code>REPEATER_TOKEN</code> in the environment (or enter the password at the prompt). Watch <code>heap_max</code> (largest internal block; TLS needs ~40KB), <code>heap_min</code>, and the <code>heals</code>/<code>deferred</code>/<code>leaked</code> counters.</p>
 
 
 
