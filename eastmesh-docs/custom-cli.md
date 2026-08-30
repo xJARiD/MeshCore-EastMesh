@@ -34,7 +34,7 @@ No-argument `get` commands must be entered exactly as shown.
 
 ### MQTT Status And Routing
 
-- `get mqtt.status`: shows Wi-Fi, NTP, IATA, endpoint status, custom endpoint transport, status publishing state, and TX state.
+- `get mqtt.status`: shows Wi-Fi, NTP, IATA, endpoint status, custom endpoint transport, status publishing state, TX state, and `leaked:<n>` (MQTT clients intentionally left unfreed after a heap-integrity failure at teardown; should stay `0`).
 - `get mqtt.statuscfg`: shows whether periodic status messages are enabled as a simple `on` or `off` value. Most users can just use `get mqtt.status`.
 - `get mqtt.client_version`: shows the MQTT `client_version` string published by the repeater.
 - `get mqtt.client_env`: shows the PlatformIO env used to build the repeater firmware.
@@ -165,7 +165,7 @@ OK
 ### Web Panel Controls
 
 - `get web`
-- `get web.status`: shows whether the local HTTPS panel is available.
+- `get web.status`: shows whether the local HTTPS panel is available, plus `heals:<n>` (times the panel was restarted because internal heap was too fragmented for a TLS handshake) and `deferred:<n>` (start attempts postponed until heap headroom recovered).
 - `get web.stats.status`: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-active boards also record per-minute satellites samples for the `/stats` history view. If archive access drops while stats remain enabled, the repeater retries the SD mount periodically.
 - At boot, archive-backed stats restore uses bounded reads of the latest summary, events, and neighbour snapshots so malformed or unexpectedly large archive files do not delay MQTT or web startup.
 - `set web on|off`
@@ -274,11 +274,11 @@ access point so it can be rescued without a serial cable.
 least 8 characters). The pin follows the same rules as the Bluetooth pairing pin on
 BLE builds:
 
-| Device | Active pin | `EastMesh-WiFi` password |
-| --- | --- | --- |
-| Has a screen, no pin set | random 6-digit pin each boot, shown as `Pin:NNNNNN` on the home screen | `00NNNNNN` — read it off the screen |
-| No screen, no pin set | `123456` (default) | `00123456` |
-| Pin set via `set pin <pin>` | your configured pin (any device) | your pin zero-padded to 8 digits, e.g. pin `4242` → `00004242` |
+| Device                      | Active pin                                                             | `EastMesh-WiFi` password                                       |
+| --------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Has a screen, no pin set    | random 6-digit pin each boot, shown as `Pin:NNNNNN` on the home screen | `00NNNNNN` — read it off the screen                            |
+| No screen, no pin set       | `123456` (default)                                                     | `00123456`                                                     |
+| Pin set via `set pin <pin>` | your configured pin (any device)                                       | your pin zero-padded to 8 digits, e.g. pin `4242` → `00004242` |
 
 Notes on the pin:
 
@@ -320,3 +320,7 @@ Notes for roaming use:
   network first), and stays up for as long as that network is unreachable
 - back in range of its configured network, the device joins it and shuts the AP
   down automatically — reconnect the app via the LAN address instead
+
+## Heap Health Check Script
+
+`eastmesh-tools/web-heap-check.sh <host> [--stress] [--rounds N]` reads `memory`, `get web.status`, `get mqtt.status` and `get wifi.status` over the HTTPS API and, with `--stress`, simulates browser page-load bursts before re-reading `memory`. Authenticate with `REPEATER_PASSWORD` or `REPEATER_TOKEN` in the environment (or enter the password at the prompt). Watch `heap_max` (largest internal block; TLS needs ~40KB), `heap_min`, and the `heals`/`deferred`/`leaked` counters.

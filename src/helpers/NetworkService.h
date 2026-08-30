@@ -33,6 +33,9 @@ public:
   void formatWifiStatusReply(char* reply, size_t reply_size) const;
   void reconnectWifi();
   void forceReconnect();
+  // Gateway watchdog state, as reported by `get wifi.status` (gw:ok|lost wd:<n>).
+  bool isGatewayReachable() const;
+  uint16_t getWatchdogReconnectCount() const;
 
   bool isWifiConnected() const override;
   bool hasTimeSync() const override { return _have_time_sync; }

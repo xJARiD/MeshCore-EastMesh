@@ -2644,6 +2644,9 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   int wifi_rssi = 0;
   int wifi_quality = 0;
   int wifi_code = 0;
+  int wifi_channel = 0;
+  const char* wifi_gateway = "--";
+  unsigned wifi_watchdog_count = 0;
 
 #if defined(ESP32)
   if (network.getWifiSSID()[0] == 0) {
@@ -2664,6 +2667,9 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
     escapeJsonString(ip.c_str(), wifi_ip, sizeof(wifi_ip));
     wifi_rssi = WiFi.RSSI();
     wifi_code = static_cast<int>(WiFi.status());
+    wifi_channel = WiFi.channel();
+    wifi_gateway = network.isGatewayReachable() ? "ok" : "lost";
+    wifi_watchdog_count = network.getWatchdogReconnectCount();
     if (wifi_rssi <= -100) {
       wifi_quality = 0;
       strncpy(wifi_signal, "poor", sizeof(wifi_signal) - 1);
@@ -2778,7 +2784,8 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      "\"packets\":{\"recv\":%u,\"sent\":%u,\"flood_tx\":%u,\"direct_tx\":%u,\"flood_rx\":%u,\"direct_rx\":%u,"
                      "\"recv_errors\":%u,\"direct_dups\":%u,\"flood_dups\":%u,\"neighbors\":%u},"
                      "\"memory\":{\"heap_free\":%u,\"heap_min\":%u,\"heap_max\":%u,\"psram_free\":%u,\"psram_min\":%u,\"psram_max\":%u},"
-                     "\"wifi\":{\"ssid\":\"%s\",\"status\":\"%s\",\"connected\":%s,\"state\":\"%s\",\"code\":%d,\"ip\":\"%s\",\"rssi\":%d,\"quality\":%d,\"signal\":\"%s\",\"powersave\":\"%s\"},"
+                     "\"wifi\":{\"ssid\":\"%s\",\"status\":\"%s\",\"connected\":%s,\"state\":\"%s\",\"code\":%d,\"ip\":\"%s\",\"rssi\":%d,\"quality\":%d,\"signal\":\"%s\",\"powersave\":\"%s\","
+                     "\"channel\":%d,\"gateway\":\"%s\",\"watchdog_count\":%u},"
                      "\"services\":{\"mqtt_connected\":%s,\"mqtt_state\":\"%s\",\"web_enabled\":%s,\"web_panel_up\":%s,\"web_auth\":\"%s\","
                      "\"archive_available\":%s}",
                      (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "true" : "false",
@@ -2841,6 +2848,9 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      wifi_quality,
                      wifi_signal,
                      wifi_powersave,
+                     wifi_channel,
+                     wifi_gateway,
+                     wifi_watchdog_count,
                      mqtt_connected ? "true" : "false",
                      mqtt_state,
                      web.isWebEnabled() ? "true" : "false",
