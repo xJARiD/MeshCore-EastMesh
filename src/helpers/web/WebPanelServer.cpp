@@ -1675,10 +1675,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       const region = regionSelect.value;
       const commands = [
-        "region put au",
-        "region put " + region,
-        "region allowf au",
-        "region allowf " + region,
+        "region def au " + region,
         "region save"
       ];
       setRegionStatus("Saving regions...", false);
