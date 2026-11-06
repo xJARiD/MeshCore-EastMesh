@@ -86,10 +86,15 @@ Generic_E22_sx1262_repeater_observer
 Generic_E22_sx1268_repeater_observer
 Heltec_E213_repeater_observer
 Heltec_E290_repeater_observer
+heltec_rc32_repeater_observer
+heltec_rc32_without_display_repeater_observer
 Heltec_T190_repeater_observer
 heltec_tracker_v2_repeater_observer
 Heltec_v2_repeater_observer
 Heltec_v3_repeater_observer
+heltec_v4_expansionkit_repeater_observer
+heltec_v4_r8_repeater_observer
+heltec_v4_r8_tft_repeater_observer
 heltec_v4_repeater_observer
 heltec_v4_tft_repeater_observer
 Heltec_Wireless_Paper_repeater_observer
@@ -99,11 +104,13 @@ LilyGo_T3S3_sx1262_repeater_observer
 LilyGo_T3S3_sx1276_repeater_observer
 LilyGo_TBeam_1W_repeater_observer
 LilyGo_TDeck_repeater_observer
+LilyGo_TETH_Elite_sx1262_repeater_observer
 LilyGo_Tlora_C6_repeater_observer
 M5Stack_Unit_C6L_repeater_observer
 Meshadventurer_sx1262_repeater_observer
 Meshadventurer_sx1268_repeater_observer
 Meshimi_repeater_observer
+meshnology_w12_repeater_observer
 nibble_screen_connect_repeater_observer
 RAK_3112_repeater_observer
 Station_G2_logging_repeater_observer
@@ -114,6 +121,7 @@ Tbeam_SX1276_repeater_observer
 WHY2025_badge_repeater_observer
 Xiao_C6_repeater_observer
 Xiao_S3_LoRa2021F33-2G4_repeater_observer
+Xiao_S3_repeater_observer
 Xiao_S3_WIO_repeater_observer
 ```
 
@@ -137,6 +145,16 @@ T_Beam_S3_Supreme_SX1262_repeater_bridge_espnow
 T_Beam_S3_Supreme_SX1262_repeater_observer_espnow
 ```
 
+## Supported `room_server_mqtt_bridge` Boards
+
+A `room_server_mqtt_bridge` build is defined for each observer board (except the `Station_G2_logging` variant).
+
+List the available targets:
+
+```bash
+bash eastmesh-build.sh list | grep '_room_server_mqtt_bridge'
+```
+
 ## Supported `repeater_observer_mqtt_bridge` Boards
 
 An `mqtt_bridge` build variant is defined for each observer board.
@@ -147,4 +165,4 @@ List the available targets:
 bash eastmesh-build.sh list | grep '_repeater_observer_mqtt_bridge'
 ```
 
-Bridge firmware is for local ESP-NOW bridge use between nearby repeaters. It is not MQTT-over-WAN or VPN bridging.
+MQTT bridge firmware relays mesh packets through a peer MQTT broker you run. Configure it with the `bridge.peer.*` and `bridge.secret` commands in [Custom CLI](./custom-cli.md#mqtt-bridge-settings-for-observer-mqtt-bridge-builds).

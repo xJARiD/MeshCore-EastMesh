@@ -29,13 +29,14 @@ EastMesh publishes these release tracks:
 | `observer-eastmesh`               | You want a repeater with Wi-Fi and MQTT uplink, usually feeding broker visibility such as EastMesh/CoreScope. | `*_repeater_observer`        |
 | `repeater-bridge-espnow`          | You want a local ESP-NOW bridge between nearby repeaters, without MQTT uplink or the EastMesh web panel.      | `*_repeater_bridge_espnow`   |
 | `observer-eastmesh-bridge-espnow` | You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties.                            | `*_repeater_observer_espnow` |
+| `observer-eastmesh-bridge-mqtt` | You want an observer that also relays mesh packets to other bridge nodes through an MQTT broker you run. | `*_repeater_observer_mqtt_bridge` |
 | `room-server-eastmesh-bridge-mqtt` | You want a room server whose posts sync with other room servers over an MQTT broker, which also bridges and repeats mesh packets. | `*_room_server_mqtt_bridge` |
 
-!!! note "Bridge firmware is not a WAN bridge"
+!!! note "ESP-NOW bridges are local; MQTT bridges use your own broker"
 
-    ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example `Australia (Narrow)` and `Australia (Mid)`.
+    ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example `Australia (Narrow)` and `Australia (Mid)`. They do not tunnel mesh traffic over the internet, WAN links, or VPNs.
 
-    Bridge tracks do not use MQTT uplink brokers to tunnel mesh traffic over the internet, WAN links, or VPNs.
+    MQTT bridge tracks relay encrypted mesh packets through a peer MQTT broker you configure with `bridge.peer.host`. This is separate from the MQTT uplink brokers (`eastmesh-au`, `meshmapper`) that observers publish telemetry to.
 
 ## Pick The Right Asset
 
@@ -47,13 +48,15 @@ Examples:
 - `heltec_v4_repeater_observer-v1.15.0-eastmesh-v2026.5.1-abcdef-merged.bin`
 - `heltec_v4_repeater_bridge_espnow-v1.15.0-abcdef.bin`
 - `heltec_v4_repeater_observer_espnow-v1.15.0-eastmesh-v2026.5.1-abcdef.bin`
-- `heltec_v4_room_server_mqtt_bridge-v1.18.0-eastmesh-v2026.10.1-abcdef.bin`
+- `heltec_v4_repeater_observer_mqtt_bridge-v1.18.0-eastmesh-v2026.11.1-abcdef.bin`
+- `heltec_v4_room_server_mqtt_bridge-v1.18.0-eastmesh-v2026.11.1-abcdef.bin`
 
 The important part is the board/env prefix:
 
 - `*_repeater_observer`
 - `*_repeater_bridge_espnow`
 - `*_repeater_observer_espnow`
+- `*_repeater_observer_mqtt_bridge`
 - `*_room_server_mqtt_bridge`
 
 ## Which File To Flash
@@ -184,6 +187,19 @@ Typical first steps after flashing:
 - check `get wifi.status` and note the connected Wi-Fi channel
 - set `bridge.channel` to match that Wi-Fi channel
 - set the same `bridge.secret` on every local ESP-NOW bridge node that should talk together
+
+### Observer MQTT Bridge
+
+`repeater_observer_mqtt_bridge` builds combine the observer role with an MQTT packet bridge to a broker you run.
+
+Typical first steps after flashing:
+
+- do the normal observer steps above (`wifi.ssid`, `wifi.pwd`, `mqtt.iata`)
+- set the peer broker with `bridge.peer.host`, `bridge.peer.port`, and `bridge.peer.username` / `bridge.peer.password` if the broker needs them
+- set the same `bridge.secret` on every bridge node that should share traffic
+- confirm traffic flows between the bridged nodes
+
+See [MQTT Bridge Settings](./custom-cli.md#mqtt-bridge-settings-for-observer-mqtt-bridge-builds).
 
 ### Room Server MQTT Bridge
 

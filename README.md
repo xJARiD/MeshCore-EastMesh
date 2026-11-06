@@ -20,10 +20,27 @@ CoreScope (<https://core.eastmesh.au>) offers visibility into the network, inclu
   - optional local HTTPS config panel on supported ESP32 targets
 - `*_repeater_observer_espnow` firmware targets that add a local ESP-NOW mesh bridge
 - `*_repeater_bridge_espnow` firmware targets for a plain upstream-style repeater ESP-NOW bridge, without MQTT uplink or the EastMesh web panel
+- `*_repeater_observer_mqtt_bridge` firmware targets that add an MQTT mesh bridge through a broker you run
+- `*_room_server_mqtt_bridge` firmware targets: room servers with Wi-Fi, a web panel, an MQTT mesh bridge, and post sync between room servers
 - EastMesh-specific release workflows and versioning on top of upstream MeshCore releases
 - docs and release guidance for EastMesh users instead of the full upstream MeshCore docs set
 
-For Wi-Fi companion devices, use the official upstream MeshCore `*_companion_radio_wifi` firmware, which now includes persisted Wi-Fi settings natively. EastMesh no longer publishes a separate companion Wi-Fi release.
+## MQTT Bridges And Synced Rooms
+
+The community asked for MQTT bridges and room servers that share posts, so we've built both:
+
+- **Observer MQTT bridge** (`observer-eastmesh-bridge-mqtt`) links meshes that radio can't reach by relaying mesh packets through an MQTT broker.
+- **Room Server MQTT bridge** (`room-server-eastmesh-bridge-mqtt`) is a room server whose posts sync with every other room server on the same broker and topic. It also bridges and repeats mesh packets.
+
+Bridges aren't for everyone. Most repeaters should stay plain repeaters or observers, and a bridge should be a deliberate choice. Before you deploy one:
+
+- **Every bridged packet is retransmitted on the other side.** Adverts, floods, and chat from one mesh are repeated over LoRa on the other, so both meshes carry more traffic and use more airtime. Bridging busy meshes can congest both.
+- **Talk to the people who run the meshes you're joining.** A bridge links meshes that may have been kept separate on purpose, by region, radio config, or community. Don't bridge into a shared mesh without agreement.
+- **Treat the broker as part of your network.** The bridge uses plain MQTT over TCP, not TLS. Use a broker with usernames and passwords, and don't run it open to the internet. Mesh messages stay MeshCore-encrypted end to end.
+- **Check your radio settings before you connect.** A bridge transmits traffic from elsewhere, so set the correct regional radio preset first. New installs start on the upstream default, which is not the Australian band.
+- **Room sync shares everything posted to the room.** Anyone with the same topic can read and post to every room on that topic. Posts made while a room server is offline are not delivered to it later.
+
+Setup and commands are in [Custom CLI](./eastmesh-docs/custom-cli.md#mqtt-bridge-settings-for-observer-mqtt-bridge-builds) and [Room Server MQTT Bridge Commands](./eastmesh-docs/custom-cli.md#room-server-mqtt-bridge-commands).
 
 ## Releases
 
@@ -165,14 +182,16 @@ uv run --group docs zensical build
 
 The `observer-eastmesh-bridge-mqtt` release track (`*_repeater_observer_mqtt_bridge`) bridges **raw mesh packets** between repeaters through a **peer MQTT broker you run** (for example Mosquitto on a LAN PC). This is **not** the same as MQTT uplink to EastMesh/MeshMapper:
 
-| | MQTT uplink (observer) | MQTT mesh bridge |
-| --- | --- | --- |
-| Purpose | Publish JSON telemetry to curated brokers | Forward encrypted mesh packets between radios |
-| Brokers | `eastmesh-au`, `meshmapper`, custom WSS | Your peer broker (`host:port`, TCP) |
-| Topic | `meshcore/<iata>/...` (per IATA) | `meshcore/bridge/packets` (fixed) |
-| Default on bridge builds | Off by default (enable in web panel / CLI) | On when `bridge.enabled` is on |
+|                          | MQTT uplink (observer)                     | MQTT mesh bridge                              |
+| ------------------------ | ------------------------------------------ | --------------------------------------------- |
+| Purpose                  | Publish JSON telemetry to curated brokers  | Forward encrypted mesh packets between radios |
+| Brokers                  | `eastmesh-au`, `meshmapper`, custom WSS    | Your peer broker (`host:port`, TCP)           |
+| Topic                    | `meshcore/<iata>/...` (per IATA)           | `meshcore/bridge/packets` (fixed)             |
+| Default on bridge builds | Off by default (enable in web panel / CLI) | On when `bridge.enabled` is on                |
 
-**First supported target:** `Xiao_S3_WIO_repeater_observer_mqtt_bridge`
+**Targets:** every observer board has a `*_repeater_observer_mqtt_bridge` build. List them with `bash eastmesh-build.sh list | grep _repeater_observer_mqtt_bridge`.
+
+**Room servers:** the `room-server-eastmesh-bridge-mqtt` track (`*_room_server_mqtt_bridge`) uses the same bridge topic, so room servers join an observer MQTT bridge on the same broker and secret. Room servers on the same `bridge.topic` also sync their posts with each other. See [Room Server MQTT Bridge Commands](./eastmesh-docs/custom-cli.md#room-server-mqtt-bridge-commands).
 
 **Related track:** `observer-eastmesh-bridge-espnow` (`*_repeater_observer_espnow`) uses ESP-NOW instead of MQTT for local bridging.
 

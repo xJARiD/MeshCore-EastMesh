@@ -255,6 +255,7 @@ This section includes:
 - `mqtt.email`: owner contact email.
 - MQTT brokers: **Primary MQTT** and **Secondary MQTT** dropdowns, each selecting one of `eastmesh-au`, `meshmapper`, `Custom`, the retired `letsmesh-eu`/`letsmesh-us`, or `None`. The two slots enforce the two-broker maximum, and a broker chosen in one slot is disabled in the other.
 - custom MQTT `host:port`, TCP/WSS transport, username, and password fields, shown when `Custom` is selected in either slot.
+- on `*_repeater_observer_mqtt_bridge` builds, a **Mesh bridge peer** field for the bridge broker `host:port`, username, and password. This is the broker used for packet bridging, not an uplink broker. Set the matching `bridge.secret` from the CLI.
 
 `UNSET - To be configured` is the default for new observer installs until a real saved value exists.
 

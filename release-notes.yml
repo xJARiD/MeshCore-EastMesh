@@ -4,6 +4,8 @@ tracks:
   - repeater-bridge-espnow
   - observer-eastmesh
   - observer-eastmesh-bridge-espnow
+  - observer-eastmesh-bridge-mqtt
+  - room-server-eastmesh-bridge-mqtt
 generated_from: "Adjacent git tag comparisons plus non-merge commit subjects."
 
 releases:
@@ -513,6 +515,27 @@ releases:
     breaking_changes:
       - "LilyGo T-Beam 1W: the EastMesh `set fan timeout <Ns>` command has been removed, and fan mode and timeout saved by earlier EastMesh builds are not migrated, so the fan returns to `auto` with the default thresholds after upgrading."
 
+  - track: observer-eastmesh
+    version: "2026.11.1"
+    tag: "observer-eastmesh-v2026.11.1"
+    date: "2026-11-06"
+    previous_version: "2026.10.0"
+    summary: "Public release on upstream MeshCore v1.18.0 with the latest upstream fixes, ThinkNode M7 support and eight more observer boards."
+    changes:
+      - type: added
+        area: board
+        text: "Added ThinkNode M7 observer, Observer ESP-NOW and Observer MQTT bridge builds. (#88)"
+      - type: added
+        area: board
+        text: "Added observer, Observer ESP-NOW and Observer MQTT bridge builds for Heltec V4 R8 (OLED and TFT), the Heltec V4 Expansion Kit, Heltec RC32 (with and without display), LilyGo T-ETH Elite SX1262, Meshnology W12 (LR2021) and Seeed Xiao ESP32-S3."
+      - type: changed
+        area: upstream
+        text: "Merged the latest upstream MeshCore `dev` changes on top of v1.18.0 (the base version stays v1.18.0), including: RadioLib 7.8.1; received packets whose LoRa header says there is no CRC are now dropped; the RadioLib receive error counter is initialised; duplicate-packet stats saturate instead of wrapping; LR2021 radios are put in standby before being re-configured; `set af` refuses `nan`; a negative TX power is no longer stored as a large positive value; a possible reply overflow in `sensor list` is fixed; scope 0 rule fixes; and empty anonymous contact slots are skipped in peer lookups."
+      - type: changed
+        area: docs
+        text: "Refreshed the docs for this public release: every release track (including Observer MQTT bridge and the new Room Server MQTT bridge) is described in Home, Boards, Releases, Custom CLI, Web Panel, Web API and Local Builds, and the board tables include the new boards."
+    breaking_changes: []
+
   - track: observer-eastmesh-bridge-espnow
     version: "2026.5.1"
     tag: "observer-eastmesh-bridge-espnow-v2026.5.1"
@@ -839,3 +862,86 @@ releases:
     breaking_changes:
       - "LilyGo T-Beam 1W: the EastMesh `set fan timeout <Ns>` command has been removed, and fan mode and timeout saved by earlier EastMesh builds are not migrated, so the fan returns to `auto` with the default thresholds after upgrading."
 
+  - track: observer-eastmesh-bridge-espnow
+    version: "2026.11.1"
+    tag: "observer-eastmesh-bridge-espnow-v2026.11.1"
+    date: "2026-11-06"
+    previous_version: "2026.10.0"
+    summary: "Public release on upstream MeshCore v1.18.0 with the latest upstream fixes, ThinkNode M7 support and eight more observer boards."
+    changes:
+      - type: added
+        area: board
+        text: "Added ThinkNode M7 observer, Observer ESP-NOW and Observer MQTT bridge builds. (#88)"
+      - type: added
+        area: board
+        text: "Added observer, Observer ESP-NOW and Observer MQTT bridge builds for Heltec V4 R8 (OLED and TFT), the Heltec V4 Expansion Kit, Heltec RC32 (with and without display), LilyGo T-ETH Elite SX1262, Meshnology W12 (LR2021) and Seeed Xiao ESP32-S3."
+      - type: changed
+        area: upstream
+        text: "Merged the latest upstream MeshCore `dev` changes on top of v1.18.0 (the base version stays v1.18.0), including: RadioLib 7.8.1; received packets whose LoRa header says there is no CRC are now dropped; the RadioLib receive error counter is initialised; duplicate-packet stats saturate instead of wrapping; LR2021 radios are put in standby before being re-configured; `set af` refuses `nan`; a negative TX power is no longer stored as a large positive value; a possible reply overflow in `sensor list` is fixed; scope 0 rule fixes; and empty anonymous contact slots are skipped in peer lookups."
+      - type: changed
+        area: docs
+        text: "Refreshed the docs for this public release: every release track (including Observer MQTT bridge and the new Room Server MQTT bridge) is described in Home, Boards, Releases, Custom CLI, Web Panel, Web API and Local Builds, and the board tables include the new boards."
+    breaking_changes: []
+
+  - track: observer-eastmesh-bridge-mqtt
+    version: "2026.11.1"
+    tag: "observer-eastmesh-bridge-mqtt-v2026.11.1"
+    date: "2026-11-06"
+    previous_version: "2026.10.0"
+    summary: "Public release of Observer firmware with the MQTT packet bridge, on upstream MeshCore v1.18.0 with the latest upstream fixes, ThinkNode M7 support and eight more boards."
+    changes:
+      - type: added
+        area: board
+        text: "Added ThinkNode M7 observer, Observer ESP-NOW and Observer MQTT bridge builds. (#88)"
+      - type: added
+        area: board
+        text: "Added observer, Observer ESP-NOW and Observer MQTT bridge builds for Heltec V4 R8 (OLED and TFT), the Heltec V4 Expansion Kit, Heltec RC32 (with and without display), LilyGo T-ETH Elite SX1262, Meshnology W12 (LR2021) and Seeed Xiao ESP32-S3."
+      - type: changed
+        area: upstream
+        text: "Merged the latest upstream MeshCore `dev` changes on top of v1.18.0 (the base version stays v1.18.0), including: RadioLib 7.8.1; received packets whose LoRa header says there is no CRC are now dropped; the RadioLib receive error counter is initialised; duplicate-packet stats saturate instead of wrapping; LR2021 radios are put in standby before being re-configured; `set af` refuses `nan`; a negative TX power is no longer stored as a large positive value; a possible reply overflow in `sensor list` is fixed; scope 0 rule fixes; and empty anonymous contact slots are skipped in peer lookups."
+      - type: changed
+        area: bridge
+        text: "Observer MQTT bridges interoperate with the new Room Server MQTT bridge track: room servers bridge on the same `meshcore/bridge/packets` topic and join an observer bridge that uses the same broker and `bridge.secret`. The bridge connection can also carry room sync traffic for room server builds; observer bridging behaviour is unchanged."
+      - type: changed
+        area: release
+        text: "Added the Observer MQTT bridge track to the release notes. Earlier `observer-eastmesh-bridge-mqtt` tags shipped with the same changes as the matching `observer-eastmesh` releases."
+      - type: changed
+        area: docs
+        text: "Refreshed the docs for this public release: every release track (including Observer MQTT bridge and the new Room Server MQTT bridge) is described in Home, Boards, Releases, Custom CLI, Web Panel, Web API and Local Builds, and the board tables include the new boards."
+    breaking_changes: []
+
+  - track: room-server-eastmesh-bridge-mqtt
+    version: "2026.11.1"
+    tag: "room-server-eastmesh-bridge-mqtt-v2026.11.1"
+    date: "2026-11-06"
+    previous_version: null
+    summary: "First Room Server MQTT bridge release: a room server with Wi-Fi, a web panel, an MQTT packet bridge, and post sync between room servers on the same topic."
+    changes:
+      - type: added
+        area: room
+        text: "Added room sync. Posts made to a room are published to `meshcore/rooms/<topic>`, and every room server on the same broker, `bridge.topic` and `bridge.secret` stores them under the original author and pushes them to its own clients. Posts are encrypted and authenticated with a key derived from the topic and secret, duplicates and the broker echo are ignored, posts are never re-published, and posts older than 24 hours are dropped as replays."
+      - type: added
+        area: bridge
+        text: "Room servers bridge mesh packets over MQTT on the shared `meshcore/bridge/packets` topic, so they also work with existing Observer MQTT bridges. Repeating is on by default in this firmware so bridged packets reach LoRa (`set repeat on|off`)."
+      - type: added
+        area: cli
+        text: "Added `set/get bridge.topic`, `get bridge.status`, `get bridge.sync` and `get mqtt.client_env`, plus the observer Wi-Fi, NTP, web and `bridge.peer.*` commands. See Room Server MQTT Bridge Commands in the Custom CLI docs."
+      - type: added
+        area: web
+        text: "Added the room server web panel: Wi-Fi, MQTT bridge and room sync status tiles; room name, location, room, read-only and admin passwords; Wi-Fi; broker `host:port` and credentials; room sync topic and repeat; community radio presets and the AU region selector; TX power; Start OTA; direct firmware upload that refuses `.bin` files named for a different board or `-merged.bin` images; and a CLI box. The bridge secret is CLI-only."
+      - type: added
+        area: web
+        text: "The same local HTTPS API as observers: `/login`, `/api/session`, `/api/command`, `/api/firmware-update`, and `/api/stats?view=legacy`."
+      - type: added
+        area: ui
+        text: "Room servers with a display show their IP address on the home screen."
+      - type: added
+        area: board
+        text: "Available for every observer board except Station G2 logging, 45 boards in total, using `*_room_server_mqtt_bridge` PlatformIO environments."
+      - type: added
+        area: release
+        text: "Added the `room-server-eastmesh-bridge-mqtt-v*` release tag format and GitHub Actions workflow, and `bash eastmesh-build.sh build-room-server-mqtt-bridge-firmwares`."
+      - type: changed
+        area: upstream
+        text: "Merged the latest upstream MeshCore `dev` changes on top of v1.18.0 (the base version stays v1.18.0), including: RadioLib 7.8.1; received packets whose LoRa header says there is no CRC are now dropped; the RadioLib receive error counter is initialised; duplicate-packet stats saturate instead of wrapping; LR2021 radios are put in standby before being re-configured; `set af` refuses `nan`; a negative TX power is no longer stored as a large positive value; a possible reply overflow in `sensor list` is fixed; scope 0 rule fixes; and empty anonymous contact slots are skipped in peer lookups."
+    breaking_changes: []

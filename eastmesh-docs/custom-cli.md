@@ -162,6 +162,24 @@ Example:
 OK
 ```
 
+### MQTT Bridge Settings For Observer MQTT Bridge Builds
+
+These commands are available on `*_repeater_observer_mqtt_bridge` firmware targets. The bridge relays raw, encrypted mesh packets to other bridge nodes through a peer MQTT broker you run. That broker is separate from the MQTT uplink brokers above.
+
+- `get bridge.enabled`, `set bridge.enabled on|off`
+- `get bridge.peer.host`, `set bridge.peer.host <host>`: broker hostname or IP address (no scheme, port, or path).
+- `get bridge.peer.port`, `set bridge.peer.port <1-65535>`: default `1883`.
+- `get bridge.peer.username`, `set bridge.peer.username <user>`
+- `get bridge.peer.password`, `set bridge.peer.password <password>`: `get` only reports `set` or `-`.
+- `get bridge.secret`, `set bridge.secret <secret>`: shared secret (up to 15 characters) that encrypts bridged packets. Every bridge node must use the same one.
+
+Notes:
+
+- every bridge node must use the same broker, credentials, and `bridge.secret`
+- packets are bridged on the fixed `meshcore/bridge/packets` topic over plain MQTT/TCP. TLS and WebSockets are not supported on the bridge connection
+- `*_room_server_mqtt_bridge` room servers use the same topic and join an existing observer MQTT bridge when they share the broker and secret
+- the README has a worked example of a [Mosquitto peer broker](https://github.com/xJARiD/MeshCore-EastMesh#peer-mosquitto-broker-lan)
+
 ### Web Panel Controls
 
 - `get web`

@@ -34,7 +34,7 @@ curl -sk https://<repeater-ip>/api/command \
 
 The API is available only when:
 
-- you are running a supported `*_repeater_observer` firmware build
+- you are running a supported `*_repeater_observer` firmware build, any of its `_espnow` / `_mqtt_bridge` variants, or a `*_room_server_mqtt_bridge` build
 - the repeater web panel is enabled and running
 - you can reach the repeater over the local network
 - you have authenticated with the repeater admin password
@@ -385,6 +385,22 @@ curl -sk "$BASE_URL/api/command" \
   -H "X-Auth-Token: $TOKEN" \
   --data 'get mqtt.status'
 ```
+
+## Room Server Builds
+
+`*_room_server_mqtt_bridge` builds serve the same API with the room server admin password:
+
+- `POST /login`, `GET /api/session`, `POST /api/command`, and `POST /api/firmware-update` work as described above.
+- `GET /api/stats?view=legacy` returns the Wi-Fi, core, radio, packet, and memory bundle.
+- `GET /api/stats` and `GET /api/stats?series=<name>` return `503 Stats disabled`, because room servers do not keep stats history.
+
+Useful room server commands through `/api/command` include `get bridge.status`, `get bridge.sync`, `get mqtt.client_env`, and `room.post <text>`:
+
+```bash
+curl -sk https://<room-ip>/api/command -H "X-Auth-Token: $TOKEN" --data 'get bridge.sync'
+```
+
+`room.post` publishes to every room server on the same topic. Use it deliberately.
 
 ## Error Cases
 

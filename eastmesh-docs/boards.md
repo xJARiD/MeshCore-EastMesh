@@ -44,8 +44,9 @@ The tables below are built from the repo's PlatformIO board metadata and variant
 
 - `observer-eastmesh` boards are for Wi-Fi repeaters that publish to MQTT.
 - `repeater-bridge-espnow` and `observer-eastmesh-bridge-espnow` boards are for local ESP-NOW bridge use between nearby repeaters on different MeshCore radio configs.
+- `observer-eastmesh-bridge-mqtt` and `room-server-eastmesh-bridge-mqtt` builds exist for every observer board in the tables below (except `Station_G2_logging` for room servers). They relay mesh packets through an MQTT broker you run.
 
-Bridge firmware is not MQTT-over-WAN or VPN bridging. Use it when two local repeaters need to exchange traffic across radio configs such as `Australia (Narrow)` and `Australia (Mid)`.
+ESP-NOW bridge firmware is not MQTT-over-WAN or VPN bridging. Use it when two local repeaters need to exchange traffic across radio configs such as `Australia (Narrow)` and `Australia (Mid)`. Use an MQTT bridge track when the nodes are out of ESP-NOW range.
 
 ## Additional Signals
 
@@ -63,11 +64,16 @@ If you are deciding between otherwise similar boards, these target-level setting
 | Generic_E22_sx1268       | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Heltec_E213              | default | 22 dBm cfg   | ADC batt  |           |
 | Heltec_E290              | default | 22 dBm cfg   | ADC batt  |           |
+| heltec_rc32              | 160 MHz | 22 dBm cfg   | ADC batt  | RF switch |
+| heltec_rc32_without_display | 160 MHz | 22 dBm cfg   | ADC batt  | RF switch |
 | Heltec_T190              | default | 22 dBm cfg   | ADC batt  |           |
 | heltec_tracker_v2        | 160 MHz | 9 dBm cfg\*  | ADC batt  | PA/FEM    |
 | Heltec_v2                | default | 20 dBm cfg   | ADC batt  |           |
 | Heltec_v3                | 80 MHz  | 22 dBm cfg   | ADC batt  |           |
 | heltec_v4                | 80 MHz  | 10 dBm cfg\* | ADC batt  | PA/FEM    |
+| heltec_v4_expansionkit   | 80 MHz  | 10 dBm cfg\* | ADC batt  | PA/FEM    |
+| heltec_v4_r8             | 80 MHz  | 10 dBm cfg\* | ADC batt  | PA/FEM    |
+| heltec_v4_r8_tft         | 80 MHz  | 10 dBm cfg\* | ADC batt  | PA/FEM    |
 | heltec_v4_tft            | 80 MHz  | 10 dBm cfg\* | ADC batt  | PA/FEM    |
 | Heltec_Wireless_Paper    | default | 22 dBm cfg   | ADC batt  |           |
 | Heltec_Wireless_Tracker  | 80 MHz  | 22 dBm cfg   | none      |           |
@@ -76,12 +82,14 @@ If you are deciding between otherwise similar boards, these target-level setting
 | LilyGo_T3S3_sx1276       | default | 20 dBm cfg   | ADC batt  | RF switch |
 | LilyGo_TBeam_1W          | default | 22 dBm cfg\* | custom 2S | PA/FEM    |
 | LilyGo_TDeck             | default | 22 dBm cfg   | ADC batt  |           |
+| LilyGo_TETH_Elite_sx1262 | default | 8 dBm cfg    | none      | RF switch |
 | LilyGo_Tlora_C6          | default | 22 dBm cfg   | none      | RF switch |
 | LilyGo_TLora_V2_1_1_6    | default | 20 dBm cfg   | ADC batt  |           |
 | M5Stack_Unit_C6L         | default | 22 dBm cfg   | none      | RF switch |
 | Meshadventurer_sx1262    | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Meshadventurer_sx1268    | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Meshimi                  | default | 22 dBm cfg   | none      | ext ant   |
+| meshnology_w12           | 80 MHz  | 5 dBm cfg    | ADC batt  | NeoPixel  |
 | nibble_screen_connect    | default | 22 dBm cfg   | none      | NeoPixel  |
 | RAK_3112                 | 80 MHz  | 22 dBm cfg   | ADC batt  |           |
 | Station_G2               | default | 7 dBm cfg\*  | fixed/ext | PA/FEM    |
@@ -93,6 +101,7 @@ If you are deciding between otherwise similar boards, these target-level setting
 | ThinkNode_M5             | default | 22 dBm cfg   | ADC batt  |           |
 | WHY2025_badge            | default | 22 dBm cfg   | none      |           |
 | Xiao_C6                  | default | 22 dBm cfg   | none      | RF switch |
+| Xiao_S3                  | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Xiao_S3_LoRa2021F33-2G4  | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Xiao_S3_WIO              | default | 22 dBm cfg   | none      | RF switch |
 
@@ -109,11 +118,16 @@ This table includes all observer targets currently defined in `variants/eastmesh
 | Generic_E22_sx1268       | ESP32   | 520 KB | No    | 4 MB  | SX1268 | None            |     |     |
 | Heltec_E213              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | E-paper (2.13") |     |     |
 | Heltec_E290              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | E-paper (2.9")  |     |     |
+| heltec_rc32              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | TFT (NV3001B)   | ✅   |     |
+| heltec_rc32_without_display | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | None            | ✅   |     |
 | Heltec_T190              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | TFT (ST7789)    |     |     |
 | heltec_tracker_v2        | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | TFT (ST7735)    | ✅  |     |
 | Heltec_v2                | ESP32   | 520 KB | No    | 8 MB  | SX1276 | OLED (SSD1306)  |     |     |
 | Heltec_v3                | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | OLED (SSD1306)  | ✅  |     |
 | heltec_v4                | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | OLED (SSD1306)  | ✅  |     |
+| heltec_v4_expansionkit   | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | OLED (SSD1306)  | ✅   | 🧪   |
+| heltec_v4_r8             | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SSD1306)  | ✅   |     |
+| heltec_v4_r8_tft         | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | TFT (ST7789)    | ✅   |     |
 | heltec_v4_tft            | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | TFT (ST7789)    | ✅  |     |
 | Heltec_Wireless_Paper    | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | E-paper (2.13") |     |     |
 | Heltec_Wireless_Tracker  | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | TFT (ST7735)    | ✅  |     |
@@ -122,11 +136,13 @@ This table includes all observer targets currently defined in `variants/eastmesh
 | LilyGo_T3S3_sx1276       | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1276 | OLED (SSD1306)  |     | 🧪  |
 | LilyGo_TBeam_1W          | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  | ✅  |
 | LilyGo_TDeck             | ESP32S3 | 512 KB | No    | 16 MB | SX1262 | TFT (ST7789)    | ✅  | 🧪  |
+| LilyGo_TETH_Elite_sx1262 | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | None            |     |     |
 | LilyGo_Tlora_C6          | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
 | M5Stack_Unit_C6L         | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            | ✅  |     |
 | Meshadventurer_sx1262    | ESP32   | 520 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  | ✅  |     |
 | Meshadventurer_sx1268    | ESP32   | 520 KB | No    | 4 MB  | SX1268 | OLED (SSD1306)  | ✅  |     |
 | Meshimi                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| meshnology_w12           | ESP32S3 | 512 KB | 8 MB  | 16 MB | LR2021 | OLED (SSD1306)  | ✅   |     |
 | nibble_screen_connect    | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  |     |     |
 | RAK_3112                 | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |     |
 | Station_G2               | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  |     |
@@ -138,6 +154,7 @@ This table includes all observer targets currently defined in `variants/eastmesh
 | ThinkNode_M5             | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | E-paper (GxEPD) | ✅  |     |
 | WHY2025_badge            | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
 | Xiao_C6                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| Xiao_S3                  | ESP32S3 | 512 KB | 8 MB  | 8 MB  | SX1262 | None            |     |     |
 | Xiao_S3_LoRa2021F33-2G4  | ESP32S3 | 512 KB | No    | 8 MB  | LR2021 | None            |     |     |
 | Xiao_S3_WIO              | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |     |
 

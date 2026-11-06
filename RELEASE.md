@@ -71,7 +71,7 @@ Example:
 5. Push the tags.
 6. Wait for the workflows to finish building.
 7. Review the draft GitHub Releases.
-8. Publish the release.
+8. Publish the release. For a public release, leave `Set as a pre-release` unchecked so it becomes the latest release.
 
 If `release-notes.yml` should reflect the tagged firmware release in-repo, make that change before the PR to `main` so the tagged commit already contains the matching release notes.
 
