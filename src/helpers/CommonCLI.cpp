@@ -775,6 +775,29 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     savePrefs();
     strcpy(reply, "OK");
 #endif
+#ifdef WITH_ROOM_SYNC
+  } else if (memcmp(config, "bridge.topic ", 13) == 0) {
+    const char* topic = &config[13];
+    if (strcmp(topic, "off") == 0 || strcmp(topic, "-") == 0) {
+      topic = "";
+    }
+    size_t len = strlen(topic);
+    if (len >= sizeof(_prefs->bridge_room_topic)) {
+      strcpy(reply, "Error: max 32 chars");
+      return;
+    }
+    for (size_t i = 0; i < len; ++i) {
+      char c = topic[i];
+      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_')) {
+        strcpy(reply, "Error: use A-Z a-z 0-9 - _");
+        return;
+      }
+    }
+    StrHelper::strncpy(_prefs->bridge_room_topic, topic, sizeof(_prefs->bridge_room_topic));
+    _callbacks->restartBridge();
+    savePrefs();
+    strcpy(reply, "OK");
+#endif
   } else if (memcmp(config, "adc.multiplier ", 15) == 0) {
     _prefs->adc_multiplier = atof(&config[15]);
     if (_board->setAdcMultiplier(_prefs->adc_multiplier)) {
@@ -911,6 +934,10 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     sprintf(reply, "> %s", _prefs->bridge_peer_password[0] ? "set" : "-");
   } else if (memcmp(config, "bridge.secret", 13) == 0) {
     sprintf(reply, "> %s", _prefs->bridge_secret);
+#endif
+#ifdef WITH_ROOM_SYNC
+  } else if (memcmp(config, "bridge.topic", 12) == 0) {
+    sprintf(reply, "> %s", _prefs->bridge_room_topic[0] ? _prefs->bridge_room_topic : "-");
 #endif
   } else if (memcmp(config, "bootloader.ver", 14) == 0) {
   #ifdef NRF52_PLATFORM

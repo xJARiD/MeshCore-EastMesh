@@ -75,7 +75,7 @@ This produces versioned artifacts in `out/`.
 Versioning rule:
 
 - `repeater-bridge-espnow` uses the upstream MeshCore version as `FIRMWARE_VERSION`
-- `observer-eastmesh`, `observer-eastmesh-bridge-espnow`, and `observer-eastmesh-bridge-mqtt` use the upstream MeshCore version as `FIRMWARE_VERSION` plus the EastMesh release version as `EASTMESH_VERSION`
+- `observer-eastmesh`, `observer-eastmesh-bridge-espnow`, `observer-eastmesh-bridge-mqtt`, and `room-server-eastmesh-bridge-mqtt` use the upstream MeshCore version as `FIRMWARE_VERSION` plus the EastMesh release version as `EASTMESH_VERSION`
 
 ## Supported `repeater_observer` Boards
 

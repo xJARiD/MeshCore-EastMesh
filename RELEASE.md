@@ -20,11 +20,13 @@ Push one or more of the following tag formats to trigger the matching firmware r
 - `observer-eastmesh-bridge-espnow-v2026.5.1`
 - `observer-eastmesh-bridge-mqtt-v2026.7.0`
 - `observer-eastmesh-v2026.5.1`
+- `room-server-eastmesh-bridge-mqtt-v2026.10.1`
 
 Use the upstream MeshCore version in `repeater-bridge-espnow-v1.15.0`.
 Use the EastMesh release version in `observer-eastmesh-bridge-espnow-v2026.5.1`.
 Use the EastMesh release version in `observer-eastmesh-bridge-mqtt-v2026.7.0`.
 Use the EastMesh release version in `observer-eastmesh-v2026.5.1`.
+Use the EastMesh release version in `room-server-eastmesh-bridge-mqtt-v2026.10.1`.
 
 Each tag triggers a separate workflow:
 
@@ -32,6 +34,7 @@ Each tag triggers a separate workflow:
 - `observer-eastmesh-bridge-espnow-v*` builds Observer ESP-NOW firmware
 - `observer-eastmesh-bridge-mqtt-v*` builds Observer MQTT bridge firmware
 - `observer-eastmesh-v*` builds Observer firmware
+- `room-server-eastmesh-bridge-mqtt-v*` builds Room Server MQTT bridge firmware (`*_room_server_mqtt_bridge`)
 
 You can push one, or more tags on the same commit, and they will all build separately.
 
@@ -43,6 +46,7 @@ During the GitHub Actions build:
 - `observer-eastmesh-bridge-espnow` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
 - `observer-eastmesh-bridge-mqtt` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
 - `observer-eastmesh` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
+- `room-server-eastmesh-bridge-mqtt` uses `OFFICIAL_MESHCORE_VERSION` as `FIRMWARE_VERSION` and the EastMesh version from the tag as `EASTMESH_VERSION`
 
 The resulting version string depends on the workflow:
 
@@ -50,6 +54,7 @@ The resulting version string depends on the workflow:
 - `observer-eastmesh-bridge-espnow`: `v1.15.0-eastmesh-v2026.5.1-<commit>`
 - `observer-eastmesh-bridge-mqtt`: `v1.15.0-eastmesh-v2026.7.0-<commit>`
 - `observer-eastmesh`: `v1.15.0-eastmesh-v2026.5.1-<commit>`
+- `room-server-eastmesh-bridge-mqtt`: `v1.15.0-eastmesh-v2026.10.1-<commit>`
 
 Example:
 
@@ -77,7 +82,8 @@ git tag repeater-bridge-espnow-v1.15.0
 git tag observer-eastmesh-bridge-espnow-v2026.5.1
 git tag observer-eastmesh-bridge-mqtt-v2026.7.0
 git tag observer-eastmesh-v2026.5.1
-git push origin repeater-bridge-espnow-v1.15.0 observer-eastmesh-bridge-espnow-v2026.5.1 observer-eastmesh-bridge-mqtt-v2026.7.0 observer-eastmesh-v2026.5.1
+git tag room-server-eastmesh-bridge-mqtt-v2026.10.1
+git push origin repeater-bridge-espnow-v1.15.0 observer-eastmesh-bridge-espnow-v2026.5.1 observer-eastmesh-bridge-mqtt-v2026.7.0 observer-eastmesh-v2026.5.1 room-server-eastmesh-bridge-mqtt-v2026.10.1
 ```
 
 ## Supported Tags
@@ -86,5 +92,6 @@ git push origin repeater-bridge-espnow-v1.15.0 observer-eastmesh-bridge-espnow-v
 - `observer-eastmesh-bridge-espnow-v2026.5.1`
 - `observer-eastmesh-bridge-mqtt-v2026.7.0`
 - `observer-eastmesh-v2026.5.1`
+- `room-server-eastmesh-bridge-mqtt-v2026.10.1`
 
 The `companion-wifi` track has been retired. Upstream MeshCore now ships `*_companion_radio_wifi` firmware with persisted Wi-Fi settings, so EastMesh no longer builds or tags companion Wi-Fi releases.

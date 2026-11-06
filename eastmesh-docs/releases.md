@@ -29,6 +29,7 @@ EastMesh publishes these release tracks:
 | `observer-eastmesh`               | You want a repeater with Wi-Fi and MQTT uplink, usually feeding broker visibility such as EastMesh/CoreScope. | `*_repeater_observer`        |
 | `repeater-bridge-espnow`          | You want a local ESP-NOW bridge between nearby repeaters, without MQTT uplink or the EastMesh web panel.      | `*_repeater_bridge_espnow`   |
 | `observer-eastmesh-bridge-espnow` | You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties.                            | `*_repeater_observer_espnow` |
+| `room-server-eastmesh-bridge-mqtt` | You want a room server whose posts sync with other room servers over an MQTT broker, which also bridges and repeats mesh packets. | `*_room_server_mqtt_bridge` |
 
 !!! note "Bridge firmware is not a WAN bridge"
 
@@ -46,12 +47,14 @@ Examples:
 - `heltec_v4_repeater_observer-v1.15.0-eastmesh-v2026.5.1-abcdef-merged.bin`
 - `heltec_v4_repeater_bridge_espnow-v1.15.0-abcdef.bin`
 - `heltec_v4_repeater_observer_espnow-v1.15.0-eastmesh-v2026.5.1-abcdef.bin`
+- `heltec_v4_room_server_mqtt_bridge-v1.18.0-eastmesh-v2026.10.1-abcdef.bin`
 
 The important part is the board/env prefix:
 
 - `*_repeater_observer`
 - `*_repeater_bridge_espnow`
 - `*_repeater_observer_espnow`
+- `*_room_server_mqtt_bridge`
 
 ## Which File To Flash
 
@@ -181,6 +184,21 @@ Typical first steps after flashing:
 - check `get wifi.status` and note the connected Wi-Fi channel
 - set `bridge.channel` to match that Wi-Fi channel
 - set the same `bridge.secret` on every local ESP-NOW bridge node that should talk together
+
+### Room Server MQTT Bridge
+
+`room_server_mqtt_bridge` builds are room servers with Wi-Fi, the room server web panel, an MQTT bridge, and room sync.
+
+Typical first steps after flashing:
+
+- set `wifi.ssid` and `wifi.pwd`
+- open the web panel at the IP shown on the display or in `get wifi.status`
+- pick the radio preset and AU region, then reboot
+- set the bridge broker (`bridge.peer.host`, `bridge.peer.port`, and credentials if needed)
+- set the same `bridge.topic` and `bridge.secret` on every room server that should share posts
+- confirm `get bridge.status` and `get bridge.sync` both report `online`
+
+See [Room Server MQTT Bridge Commands](./custom-cli.md#room-server-mqtt-bridge-commands).
 
 ### Repeater ESP-NOW Bridge
 

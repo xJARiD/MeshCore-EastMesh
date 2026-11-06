@@ -14,6 +14,15 @@
 #include "EastMeshFavicon.h"
 #include "../mqtt/generated/WebPanelCert.h"
 
+#if defined(EASTMESH_ROOM_SERVER)
+  #include "RoomPanelHtml.h"
+  #define WEB_PANEL_LOGIN_HTML kRoomPanelLoginHtml
+  #define WEB_PANEL_APP_HTML kRoomPanelAppHtml
+#else
+  #define WEB_PANEL_LOGIN_HTML kWebPanelLoginHtml
+  #define WEB_PANEL_APP_HTML kWebPanelAppHtml
+#endif
+
 namespace {
 
 #ifndef WEB_PANEL_STACK_SIZE
@@ -238,6 +247,7 @@ esp_err_t sendLegacyStatsBundle(httpd_req_t* req, WebPanelCommandRunner* runner,
   return rc;
 }
 
+#if !defined(EASTMESH_ROOM_SERVER)
 const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
 <!doctype html>
 <html>
@@ -326,6 +336,7 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
 </body>
 </html>
 )HTML";
+#endif  // !EASTMESH_ROOM_SERVER
 
 const char kWebPanelStatsDisabledHtml[] PROGMEM = R"HTML(
 <!doctype html>
@@ -366,6 +377,7 @@ const char kWebPanelStatsDisabledHtml[] PROGMEM = R"HTML(
 </html>
 )HTML";
 
+#if !defined(EASTMESH_ROOM_SERVER)
 const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 <!doctype html>
 <html>
@@ -3318,6 +3330,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 </body>
 </html>
 )HTML";
+#endif  // !EASTMESH_ROOM_SERVER
 
 }  // namespace
 
@@ -3499,7 +3512,7 @@ esp_err_t WebPanelServer::handleIndex(httpd_req_t* req) {
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   markCloseAfterSend(req);
-  return finishAndClose(req, sendProgmemChunked(req, kWebPanelLoginHtml));
+  return finishAndClose(req, sendProgmemChunked(req, WEB_PANEL_LOGIN_HTML));
 }
 
 esp_err_t WebPanelServer::handleFavicon(httpd_req_t* req) {
@@ -3536,7 +3549,7 @@ esp_err_t WebPanelServer::handleApp(httpd_req_t* req) {
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   markCloseAfterSend(req);
-  return finishAndClose(req, sendProgmemChunked(req, kWebPanelAppHtml));
+  return finishAndClose(req, sendProgmemChunked(req, WEB_PANEL_APP_HTML));
 }
 
 esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
@@ -3551,7 +3564,7 @@ esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
   if (ctx->self->_runner != nullptr && !ctx->self->_runner->isWebStatsEnabled()) {
     return finishAndClose(req, sendProgmemChunked(req, kWebPanelStatsDisabledHtml));
   }
-  return finishAndClose(req, sendProgmemChunked(req, kWebPanelAppHtml));
+  return finishAndClose(req, sendProgmemChunked(req, WEB_PANEL_APP_HTML));
 }
 
 esp_err_t WebPanelServer::handleLogin(httpd_req_t* req) {
