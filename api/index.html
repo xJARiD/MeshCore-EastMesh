@@ -666,6 +666,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#room-server-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server Builds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#error-cases" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1022,6 +1033,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#room-server-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server Builds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#error-cases" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1093,7 +1115,7 @@
 <h2 id="scope-and-availability">Scope And Availability<a class="headerlink" href="#scope-and-availability" title="Permanent link">&para;</a></h2>
 <p>The API is available only when:</p>
 <ul>
-<li>you are running a supported <code>*_repeater_observer</code> firmware build</li>
+<li>you are running a supported <code>*_repeater_observer</code> firmware build, any of its <code>_espnow</code> / <code>_mqtt_bridge</code> variants, or a <code>*_room_server_mqtt_bridge</code> build</li>
 <li>the repeater web panel is enabled and running</li>
 <li>you can reach the repeater over the local network</li>
 <li>you have authenticated with the repeater admin password</li>
@@ -1348,6 +1370,17 @@
 </span><span id="__span-20-21"><a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-20-22"><a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
 </span></code></pre></div>
+<h2 id="room-server-builds">Room Server Builds<a class="headerlink" href="#room-server-builds" title="Permanent link">&para;</a></h2>
+<p><code>*_room_server_mqtt_bridge</code> builds serve the same API with the room server admin password:</p>
+<ul>
+<li><code>POST /login</code>, <code>GET /api/session</code>, <code>POST /api/command</code>, and <code>POST /api/firmware-update</code> work as described above.</li>
+<li><code>GET /api/stats?view=legacy</code> returns the Wi-Fi, core, radio, packet, and memory bundle.</li>
+<li><code>GET /api/stats</code> and <code>GET /api/stats?series=&lt;name&gt;</code> return <code>503 Stats disabled</code>, because room servers do not keep stats history.</li>
+</ul>
+<p>Useful room server commands through <code>/api/command</code> include <code>get bridge.status</code>, <code>get bridge.sync</code>, <code>get mqtt.client_env</code>, and <code>room.post &lt;text&gt;</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;room-ip&gt;/api/command<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span>--data<span class="w"> </span><span class="s1">&#39;get bridge.sync&#39;</span>
+</span></code></pre></div>
+<p><code>room.post</code> publishes to every room server on the same topic. Use it deliberately.</p>
 <h2 id="error-cases">Error Cases<a class="headerlink" href="#error-cases" title="Permanent link">&para;</a></h2>
 <p>Common responses:</p>
 <ul>

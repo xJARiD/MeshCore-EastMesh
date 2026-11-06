@@ -731,8 +731,9 @@
 <ul>
 <li><code>observer-eastmesh</code> boards are for Wi-Fi repeaters that publish to MQTT.</li>
 <li><code>repeater-bridge-espnow</code> and <code>observer-eastmesh-bridge-espnow</code> boards are for local ESP-NOW bridge use between nearby repeaters on different MeshCore radio configs.</li>
+<li><code>observer-eastmesh-bridge-mqtt</code> and <code>room-server-eastmesh-bridge-mqtt</code> builds exist for every observer board in the tables below (except <code>Station_G2_logging</code> for room servers). They relay mesh packets through an MQTT broker you run.</li>
 </ul>
-<p>Bridge firmware is not MQTT-over-WAN or VPN bridging. Use it when two local repeaters need to exchange traffic across radio configs such as <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>.</p>
+<p>ESP-NOW bridge firmware is not MQTT-over-WAN or VPN bridging. Use it when two local repeaters need to exchange traffic across radio configs such as <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>. Use an MQTT bridge track when the nodes are out of ESP-NOW range.</p>
 <h2 id="additional-signals">Additional Signals<a class="headerlink" href="#additional-signals" title="Permanent link">&para;</a></h2>
 <p>If you are deciding between otherwise similar boards, these target-level settings often matter more than flash alone.</p>
 <ul>
@@ -788,6 +789,20 @@
 <td></td>
 </tr>
 <tr>
+<td>heltec_rc32</td>
+<td>160 MHz</td>
+<td>22 dBm cfg</td>
+<td>ADC batt</td>
+<td>RF switch</td>
+</tr>
+<tr>
+<td>heltec_rc32_without_display</td>
+<td>160 MHz</td>
+<td>22 dBm cfg</td>
+<td>ADC batt</td>
+<td>RF switch</td>
+</tr>
+<tr>
 <td>Heltec_T190</td>
 <td>default</td>
 <td>22 dBm cfg</td>
@@ -817,6 +832,27 @@
 </tr>
 <tr>
 <td>heltec_v4</td>
+<td>80 MHz</td>
+<td>10 dBm cfg*</td>
+<td>ADC batt</td>
+<td>PA/FEM</td>
+</tr>
+<tr>
+<td>heltec_v4_expansionkit</td>
+<td>80 MHz</td>
+<td>10 dBm cfg*</td>
+<td>ADC batt</td>
+<td>PA/FEM</td>
+</tr>
+<tr>
+<td>heltec_v4_r8</td>
+<td>80 MHz</td>
+<td>10 dBm cfg*</td>
+<td>ADC batt</td>
+<td>PA/FEM</td>
+</tr>
+<tr>
+<td>heltec_v4_r8_tft</td>
 <td>80 MHz</td>
 <td>10 dBm cfg*</td>
 <td>ADC batt</td>
@@ -879,6 +915,13 @@
 <td></td>
 </tr>
 <tr>
+<td>LilyGo_TETH_Elite_sx1262</td>
+<td>default</td>
+<td>8 dBm cfg</td>
+<td>none</td>
+<td>RF switch</td>
+</tr>
+<tr>
 <td>LilyGo_Tlora_C6</td>
 <td>default</td>
 <td>22 dBm cfg</td>
@@ -919,6 +962,13 @@
 <td>22 dBm cfg</td>
 <td>none</td>
 <td>ext ant</td>
+</tr>
+<tr>
+<td>meshnology_w12</td>
+<td>80 MHz</td>
+<td>5 dBm cfg</td>
+<td>ADC batt</td>
+<td>NeoPixel</td>
 </tr>
 <tr>
 <td>nibble_screen_connect</td>
@@ -995,6 +1045,13 @@
 <td>default</td>
 <td>22 dBm cfg</td>
 <td>none</td>
+<td>RF switch</td>
+</tr>
+<tr>
+<td>Xiao_S3</td>
+<td>default</td>
+<td>22 dBm cfg</td>
+<td>ADC batt</td>
 <td>RF switch</td>
 </tr>
 <tr>
@@ -1087,6 +1144,28 @@
 <td></td>
 </tr>
 <tr>
+<td>heltec_rc32</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>16 MB</td>
+<td>SX1262</td>
+<td>TFT (NV3001B)</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>heltec_rc32_without_display</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>16 MB</td>
+<td>SX1262</td>
+<td>None</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
 <td>Heltec_T190</td>
 <td>ESP32S3</td>
 <td>512 KB</td>
@@ -1138,6 +1217,39 @@
 <td>16 MB</td>
 <td>SX1262</td>
 <td>OLED (SSD1306)</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>heltec_v4_expansionkit</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>2 MB</td>
+<td>16 MB</td>
+<td>SX1262</td>
+<td>OLED (SSD1306)</td>
+<td>✅</td>
+<td>🧪</td>
+</tr>
+<tr>
+<td>heltec_v4_r8</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>16 MB</td>
+<td>SX1262</td>
+<td>OLED (SSD1306)</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>heltec_v4_r8_tft</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>16 MB</td>
+<td>SX1262</td>
+<td>TFT (ST7789)</td>
 <td>✅</td>
 <td></td>
 </tr>
@@ -1230,6 +1342,17 @@
 <td>🧪</td>
 </tr>
 <tr>
+<td>LilyGo_TETH_Elite_sx1262</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>16 MB</td>
+<td>SX1262</td>
+<td>None</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
 <td>LilyGo_Tlora_C6</td>
 <td>ESP32C6</td>
 <td>512 KB</td>
@@ -1282,6 +1405,17 @@
 <td>SX1262</td>
 <td>None</td>
 <td></td>
+<td></td>
+</tr>
+<tr>
+<td>meshnology_w12</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>16 MB</td>
+<td>LR2021</td>
+<td>OLED (SSD1306)</td>
+<td>✅</td>
 <td></td>
 </tr>
 <tr>
@@ -1400,6 +1534,17 @@
 <td>512 KB</td>
 <td>No</td>
 <td>4 MB</td>
+<td>SX1262</td>
+<td>None</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Xiao_S3</td>
+<td>ESP32S3</td>
+<td>512 KB</td>
+<td>8 MB</td>
+<td>8 MB</td>
 <td>SX1262</td>
 <td>None</td>
 <td></td>

@@ -586,6 +586,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mqtt-bridge-settings-for-observer-mqtt-bridge-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MQTT Bridge Settings For Observer MQTT Bridge Builds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#web-panel-controls" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -634,6 +645,89 @@
     <span class="md-ellipsis">
       
         T-Beam 1W Fan Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#room-server-mqtt-bridge-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server MQTT Bridge Commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Room Server MQTT Bridge Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-time-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-Time Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wi-fi-and-ntp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wi-Fi And NTP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bridge-broker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bridge Broker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#room-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repeating" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repeating
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#web-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web Panel
       
     </span>
   </a>
@@ -816,6 +910,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mqtt-bridge-settings-for-observer-mqtt-bridge-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MQTT Bridge Settings For Observer MQTT Bridge Builds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#web-panel-controls" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -864,6 +969,89 @@
     <span class="md-ellipsis">
       
         T-Beam 1W Fan Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#room-server-mqtt-bridge-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server MQTT Bridge Commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Room Server MQTT Bridge Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-time-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-Time Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wi-fi-and-ntp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wi-Fi And NTP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bridge-broker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bridge Broker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#room-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repeating" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repeating
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#web-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web Panel
       
     </span>
   </a>
@@ -1062,6 +1250,23 @@
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>&gt; set bridge.channel 6
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>OK
 </span></code></pre></div>
+<h3 id="mqtt-bridge-settings-for-observer-mqtt-bridge-builds">MQTT Bridge Settings For Observer MQTT Bridge Builds<a class="headerlink" href="#mqtt-bridge-settings-for-observer-mqtt-bridge-builds" title="Permanent link">&para;</a></h3>
+<p>These commands are available on <code>*_repeater_observer_mqtt_bridge</code> firmware targets. The bridge relays raw, encrypted mesh packets to other bridge nodes through a peer MQTT broker you run. That broker is separate from the MQTT uplink brokers above.</p>
+<ul>
+<li><code>get bridge.enabled</code>, <code>set bridge.enabled on|off</code></li>
+<li><code>get bridge.peer.host</code>, <code>set bridge.peer.host &lt;host&gt;</code>: broker hostname or IP address (no scheme, port, or path).</li>
+<li><code>get bridge.peer.port</code>, <code>set bridge.peer.port &lt;1-65535&gt;</code>: default <code>1883</code>.</li>
+<li><code>get bridge.peer.username</code>, <code>set bridge.peer.username &lt;user&gt;</code></li>
+<li><code>get bridge.peer.password</code>, <code>set bridge.peer.password &lt;password&gt;</code>: <code>get</code> only reports <code>set</code> or <code>-</code>.</li>
+<li><code>get bridge.secret</code>, <code>set bridge.secret &lt;secret&gt;</code>: shared secret (up to 15 characters) that encrypts bridged packets. Every bridge node must use the same one.</li>
+</ul>
+<p>Notes:</p>
+<ul>
+<li>every bridge node must use the same broker, credentials, and <code>bridge.secret</code></li>
+<li>packets are bridged on the fixed <code>meshcore/bridge/packets</code> topic over plain MQTT/TCP. TLS and WebSockets are not supported on the bridge connection</li>
+<li><code>*_room_server_mqtt_bridge</code> room servers use the same topic and join an existing observer MQTT bridge when they share the broker and secret</li>
+<li>the README has a worked example of a <a href="https://github.com/xJARiD/MeshCore-EastMesh#peer-mosquitto-broker-lan">Mosquitto peer broker</a></li>
+</ul>
 <h3 id="web-panel-controls">Web Panel Controls<a class="headerlink" href="#web-panel-controls" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get web</code></li>
@@ -1118,6 +1323,78 @@
 <li>the earlier EastMesh <code>set fan timeout &lt;Ns&gt;</code> command has been removed; the post-TX cooldown is now fixed</li>
 <li>fan settings saved by older EastMesh builds are not migrated, so the fan returns to <code>auto</code> with the default thresholds after upgrading</li>
 </ul>
+<h2 id="room-server-mqtt-bridge-commands">Room Server MQTT Bridge Commands<a class="headerlink" href="#room-server-mqtt-bridge-commands" title="Permanent link">&para;</a></h2>
+<p>These commands are available on <code>*_room_server_mqtt_bridge</code> firmware targets. There is one for every board that has a <code>*_repeater_observer_mqtt_bridge</code> build, for example <code>heltec_v4_room_server_mqtt_bridge</code>.</p>
+<p>This firmware is a normal MeshCore room server with four EastMesh additions:</p>
+<ul>
+<li>Wi-Fi and the local HTTPS web panel</li>
+<li>an MQTT bridge that relays mesh packets through a broker, like the <code>*_repeater_observer_mqtt_bridge</code> repeaters</li>
+<li>room sync, which shares room posts with other room servers on the same topic</li>
+<li>repeating, which is on by default so bridged packets reach LoRa</li>
+</ul>
+<h3 id="first-time-setup">First-Time Setup<a class="headerlink" href="#first-time-setup" title="Permanent link">&para;</a></h3>
+<p>From the serial console:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>set wifi.ssid &lt;your-ssid&gt;
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>set wifi.pwd &lt;your-password&gt;
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>set bridge.peer.host mqtt.example.com
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>set bridge.peer.port 1883
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>set bridge.peer.username &lt;user&gt;
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>set bridge.peer.password &lt;password&gt;
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>set bridge.secret &lt;shared-secret&gt;
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>set bridge.topic EastMesh
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>get bridge.sync
+</span></code></pre></div>
+<p>Every room server that should share posts must use the same broker, <code>bridge.secret</code>, and <code>bridge.topic</code>.</p>
+<h3 id="wi-fi-and-ntp">Wi-Fi And NTP<a class="headerlink" href="#wi-fi-and-ntp" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>get wifi.status</code>, <code>get wifi.ssid</code>, <code>get wifi.powersaving</code></li>
+<li><code>set wifi.ssid &lt;ssid&gt;</code>, <code>set wifi.pwd &lt;password&gt;</code>, <code>set wifi.powersaving none|min|max</code></li>
+<li><code>wifi reconnect</code></li>
+<li><code>get ntp.server1|2|3</code>, <code>set ntp.server1|2|3 &lt;host&gt;</code></li>
+</ul>
+<p>These work the same as on observer builds. Wi-Fi is only brought up while the web panel or the bridge needs it.</p>
+<h3 id="bridge-broker">Bridge Broker<a class="headerlink" href="#bridge-broker" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>get bridge.status</code>: shows bridge state (<code>online</code>, <code>connecting</code>, <code>no-wifi</code>, <code>off</code>, or <code>no-host</code>), the peer broker, and whether repeat is on.</li>
+<li><code>get bridge.enabled</code>, <code>set bridge.enabled on|off</code></li>
+<li><code>get bridge.peer.host</code>, <code>set bridge.peer.host &lt;host&gt;</code>: broker hostname or IP address (no scheme, port, or path).</li>
+<li><code>get bridge.peer.port</code>, <code>set bridge.peer.port &lt;1-65535&gt;</code>: default <code>1883</code>.</li>
+<li><code>get bridge.peer.username</code>, <code>set bridge.peer.username &lt;user&gt;</code></li>
+<li><code>get bridge.peer.password</code>, <code>set bridge.peer.password &lt;password&gt;</code>: <code>get</code> only reports <code>set</code> or <code>-</code>.</li>
+<li><code>get bridge.secret</code>, <code>set bridge.secret &lt;secret&gt;</code>: shared secret (up to 15 characters). It encrypts both bridged mesh packets and room sync posts.</li>
+</ul>
+<p>The bridge uses plain MQTT over TCP. TLS (<code>8883</code>) and WebSockets are not supported on the bridge connection.</p>
+<p>Mesh packets are bridged on the shared <code>meshcore/bridge/packets</code> topic, so a room server bridges with any EastMesh MQTT bridge repeaters that use the same broker and secret.</p>
+<h3 id="room-sync">Room Sync<a class="headerlink" href="#room-sync" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>get bridge.topic</code>: shows the room sync topic, or <code>-</code> when sync is off.</li>
+<li><code>set bridge.topic &lt;name&gt;</code>: sets the room sync topic and reconnects the bridge. Use 1-32 characters from <code>A-Z a-z 0-9 - _</code>.</li>
+<li><code>set bridge.topic off</code>: turns room sync off.</li>
+<li><code>get bridge.sync</code>: shows <code>sync:&lt;state&gt; topic:&lt;name&gt; tx:&lt;n&gt; rx:&lt;n&gt; dup:&lt;n&gt; bad:&lt;n&gt; drop:&lt;n&gt;</code>.</li>
+</ul>
+<p>How room sync works:</p>
+<ul>
+<li>A post that a client sends to this room, or an admin <code>room.post</code>, is published to <code>meshcore/rooms/&lt;topic&gt;</code>.</li>
+<li>Every other room server with the same topic and secret stores the post under its original author and pushes it to its own logged-in clients.</li>
+<li>Posts are encrypted and authenticated with a key derived from the topic and <code>bridge.secret</code>. A room server with a different secret counts the message under <code>bad</code> and ignores it.</li>
+<li>A room server does not re-publish posts it received, so posts do not loop. Duplicate deliveries count under <code>dup</code>.</li>
+<li>There is no backfill. A room server that is offline when a post is made does not receive it later.</li>
+<li>Posts older than 24 hours by the sender's clock are dropped as replays. Keep NTP working so clocks stay correct.</li>
+<li>Clients see a synced post under the original author's public key. The app shows the author's name only if it already knows that contact.</li>
+</ul>
+<p><code>room.post &lt;text&gt;</code> from the serial console or web panel is a quick way to test sync without a client app.</p>
+<h3 id="repeating">Repeating<a class="headerlink" href="#repeating" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>get repeat</code>, <code>set repeat on|off</code></li>
+</ul>
+<p>Upstream MeshCore room servers no longer repeat. This firmware turns repeating back on by default so packets arriving over the bridge are transmitted on LoRa. A board that already has saved settings from an upstream room server keeps its existing <code>repeat off</code> until you run <code>set repeat on</code>.</p>
+<h3 id="web-panel">Web Panel<a class="headerlink" href="#web-panel" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>get web</code>, <code>get web.status</code></li>
+<li><code>set web on|off</code></li>
+<li><code>get mqtt.client_env</code>: shows the PlatformIO env this firmware was built for (same command as observer builds), for example <code>heltec_v4_room_server_mqtt_bridge</code>. The panel's firmware upload uses it to refuse <code>.bin</code> files named for a different board.</li>
+</ul>
+<p>The room server panel is described in <a href=".././web-panel/#room-server-web-panel">Room Server Web Panel</a>.</p>
 <h2 id="web-panel-cli-access">Web Panel CLI Access<a class="headerlink" href="#web-panel-cli-access" title="Permanent link">&para;</a></h2>
 <p>When the repeater web panel is enabled and you are authenticated, the browser CLI panel can run the same CLI commands accepted by the repeater.</p>
 <p>Notes:</p>

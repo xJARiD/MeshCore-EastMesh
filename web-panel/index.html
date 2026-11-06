@@ -861,6 +861,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#room-server-web-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server Web Panel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#related-docs" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1455,6 +1466,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#room-server-web-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server Web Panel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#related-docs" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1704,6 +1726,7 @@
 <li><code>mqtt.email</code>: owner contact email.</li>
 <li>MQTT brokers: <strong>Primary MQTT</strong> and <strong>Secondary MQTT</strong> dropdowns, each selecting one of <code>eastmesh-au</code>, <code>meshmapper</code>, <code>Custom</code>, the retired <code>letsmesh-eu</code>/<code>letsmesh-us</code>, or <code>None</code>. The two slots enforce the two-broker maximum, and a broker chosen in one slot is disabled in the other.</li>
 <li>custom MQTT <code>host:port</code>, TCP/WSS transport, username, and password fields, shown when <code>Custom</code> is selected in either slot.</li>
+<li>on <code>*_repeater_observer_mqtt_bridge</code> builds, a <strong>Mesh bridge peer</strong> field for the bridge broker <code>host:port</code>, username, and password. This is the broker used for packet bridging, not an uplink broker. Set the matching <code>bridge.secret</code> from the CLI.</li>
 </ul>
 <p><code>UNSET - To be configured</code> is the default for new observer installs until a real saved value exists.</p>
 <p>Notes:</p>
@@ -1865,6 +1888,21 @@ If the old redirect listener has not fully released port <code>80</code>, the OT
 <li>whether <code>set web.stats on</code> has been applied</li>
 </ul>
 <p>If <code>web.stats</code> is off, <code>/stats</code> will stay disabled and the historical graph requests will not run.</p>
+<h2 id="room-server-web-panel">Room Server Web Panel<a class="headerlink" href="#room-server-web-panel" title="Permanent link">&para;</a></h2>
+<p><code>*_room_server_mqtt_bridge</code> builds serve a smaller panel built for room servers. Open it the same way: find the IP address on the home screen of a board with a display (<code>IP: …</code>, or <code>IP: -</code> until Wi-Fi connects) or with <code>get wifi.status</code>, browse to <code>https://&lt;room-ip&gt;/</code>, accept the certificate warning, and log in with the room server admin password.</p>
+<p>The panel has:</p>
+<ul>
+<li><strong>Actions:</strong> <code>Advert</code>, <code>Start OTA</code>, <code>Refresh</code>, <code>Reboot</code>, theme toggle, and <code>Logout</code>. <code>Start OTA</code> runs <code>start ota</code> and, after 5 seconds, opens the returned <code>http://&lt;ip&gt;/update</code> page, where you upload the new firmware <code>.bin</code>. This works the same as <a href="#start-ota">Start OTA</a> on the observer panel.</li>
+<li><strong>Status tiles:</strong> Wi-Fi, MQTT Bridge, and Room Sync. These refresh every 30 seconds while the tab is visible.</li>
+<li><strong>Room Settings:</strong> room name, latitude and longitude, public key, clock with a <code>Sync from browser</code> button, room password, read-only logins, and the admin password.</li>
+<li><strong>Wi-Fi:</strong> SSID and password. Saving Wi-Fi changes drops the page until the room server rejoins the network, possibly with a new IP address.</li>
+<li><strong>MQTT Bridge &amp; Room Sync:</strong> bridge on/off, broker <code>host:port</code>, username, password, room sync topic, and repeat on/off. The bridge secret is not shown in the panel. Change it with <code>set bridge.secret &lt;secret&gt;</code> in the CLI if you need to.</li>
+<li><strong>Radio:</strong> current radio, community radio presets (the same list the observer panel loads from <code>api.meshcore.nz</code>), the <code>Region (Australia)</code> state selector, and TX power. Preset changes apply after a reboot. The region selector runs <code>region def au &lt;state&gt;</code> then <code>region save</code>, the same as the observer panel.</li>
+<li><strong>Firmware:</strong> choose the non-merged <code>.bin</code> for this board and press <code>Upload</code>. The panel reads the board's env with <code>get mqtt.client_env</code> and refuses release files named for a different board (<code>&lt;env&gt;-&lt;version&gt;.bin</code>) and <code>-merged.bin</code> USB images. A locally built <code>firmware.bin</code> can't be matched by name, so it is allowed with a reminder. The panel also checks the image header and sends an MD5 with it, shows upload progress, and reloads after the room server reboots. It uses the authenticated <code>/api/firmware-update</code> endpoint, so OTA mode is not needed.</li>
+<li><strong>CLI:</strong> quick buttons for <code>wifi.status</code>, <code>bridge.status</code>, <code>bridge.sync</code>, <code>web.status</code>, and <code>ver</code>, plus a free-form command box. Try <code>room.post hello</code> to test room sync.</li>
+</ul>
+<p>Password fields are write-only and clear after saving. Every control runs a CLI command. The commands are listed in <a href=".././custom-cli/#room-server-mqtt-bridge-commands">Room Server MQTT Bridge Commands</a>.</p>
+<p>The room server panel has no <code>/stats</code> page, firmware update banner, or MQTT observer settings.</p>
 <h2 id="related-docs">Related Docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href=".././custom-cli/">Custom CLI Commands</a></li>

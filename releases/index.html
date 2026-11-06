@@ -509,6 +509,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#observer-mqtt-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observer MQTT Bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#room-server-mqtt-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server MQTT Bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#repeater-esp-now-bridge" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -864,6 +886,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#observer-mqtt-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observer MQTT Bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#room-server-mqtt-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Room Server MQTT Bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#repeater-esp-now-bridge" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -947,12 +991,22 @@
 <td>You want one repeater to provide both MQTT uplink and local ESP-NOW bridge duties.</td>
 <td><code>*_repeater_observer_espnow</code></td>
 </tr>
+<tr>
+<td><code>observer-eastmesh-bridge-mqtt</code></td>
+<td>You want an observer that also relays mesh packets to other bridge nodes through an MQTT broker you run.</td>
+<td><code>*_repeater_observer_mqtt_bridge</code></td>
+</tr>
+<tr>
+<td><code>room-server-eastmesh-bridge-mqtt</code></td>
+<td>You want a room server whose posts sync with other room servers over an MQTT broker, which also bridges and repeats mesh packets.</td>
+<td><code>*_room_server_mqtt_bridge</code></td>
+</tr>
 </tbody>
 </table>
 <div class="admonition note">
-<p class="admonition-title">Bridge firmware is not a WAN bridge</p>
-<p>ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>.</p>
-<p>Bridge tracks do not use MQTT uplink brokers to tunnel mesh traffic over the internet, WAN links, or VPNs.</p>
+<p class="admonition-title">ESP-NOW bridges are local; MQTT bridges use your own broker</p>
+<p>ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example <code>Australia (Narrow)</code> and <code>Australia (Mid)</code>. They do not tunnel mesh traffic over the internet, WAN links, or VPNs.</p>
+<p>MQTT bridge tracks relay encrypted mesh packets through a peer MQTT broker you configure with <code>bridge.peer.host</code>. This is separate from the MQTT uplink brokers (<code>eastmesh-au</code>, <code>meshmapper</code>) that observers publish telemetry to.</p>
 </div>
 <h2 id="pick-the-right-asset">Pick The Right Asset<a class="headerlink" href="#pick-the-right-asset" title="Permanent link">&para;</a></h2>
 <p>Download the asset that matches your board and firmware type.</p>
@@ -962,12 +1016,16 @@
 <li><code>heltec_v4_repeater_observer-v1.15.0-eastmesh-v2026.5.1-abcdef-merged.bin</code></li>
 <li><code>heltec_v4_repeater_bridge_espnow-v1.15.0-abcdef.bin</code></li>
 <li><code>heltec_v4_repeater_observer_espnow-v1.15.0-eastmesh-v2026.5.1-abcdef.bin</code></li>
+<li><code>heltec_v4_repeater_observer_mqtt_bridge-v1.18.0-eastmesh-v2026.11.1-abcdef.bin</code></li>
+<li><code>heltec_v4_room_server_mqtt_bridge-v1.18.0-eastmesh-v2026.11.1-abcdef.bin</code></li>
 </ul>
 <p>The important part is the board/env prefix:</p>
 <ul>
 <li><code>*_repeater_observer</code></li>
 <li><code>*_repeater_bridge_espnow</code></li>
 <li><code>*_repeater_observer_espnow</code></li>
+<li><code>*_repeater_observer_mqtt_bridge</code></li>
+<li><code>*_room_server_mqtt_bridge</code></li>
 </ul>
 <h2 id="which-file-to-flash">Which File To Flash<a class="headerlink" href="#which-file-to-flash" title="Permanent link">&para;</a></h2>
 <p>If you are using <a href="https://flasher.eastmesh.au/">https://flasher.eastmesh.au/</a>, choose the image type in the flasher:</p>
@@ -1077,6 +1135,28 @@
 <li>set <code>bridge.channel</code> to match that Wi-Fi channel</li>
 <li>set the same <code>bridge.secret</code> on every local ESP-NOW bridge node that should talk together</li>
 </ul>
+<h3 id="observer-mqtt-bridge">Observer MQTT Bridge<a class="headerlink" href="#observer-mqtt-bridge" title="Permanent link">&para;</a></h3>
+<p><code>repeater_observer_mqtt_bridge</code> builds combine the observer role with an MQTT packet bridge to a broker you run.</p>
+<p>Typical first steps after flashing:</p>
+<ul>
+<li>do the normal observer steps above (<code>wifi.ssid</code>, <code>wifi.pwd</code>, <code>mqtt.iata</code>)</li>
+<li>set the peer broker with <code>bridge.peer.host</code>, <code>bridge.peer.port</code>, and <code>bridge.peer.username</code> / <code>bridge.peer.password</code> if the broker needs them</li>
+<li>set the same <code>bridge.secret</code> on every bridge node that should share traffic</li>
+<li>confirm traffic flows between the bridged nodes</li>
+</ul>
+<p>See <a href=".././custom-cli/#mqtt-bridge-settings-for-observer-mqtt-bridge-builds">MQTT Bridge Settings</a>.</p>
+<h3 id="room-server-mqtt-bridge">Room Server MQTT Bridge<a class="headerlink" href="#room-server-mqtt-bridge" title="Permanent link">&para;</a></h3>
+<p><code>room_server_mqtt_bridge</code> builds are room servers with Wi-Fi, the room server web panel, an MQTT bridge, and room sync.</p>
+<p>Typical first steps after flashing:</p>
+<ul>
+<li>set <code>wifi.ssid</code> and <code>wifi.pwd</code></li>
+<li>open the web panel at the IP shown on the display or in <code>get wifi.status</code></li>
+<li>pick the radio preset and AU region, then reboot</li>
+<li>set the bridge broker (<code>bridge.peer.host</code>, <code>bridge.peer.port</code>, and credentials if needed)</li>
+<li>set the same <code>bridge.topic</code> and <code>bridge.secret</code> on every room server that should share posts</li>
+<li>confirm <code>get bridge.status</code> and <code>get bridge.sync</code> both report <code>online</code></li>
+</ul>
+<p>See <a href=".././custom-cli/#room-server-mqtt-bridge-commands">Room Server MQTT Bridge Commands</a>.</p>
 <h3 id="repeater-esp-now-bridge">Repeater ESP-NOW Bridge<a class="headerlink" href="#repeater-esp-now-bridge" title="Permanent link">&para;</a></h3>
 <p><code>repeater_bridge_espnow</code> builds are for local ESP-NOW bridge nodes without MQTT uplink.</p>
 <p>Typical first steps after flashing:</p>

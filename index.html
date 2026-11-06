@@ -750,12 +750,14 @@
 <li><code>repeater-bridge-espnow</code>: use this when you need a plain upstream-style repeater ESP-NOW bridge without MQTT uplink or the EastMesh web panel.</li>
 <li><code>observer-eastmesh</code>: use this for a Wi-Fi repeater that should publish to an MQTT broker and, on supported ESP32 boards, offer the optional local web panel for setup and troubleshooting.</li>
 <li><code>observer-eastmesh-bridge-espnow</code>: use this when one repeater needs both MQTT uplink and ESP-NOW bridge duties, including bridge channel/secret controls for keeping the bridge aligned with Wi-Fi.</li>
+<li><code>observer-eastmesh-bridge-mqtt</code>: use this when an observer should also relay mesh packets to other bridge nodes through an MQTT broker you run, linking meshes that radio can't reach.</li>
+<li><code>room-server-eastmesh-bridge-mqtt</code>: use this for a room server with Wi-Fi and a web panel whose posts sync with other room servers on the same broker and topic. It also bridges and repeats mesh packets like the observer MQTT bridge.</li>
 </ul>
 <p>For Wi-Fi-connected companion devices, use the official upstream MeshCore <code>*_companion_radio_wifi</code> firmware. It now supports persisted Wi-Fi settings natively, so EastMesh no longer publishes its own <code>companion-wifi</code> track.</p>
 <div class="admonition note">
-<p class="admonition-title">Bridge tracks are local radio bridges</p>
-<p>The ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example one repeater on <code>Australia (Narrow)</code> and another on <code>Australia (Mid)</code>.</p>
-<p>Bridge tracks are not MQTT-over-WAN, VPN, or internet tunnel releases.</p>
+<p class="admonition-title">ESP-NOW bridges and MQTT bridges do different jobs</p>
+<p>The ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example one repeater on <code>Australia (Narrow)</code> and another on <code>Australia (Mid)</code>. They are not MQTT-over-WAN, VPN, or internet tunnel releases.</p>
+<p>The MQTT bridge tracks (<code>observer-eastmesh-bridge-mqtt</code> and <code>room-server-eastmesh-bridge-mqtt</code>) relay encrypted mesh packets through an MQTT broker you run, so the bridged nodes can be on the same LAN or far apart.</p>
 </div>
 <p>If you want guidance first, start with:</p>
 <ul>
@@ -772,6 +774,7 @@
 <li>flash firmware with guidance: start with <a href="./releases/">Download and Flash Releases</a></li>
 <li>flash firmware now: open the <a href="https://flasher.eastmesh.au">EastMesh Flasher</a></li>
 <li>set up a repeater after flashing: use <a href="./releases/">Download and Flash Releases</a> and <a href="./web-panel/">Use the Repeater Web Panel</a></li>
+<li>set up a synced room server: use <a href="./custom-cli/#room-server-mqtt-bridge-commands">Room Server MQTT Bridge Commands</a> and the <a href="./web-panel/#room-server-web-panel">Room Server Web Panel</a></li>
 <li>understand EastMesh CLI commands: use <a href="./custom-cli/">Custom CLI Commands</a></li>
 <li>automate or script against a repeater: use <a href="./api/">Use the Repeater Web API</a></li>
 <li>build firmware locally: use <a href="./local-builds/">Build Locally With uv</a></li>
