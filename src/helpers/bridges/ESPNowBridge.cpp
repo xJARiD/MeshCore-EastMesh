@@ -9,11 +9,19 @@
 ESPNowBridge *ESPNowBridge::_instance = nullptr;
 
 // Static callback wrappers
+#if ESP_IDF_VERSION_MAJOR >= 5
+void ESPNowBridge::recv_cb(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
+  if (_instance && info != nullptr) {
+    _instance->onDataRecv(info->src_addr, data, len);
+  }
+}
+#else
 void ESPNowBridge::recv_cb(const uint8_t *mac, const uint8_t *data, int32_t len) {
   if (_instance) {
     _instance->onDataRecv(mac, data, len);
   }
 }
+#endif
 
 void ESPNowBridge::send_cb(const uint8_t *mac, esp_now_send_status_t status) {
   if (_instance) {
