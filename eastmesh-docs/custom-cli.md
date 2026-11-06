@@ -162,6 +162,24 @@ Example:
 OK
 ```
 
+### MQTT Bridge Settings For Observer MQTT Bridge Builds
+
+These commands are available on `*_repeater_observer_mqtt_bridge` firmware targets. The bridge relays raw, encrypted mesh packets to other bridge nodes through a peer MQTT broker you run. That broker is separate from the MQTT uplink brokers above.
+
+- `get bridge.enabled`, `set bridge.enabled on|off`
+- `get bridge.peer.host`, `set bridge.peer.host <host>`: broker hostname or IP address (no scheme, port, or path).
+- `get bridge.peer.port`, `set bridge.peer.port <1-65535>`: default `1883`.
+- `get bridge.peer.username`, `set bridge.peer.username <user>`
+- `get bridge.peer.password`, `set bridge.peer.password <password>`: `get` only reports `set` or `-`.
+- `get bridge.secret`, `set bridge.secret <secret>`: shared secret (up to 15 characters) that encrypts bridged packets. Every bridge node must use the same one.
+
+Notes:
+
+- every bridge node must use the same broker, credentials, and `bridge.secret`
+- packets are bridged on the fixed `meshcore/bridge/packets` topic over plain MQTT/TCP. TLS and WebSockets are not supported on the bridge connection
+- `*_room_server_mqtt_bridge` room servers use the same topic and join an existing observer MQTT bridge when they share the broker and secret
+- the README has a worked example of a [Mosquitto peer broker](https://github.com/xJARiD/MeshCore-EastMesh#peer-mosquitto-broker-lan)
+
 ### Web Panel Controls
 
 - `get web`
@@ -218,6 +236,91 @@ Notes:
 - default fan mode is `auto`
 - the earlier EastMesh `set fan timeout <Ns>` command has been removed; the post-TX cooldown is now fixed
 - fan settings saved by older EastMesh builds are not migrated, so the fan returns to `auto` with the default thresholds after upgrading
+
+## Room Server MQTT Bridge Commands
+
+These commands are available on `*_room_server_mqtt_bridge` firmware targets. There is one for every board that has a `*_repeater_observer_mqtt_bridge` build, for example `heltec_v4_room_server_mqtt_bridge`.
+
+This firmware is a normal MeshCore room server with four EastMesh additions:
+
+- Wi-Fi and the local HTTPS web panel
+- an MQTT bridge that relays mesh packets through a broker, like the `*_repeater_observer_mqtt_bridge` repeaters
+- room sync, which shares room posts with other room servers on the same topic
+- repeating, which is on by default so bridged packets reach LoRa
+
+### First-Time Setup
+
+From the serial console:
+
+```text
+set wifi.ssid <your-ssid>
+set wifi.pwd <your-password>
+set bridge.peer.host mqtt.example.com
+set bridge.peer.port 1883
+set bridge.peer.username <user>
+set bridge.peer.password <password>
+set bridge.secret <shared-secret>
+set bridge.topic EastMesh
+get bridge.sync
+```
+
+Every room server that should share posts must use the same broker, `bridge.secret`, and `bridge.topic`.
+
+### Wi-Fi And NTP
+
+- `get wifi.status`, `get wifi.ssid`, `get wifi.powersaving`
+- `set wifi.ssid <ssid>`, `set wifi.pwd <password>`, `set wifi.powersaving none|min|max`
+- `wifi reconnect`
+- `get ntp.server1|2|3`, `set ntp.server1|2|3 <host>`
+
+These work the same as on observer builds. Wi-Fi is only brought up while the web panel or the bridge needs it.
+
+### Bridge Broker
+
+- `get bridge.status`: shows bridge state (`online`, `connecting`, `no-wifi`, `off`, or `no-host`), the peer broker, and whether repeat is on.
+- `get bridge.enabled`, `set bridge.enabled on|off`
+- `get bridge.peer.host`, `set bridge.peer.host <host>`: broker hostname or IP address (no scheme, port, or path).
+- `get bridge.peer.port`, `set bridge.peer.port <1-65535>`: default `1883`.
+- `get bridge.peer.username`, `set bridge.peer.username <user>`
+- `get bridge.peer.password`, `set bridge.peer.password <password>`: `get` only reports `set` or `-`.
+- `get bridge.secret`, `set bridge.secret <secret>`: shared secret (up to 15 characters). It encrypts both bridged mesh packets and room sync posts.
+
+The bridge uses plain MQTT over TCP. TLS (`8883`) and WebSockets are not supported on the bridge connection.
+
+Mesh packets are bridged on the shared `meshcore/bridge/packets` topic, so a room server bridges with any EastMesh MQTT bridge repeaters that use the same broker and secret.
+
+### Room Sync
+
+- `get bridge.topic`: shows the room sync topic, or `-` when sync is off.
+- `set bridge.topic <name>`: sets the room sync topic and reconnects the bridge. Use 1-32 characters from `A-Z a-z 0-9 - _`.
+- `set bridge.topic off`: turns room sync off.
+- `get bridge.sync`: shows `sync:<state> topic:<name> tx:<n> rx:<n> dup:<n> bad:<n> drop:<n>`.
+
+How room sync works:
+
+- A post that a client sends to this room, or an admin `room.post`, is published to `meshcore/rooms/<topic>`.
+- Every other room server with the same topic and secret stores the post under its original author and pushes it to its own logged-in clients.
+- Posts are encrypted and authenticated with a key derived from the topic and `bridge.secret`. A room server with a different secret counts the message under `bad` and ignores it.
+- A room server does not re-publish posts it received, so posts do not loop. Duplicate deliveries count under `dup`.
+- There is no backfill. A room server that is offline when a post is made does not receive it later.
+- Posts older than 24 hours by the sender's clock are dropped as replays. Keep NTP working so clocks stay correct.
+- Clients see a synced post under the original author's public key. The app shows the author's name only if it already knows that contact.
+
+`room.post <text>` from the serial console or web panel is a quick way to test sync without a client app.
+
+### Repeating
+
+- `get repeat`, `set repeat on|off`
+
+Upstream MeshCore room servers no longer repeat. This firmware turns repeating back on by default so packets arriving over the bridge are transmitted on LoRa. A board that already has saved settings from an upstream room server keeps its existing `repeat off` until you run `set repeat on`.
+
+### Web Panel
+
+- `get web`, `get web.status`
+- `set web on|off`
+- `get mqtt.client_env`: shows the PlatformIO env this firmware was built for (same command as observer builds), for example `heltec_v4_room_server_mqtt_bridge`. The panel's firmware upload uses it to refuse `.bin` files named for a different board.
+
+The room server panel is described in [Room Server Web Panel](./web-panel.md#room-server-web-panel).
 
 ## Web Panel CLI Access
 

@@ -49,9 +49,23 @@ const char *MQTTBridge::kBridgeTopic = "meshcore/bridge/packets";
 
 MQTTBridge::MQTTBridge(NodePrefs *prefs, mesh::PacketManager *mgr, mesh::RTCClock *rtc)
     : BridgeBase(prefs, mgr, rtc), _client(nullptr), _connected(false), _started(false),
-      _pending_destroy(false), _next_connect_attempt(0), _reconnect_failures(0) {
+      _pending_destroy(false), _next_connect_attempt(0), _reconnect_failures(0), _listener(nullptr) {
   _instance = this;
   _client_id[0] = 0;
+  _listener_topic[0] = 0;
+}
+
+bool MQTTBridge::hasPeerHost() const {
+  return peerHostConfigured(_prefs);
+}
+
+bool MQTTBridge::publishListenerTopic(const uint8_t *data, size_t len) {
+  if (!_initialized || !_connected || _client == nullptr || _listener_topic[0] == 0 || data == nullptr ||
+      len == 0 || len > MAX_MQTT_PACKET_SIZE) {
+    return false;
+  }
+  return esp_mqtt_client_publish(_client, _listener_topic, reinterpret_cast<const char *>(data),
+                                 static_cast<int>(len), 1, 0) >= 0;
 }
 
 void MQTTBridge::xorCrypt(uint8_t *data, size_t len) {
@@ -109,6 +123,13 @@ void MQTTBridge::onMqttConnected() {
   _next_connect_attempt = 0;
   if (_client != nullptr) {
     esp_mqtt_client_subscribe(_client, kBridgeTopic, 0);
+    _listener_topic[0] = 0;
+    if (_listener != nullptr && _listener->getBridgeTopic(_listener_topic, sizeof(_listener_topic)) &&
+        _listener_topic[0] != 0) {
+      esp_mqtt_client_subscribe(_client, _listener_topic, 1);
+    } else {
+      _listener_topic[0] = 0;
+    }
   }
   BRIDGE_DEBUG_PRINTLN("MQTT bridge connected to %s:%u\n", _prefs->bridge_peer_host,
                        static_cast<unsigned>(peerPort(_prefs)));
@@ -140,7 +161,15 @@ void MQTTBridge::mqttEventHandler(void *handler_args, esp_event_base_t, int32_t 
       break;
     case MQTT_EVENT_DATA: {
       auto *event = static_cast<esp_mqtt_event_handle_t>(event_data);
-      if (event != nullptr && event->data_len > 0) {
+      if (event != nullptr && event->data_len > 0 && bridge->_listener != nullptr &&
+          bridge->_listener_topic[0] != 0 && event->topic != nullptr &&
+          event->topic_len == static_cast<int>(strlen(bridge->_listener_topic)) &&
+          memcmp(event->topic, bridge->_listener_topic, event->topic_len) == 0) {
+        if (event->current_data_offset == 0 && event->data_len == event->total_data_len) {
+          bridge->_listener->onBridgeTopicData(reinterpret_cast<const uint8_t *>(event->data),
+                                               static_cast<size_t>(event->data_len));
+        }
+      } else if (event != nullptr && event->data_len > 0) {
         bridge->handleMqttData(reinterpret_cast<const uint8_t *>(event->data),
                                static_cast<size_t>(event->data_len));
       }

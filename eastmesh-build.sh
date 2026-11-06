@@ -38,6 +38,7 @@ Commands:
   build-observer-espnow-firmwares: Build all observer ESP-NOW firmwares for all build targets.
   build-observer-mqtt-bridge-firmwares: Build all observer MQTT bridge firmwares for all build targets.
   build-room-server-firmwares: Build all chat room server firmwares for all build targets.
+  build-room-server-mqtt-bridge-firmwares: Build all EastMesh room server MQTT bridge firmwares for all build targets.
 
 Examples:
 Build firmware for the "RAK_4631_repeater" device target
@@ -66,6 +67,9 @@ $ sh eastmesh-build.sh build-observer-mqtt-bridge-firmwares
 
 Build all chat room server firmwares
 $ sh eastmesh-build.sh build-room-server-firmwares
+
+Build all EastMesh room server MQTT bridge firmwares
+$ sh eastmesh-build.sh build-room-server-mqtt-bridge-firmwares
 
 Environment Variables:
   DISABLE_DEBUG=1: Disables all debug logging flags (MESH_DEBUG, MESH_PACKET_LOGGING, etc.)
@@ -338,6 +342,12 @@ build_room_server_firmwares() {
 
 }
 
+build_room_server_mqtt_bridge_firmwares() {
+
+  build_all_firmwares_by_suffix "_room_server_mqtt_bridge"
+
+}
+
 build_firmwares() {
   build_companion_firmwares
   build_repeater_firmwares
@@ -382,4 +392,6 @@ elif [[ $1 == "build-observer-mqtt-bridge-firmwares" ]]; then
   build_repeater_observer_mqtt_bridge_firmwares
 elif [[ $1 == "build-room-server-firmwares" ]]; then
   build_room_server_firmwares
+elif [[ $1 == "build-room-server-mqtt-bridge-firmwares" ]]; then
+  build_room_server_mqtt_bridge_firmwares
 fi

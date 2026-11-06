@@ -161,6 +161,7 @@ git tag repeater-bridge-espnow-v1.15.0
 git tag observer-eastmesh-bridge-espnow-v2026.5.1
 git tag observer-eastmesh-bridge-mqtt-v2026.7.0
 git tag observer-eastmesh-v2026.5.1
+git tag room-server-eastmesh-bridge-mqtt-v2026.10.1
 ```
 
 Rules:
@@ -169,7 +170,8 @@ Rules:
 - `observer-eastmesh-bridge-espnow` tags use the EastMesh release version in the tag
 - `observer-eastmesh-bridge-mqtt` tags use the EastMesh release version in the tag
 - `observer-eastmesh` tags use the EastMesh release version in the tag
-- GitHub Actions variable `OFFICIAL_MESHCORE_VERSION` supplies the upstream base version for Observer EastMesh, Observer ESP-NOW EastMesh, and Observer MQTT Bridge EastMesh release builds
+- `room-server-eastmesh-bridge-mqtt` tags use the EastMesh release version in the tag
+- GitHub Actions variable `OFFICIAL_MESHCORE_VERSION` supplies the upstream base version for Observer EastMesh, Observer ESP-NOW EastMesh, Observer MQTT Bridge EastMesh, and Room Server MQTT Bridge EastMesh release builds
 - if the upstream MeshCore release version changes, update `OFFICIAL_MESHCORE_VERSION` in GitHub before cutting release tags
 
 Typical release flow:

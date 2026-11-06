@@ -1,4 +1,5 @@
 #include "MyMesh.h"
+#include <algorithm>
 
 #define REPLY_DELAY_MILLIS          1500
 #define PUSH_NOTIFY_DELAY_MILLIS    2000
@@ -40,6 +41,10 @@ struct ServerStats {
 
 void MyMesh::addPost(ClientInfo *client, const char *postData) {
   storePost(client->id, postData);
+#ifdef EASTMESH_ROOM_SYNC
+  const PostInfo& stored = posts[(next_post_idx + MAX_UNSYNCED_POSTS - 1) % MAX_UNSYNCED_POSTS];
+  room_sync.publishPost(stored.author, stored.post_timestamp, stored.text);
+#endif
 }
 
 void MyMesh::addSystemPost(const char *postData) {
@@ -48,7 +53,21 @@ void MyMesh::addSystemPost(const char *postData) {
   MESH_DEBUG_PRINTLN("room.post: addSystemPost: %s", postData);
 
   storePost(self_id, postData);
+#ifdef EASTMESH_ROOM_SYNC
+  const PostInfo& stored = posts[(next_post_idx + MAX_UNSYNCED_POSTS - 1) % MAX_UNSYNCED_POSTS];
+  room_sync.publishPost(stored.author, stored.post_timestamp, stored.text);
+#endif
 }
+
+#ifdef EASTMESH_ROOM_SYNC
+static_assert(ROOM_SYNC_MAX_TEXT_LEN >= MAX_POST_TEXT_LEN, "room sync must carry a full post");
+
+void MyMesh::onRoomSyncPost(const mesh::Identity &author, uint32_t post_timestamp, const char *text) {
+  (void)post_timestamp;  // stored by OUR clock so local clients see it as new
+  MESH_DEBUG_PRINTLN("room.sync: remote post: %s", text);
+  storePost(author, text);
+}
+#endif
 
 void MyMesh::storePost(const mesh::Identity &author, const char *postData) {
   int idx = next_post_idx;
@@ -170,8 +189,8 @@ int MyMesh::handleRequest(ClientInfo *sender, uint32_t sender_timestamp, uint8_t
     stats.n_recv_direct = getNumRecvDirect();
     stats.err_events = _err_flags;
     stats.last_snr = (int16_t)(radio_driver.getLastSNR() * 4);
-    stats.n_direct_dups = ((SimpleMeshTables *)getTables())->getNumDirectDups();
-    stats.n_flood_dups = ((SimpleMeshTables *)getTables())->getNumFloodDups();
+    stats.n_direct_dups = std::min<uint32_t>(((SimpleMeshTables *)getTables())->getNumDirectDups(), 0xFFFF);
+    stats.n_flood_dups = std::min<uint32_t>(((SimpleMeshTables *)getTables())->getNumFloodDups(), 0xFFFF);
     stats.n_posted = _num_posted;
     stats.n_post_push = _num_post_pushes;
 
@@ -226,6 +245,11 @@ void MyMesh::logRxRaw(float snr, float rssi, const uint8_t raw[], int len) {
 }
 
 void MyMesh::logRx(mesh::Packet *pkt, int len, float score) {
+#ifdef WITH_MQTT_BRIDGE
+  if (_prefs.bridge_pkt_src == 1) {
+    bridge.sendPacket(pkt);
+  }
+#endif
   if (_logging) {
     File f = openAppend(PACKET_LOG_FILE);
     if (f) {
@@ -245,6 +269,11 @@ void MyMesh::logRx(mesh::Packet *pkt, int len, float score) {
   }
 }
 void MyMesh::logTx(mesh::Packet *pkt, int len) {
+#ifdef WITH_MQTT_BRIDGE
+  if (_prefs.bridge_pkt_src == 0) {
+    bridge.sendPacket(pkt);
+  }
+#endif
   if (_logging) {
     File f = openAppend(PACKET_LOG_FILE);
     if (f) {
@@ -633,6 +662,12 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
       region_map(key_store), temp_map(key_store),
       _cli(board, rtc, sensors, region_map, acl, &_prefs, this),
       telemetry(MAX_PACKET_PAYLOAD - 4)
+#ifdef WITH_MQTT_BRIDGE
+      , bridge(&_prefs, _mgr, &rtc)
+#endif
+#ifdef EASTMESH_ROOM_SYNC
+      , room_sync(&_prefs, &bridge, &rtc)
+#endif
 {
   last_millis = 0;
   uptime_millis = 0;
@@ -667,6 +702,17 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _prefs.cad_enabled = 0;            // hardware CAD before TX (off by default; 'set cad on')
 #ifdef ROOM_PASSWORD
   StrHelper::strncpy(_prefs.guest_password, ROOM_PASSWORD, sizeof(_prefs.guest_password));
+#endif
+#ifdef WITH_MQTT_BRIDGE
+  // EastMesh room bridge: acts as a repeater too, so bridged packets reach LoRa.
+  _prefs.disable_fwd = 0;
+  _prefs.bridge_enabled = 1;
+  _prefs.bridge_delay = 500;    // milliseconds
+  _prefs.bridge_pkt_src = 0;    // logTx
+  _prefs.bridge_baud = 115200;
+  _prefs.bridge_channel = 1;
+  _prefs.bridge_peer_port = 1883;
+  StrHelper::strncpy(_prefs.bridge_secret, "LVSITANOS", sizeof(_prefs.bridge_secret));
 #endif
 
   // GPS defaults
@@ -735,6 +781,24 @@ void MyMesh::begin(FILESYSTEM *fs) {
 
 #if ENV_INCLUDE_GPS == 1
   applyGpsPrefs();
+#endif
+
+#ifdef EASTMESH_ROOM_SYNC
+  room_sync.begin(&self_id, getRNG(), this);
+#endif
+#ifdef WITH_MQTT_BRIDGE
+  if (_prefs.bridge_enabled) {
+    bridge.begin();
+  }
+#endif
+#ifdef EASTMESH_ROOM_NET
+  board.setInhibitSleep(true);
+  network.begin(_fs);
+#if WITH_WEB_PANEL
+  web.setCommandRunner(this);
+  web.setNetworkStateProvider(&network);
+  web.begin(_fs);
+#endif
 #endif
 }
 
@@ -987,8 +1051,14 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
       addSystemPost(msg);
       snprintf(reply, MAX_POST_TEXT_LEN, "OK");
     }
+#ifndef WITH_MQTT_BRIDGE   // EastMesh room bridge keeps repeat: bridged packets need forwarding
   } else if (memcmp(command, "set repeat on", 13) == 0) {
     strcpy(reply, "ERR - repeat now deprecated");
+#endif
+#ifdef EASTMESH_ROOM_NET
+  } else if (handleEastMeshCommand(command, reply)) {
+    // handled
+#endif
   } else{
     _cli.handleCommand(sender_timestamp, command, reply);  // common CLI commands
   }
@@ -999,6 +1069,13 @@ bool MyMesh::saveFilter(ClientInfo* client) {
 }
 
 void MyMesh::loop() {
+#ifdef WITH_MQTT_BRIDGE
+  bridge.loop();
+#endif
+#ifdef EASTMESH_ROOM_SYNC
+  room_sync.loop();
+#endif
+
   mesh::Mesh::loop();
 
   if (millisHasNowPassed(next_push) && acl.getNumClients() > 0) {
@@ -1078,8 +1155,117 @@ void MyMesh::loop() {
 
   // TODO: periodically check for OLD/inactive entries in known_clients[], and evict
 
+#ifdef EASTMESH_ROOM_NET
+  bool network_required = false;
+#if WITH_WEB_PANEL
+  network_required = web.isWebEnabled();
+#endif
+#ifdef WITH_MQTT_BRIDGE
+  network_required = network_required || bridge.isRunning();
+#endif
+  network.loop(network_required);
+#if WITH_WEB_PANEL
+  web.loop();
+#endif
+#endif
+
   // update uptime
   uint32_t now = millis();
   uptime_millis += now - last_millis;
   last_millis = now;
 }
+
+#ifdef EASTMESH_ROOM_NET
+// EastMesh room-server commands: Wi-Fi, NTP, web panel, MQTT bridge and room sync status.
+// Returns false when the command is not one of ours, so the common CLI handles it.
+#ifndef CLIENT_ENV
+  #define CLIENT_ENV "unknown"
+#endif
+
+bool MyMesh::handleEastMeshCommand(char *command, char *reply) {
+  // Callers pass a 160-byte buffer, but a companion "xx|" prefix advances reply by 3.
+  const size_t reply_size = 156;
+  if (strcmp(command, "get mqtt.client_env") == 0) {   // same command as observer builds
+    snprintf(reply, reply_size, "> %s", CLIENT_ENV);
+  } else if (strcmp(command, "get wifi.status") == 0) {
+    network.formatWifiStatusReply(reply, reply_size);
+  } else if (strcmp(command, "get wifi.ssid") == 0) {
+    snprintf(reply, reply_size, "> %s", network.getWifiSSID()[0] ? network.getWifiSSID() : "-");
+  } else if (strcmp(command, "get wifi.powersaving") == 0) {
+    snprintf(reply, reply_size, "> %s", network.getWifiPowerSave());
+  } else if (strcmp(command, "get ntp.server1") == 0) {
+    snprintf(reply, reply_size, "> %s", network.getNtpServer(1));
+  } else if (strcmp(command, "get ntp.server2") == 0) {
+    snprintf(reply, reply_size, "> %s", network.getNtpServer(2));
+  } else if (strcmp(command, "get ntp.server3") == 0) {
+    snprintf(reply, reply_size, "> %s", network.getNtpServer(3));
+  } else if (memcmp(command, "set wifi.ssid ", 14) == 0) {
+    strcpy(reply, network.setWifiSSID(&command[14]) ? "OK" : "Err - bad wifi.ssid");
+  } else if (memcmp(command, "set wifi.pwd ", 13) == 0) {
+    strcpy(reply, network.setWifiPassword(&command[13]) ? "OK" : "Err - bad wifi.pwd");
+  } else if (memcmp(command, "set wifi.powersaving ", 21) == 0) {
+    strcpy(reply, network.setWifiPowerSave(&command[21]) ? "OK" : "Err - use none|min|max");
+  } else if (strcmp(command, "wifi reconnect") == 0) {
+    network.forceReconnect();
+    strcpy(reply, "OK - wifi reconnecting");
+  } else if (memcmp(command, "set ntp.server", 14) == 0 && command[14] >= '1' && command[14] <= '3' &&
+             command[15] == ' ') {
+    uint8_t index = command[14] - '0';
+    strcpy(reply, network.setNtpServer(index, &command[16]) ? "OK" : "Err - bad ntp server");
+#if WITH_WEB_PANEL
+  } else if (strcmp(command, "get web.status") == 0 || strcmp(command, "get web") == 0) {
+    web.formatWebStatusReply(reply, reply_size);
+  } else if (memcmp(command, "set web ", 8) == 0) {
+    web.setWebEnabled(memcmp(&command[8], "on", 2) == 0);
+    strcpy(reply, "OK");
+#endif
+#ifdef WITH_MQTT_BRIDGE
+  } else if (strcmp(command, "get bridge.status") == 0) {
+    const char* state;
+    if (!bridge.hasPeerHost()) {
+      state = "no-host";
+    } else if (!bridge.isRunning()) {
+      state = "off";
+    } else if (!network.isWifiConnected()) {
+      state = "no-wifi";
+    } else {
+      state = bridge.isConnected() ? "online" : "connecting";
+    }
+    snprintf(reply, reply_size, "> bridge:%s peer:%s:%u repeat:%s", state,
+             _prefs.bridge_peer_host[0] ? _prefs.bridge_peer_host : "-",
+             (unsigned)(_prefs.bridge_peer_port != 0 ? _prefs.bridge_peer_port : 1883),
+             _prefs.disable_fwd ? "off" : "on");
+#endif
+#ifdef EASTMESH_ROOM_SYNC
+  } else if (strcmp(command, "get bridge.sync") == 0) {
+    room_sync.formatStatusReply(reply, reply_size);
+#endif
+  } else {
+    return false;
+  }
+  return true;
+}
+
+void MyMesh::prepareForOTAStart() {
+#if WITH_WEB_PANEL
+  web.prepareForOTAStart();
+#endif
+}
+
+void MyMesh::runWebCommand(const char *command, char *reply, size_t reply_size) {
+  if (reply_size == 0) {
+    return;
+  }
+  reply[0] = 0;
+  if (command == nullptr) {
+    StrHelper::strncpy(reply, "Err - empty command", reply_size);
+    return;
+  }
+  char command_buf[192];
+  char reply_buf[192];
+  reply_buf[0] = 0;
+  StrHelper::strncpy(command_buf, command, sizeof(command_buf));
+  handleCommand(0, command_buf, reply_buf);
+  StrHelper::strncpy(reply, reply_buf, reply_size);
+}
+#endif
