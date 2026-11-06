@@ -296,6 +296,7 @@ Recommended use is initial setup and occasional troubleshooting. On observer dep
 - `.github/workflows/eastmesh-build-repeater-bridge-espnow-firmwares.yml`
 - `.github/workflows/eastmesh-build-observer-espnow-firmwares.yml`
 - `.github/workflows/eastmesh-build-observer-mqtt-bridge-firmwares.yml`
+- `.github/workflows/eastmesh-build-room-server-mqtt-bridge-firmwares.yml`
 - `.github/workflows/eastmesh-pr-build-check.yml`
 - `.github/workflows/eastmesh-push-build-check.yml`
 - `.github/workflows/eastmesh-github-pages.yml`
@@ -308,6 +309,7 @@ The current release workflows intentionally focus only on:
 - `observer-eastmesh`
 - `observer-eastmesh-bridge-espnow`
 - `observer-eastmesh-bridge-mqtt`
+- `room-server-eastmesh-bridge-mqtt`
 
 ## Release Tags
 
@@ -318,11 +320,12 @@ git tag repeater-bridge-espnow-v1.15.0
 git tag observer-eastmesh-v2026.5.1
 git tag observer-eastmesh-bridge-espnow-v2026.5.1
 git tag observer-eastmesh-bridge-mqtt-v2026.7.0
+git tag room-server-eastmesh-bridge-mqtt-v2026.10.1
 ```
 
 Repeater ESP-NOW bridge uses the upstream MeshCore version in the tag.
 
-Observer uses:
+Observer and room server tracks use:
 
 - `OFFICIAL_MESHCORE_VERSION` from GitHub Actions variables as `FIRMWARE_VERSION`
 - the EastMesh tag version as `EASTMESH_VERSION`

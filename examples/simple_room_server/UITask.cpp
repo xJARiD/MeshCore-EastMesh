@@ -1,5 +1,8 @@
 #include "UITask.h"
 #include <Arduino.h>
+#if defined(EASTMESH_ROOM_SERVER) && defined(ESP_PLATFORM)
+  #include <WiFi.h>
+#endif
 #include <helpers/CommonCLI.h>
 
 #ifndef USER_BTN_PRESSED
@@ -88,6 +91,18 @@ void UITask::renderCurrScreen() {
     _display->setCursor(0, 30);
     sprintf(tmp, "BW: %03.2f CR: %d", _node_prefs->bw, _node_prefs->cr);
     _display->print(tmp);
+
+#if defined(EASTMESH_ROOM_SERVER) && defined(ESP_PLATFORM)
+    // WiFi IP (EastMesh room server web panel)
+    _display->setCursor(0, 40);
+    if (WiFi.status() == WL_CONNECTED) {
+      IPAddress ip = WiFi.localIP();
+      snprintf(tmp, sizeof(tmp), "IP: %u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    } else {
+      snprintf(tmp, sizeof(tmp), "IP: -");
+    }
+    _display->print(tmp);
+#endif
   }
 }
 

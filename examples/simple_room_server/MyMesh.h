@@ -25,6 +25,20 @@
 #include <RTClib.h>
 #include <target.h>
 
+// EastMesh room server: Wi-Fi, local web panel, MQTT bridge and room post sync.
+#if defined(EASTMESH_ROOM_SERVER) && defined(ESP_PLATFORM)
+  #define EASTMESH_ROOM_NET 1
+  #include <helpers/NetworkService.h>
+  #include <helpers/web/WebService.h>
+#endif
+#ifdef WITH_MQTT_BRIDGE
+  #include "helpers/bridges/MQTTBridge.h"
+#endif
+#if defined(WITH_ROOM_SYNC) && defined(WITH_MQTT_BRIDGE) && defined(ESP_PLATFORM)
+  #define EASTMESH_ROOM_SYNC 1
+  #include "helpers/bridges/MQTTRoomSync.h"
+#endif
+
 /* ------------------------------ Config -------------------------------- */
 
 #ifndef FIRMWARE_BUILD_DATE
@@ -89,7 +103,14 @@ struct PostInfo {
   char text[MAX_POST_TEXT_LEN+1];
 };
 
-class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
+class MyMesh : public mesh::Mesh, public CommonCLICallbacks
+#ifdef EASTMESH_ROOM_NET
+  , public WebPanelCommandRunner
+#endif
+#ifdef EASTMESH_ROOM_SYNC
+  , public RoomSyncHandler
+#endif
+{
   FILESYSTEM* _fs;
   uint32_t last_millis;
   uint64_t uptime_millis;
@@ -118,6 +139,19 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   uint8_t pending_sf;
   uint8_t pending_cr;
   int  matching_peer_indexes[MAX_CLIENTS];
+#ifdef WITH_MQTT_BRIDGE
+  MQTTBridge bridge;
+#endif
+#ifdef EASTMESH_ROOM_SYNC
+  MQTTRoomSync room_sync;
+#endif
+#ifdef EASTMESH_ROOM_NET
+  NetworkService network;
+#if WITH_WEB_PANEL
+  WebService web;
+#endif
+  bool handleEastMeshCommand(char* command, char* reply);
+#endif
 
   void addPost(ClientInfo* client, const char* postData);
   void storePost(const mesh::Identity& author, const char* postData);
@@ -230,4 +264,35 @@ public:
   void clearStats() override;
   void handleCommand(uint32_t sender_timestamp, char* command, char* reply);
   void loop();
+
+#ifdef WITH_MQTT_BRIDGE
+  void setBridgeState(bool enable) override {
+    if (enable == bridge.isRunning()) return;
+    if (enable) {
+      bridge.begin();
+    } else {
+      bridge.end();
+    }
+  }
+
+  void restartBridge() override {
+    // Restart whenever enabled (not only when running), so a peer host saved after
+    // boot with an empty host brings the bridge up without a reboot.
+    if (!_prefs.bridge_enabled) return;
+    bridge.end();
+    bridge.begin();
+  }
+#endif
+
+#ifdef EASTMESH_ROOM_NET
+  void prepareForOTAStart() override;
+  // WebPanelCommandRunner
+  void runWebCommand(const char* command, char* reply, size_t reply_size) override;
+  const char* getWebAdminPassword() const override { return _prefs.password; }
+#endif
+
+#ifdef EASTMESH_ROOM_SYNC
+  // RoomSyncHandler
+  void onRoomSyncPost(const mesh::Identity& author, uint32_t post_timestamp, const char* text) override;
+#endif
 };
