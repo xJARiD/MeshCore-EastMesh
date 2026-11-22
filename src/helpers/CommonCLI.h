@@ -78,6 +78,7 @@ public:
   char bridge_peer_username[65]; // peer MQTT broker username (MQTT bridge only)
   char bridge_peer_password[96]; // peer MQTT broker password (MQTT bridge only)
   char bridge_room_topic[33];    // room-server post sync topic (EastMesh room server only)
+  uint8_t bridge_gateway = 0;    // 1 = with repeat off, still forward packets received from the bridge (MQTT bridge only)
 
 private:
   class RadioPrefs : public CommonRadioPrefs {
@@ -158,6 +159,7 @@ private:
       def("peer_user", _parent->bridge_peer_username, sizeof(_parent->bridge_peer_username));
       def("peer_pwd", _parent->bridge_peer_password, sizeof(_parent->bridge_peer_password));
       def("room_topic", _parent->bridge_room_topic, sizeof(_parent->bridge_room_topic));
+      def("gateway", _parent->bridge_gateway); // boolean (MQTT bridge only)
     }
   public:
     BridgePrefs(NodePrefs* parent) : _parent(parent) { }

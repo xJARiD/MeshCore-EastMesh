@@ -179,6 +179,7 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {  // Legacy 
     _prefs->bridge_pkt_src = constrain(_prefs->bridge_pkt_src, 0, 1);
     _prefs->bridge_baud = constrain(_prefs->bridge_baud, 9600, BRIDGE_MAX_BAUD);
     _prefs->bridge_channel = constrain(_prefs->bridge_channel, 0, 14);
+    _prefs->bridge_gateway = constrain(_prefs->bridge_gateway, 0, 1);
 
     _prefs->powersaving_enabled = constrain(_prefs->powersaving_enabled, 0, 1);
 
@@ -759,6 +760,17 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
     _callbacks->restartBridge();
     savePrefs();
     strcpy(reply, "OK");
+  } else if (memcmp(config, "bridge.gateway ", 15) == 0) {
+    if (strcmp(&config[15], "on") == 0) {
+      _prefs->bridge_gateway = 1;
+    } else if (strcmp(&config[15], "off") == 0) {
+      _prefs->bridge_gateway = 0;
+    } else {
+      strcpy(reply, "Error: use on|off");
+      return;
+    }
+    savePrefs();
+    strcpy(reply, "OK");
   } else if (memcmp(config, "bridge.peer.username ", 21) == 0) {
     StrHelper::strncpy(_prefs->bridge_peer_username, &config[21], sizeof(_prefs->bridge_peer_username));
     _callbacks->restartBridge();
@@ -924,6 +936,8 @@ void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* rep
     sprintf(reply, "> %s", _prefs->bridge_secret);
 #endif
 #ifdef WITH_MQTT_BRIDGE
+  } else if (memcmp(config, "bridge.gateway", 14) == 0) {
+    sprintf(reply, "> %s", _prefs->bridge_gateway ? "on" : "off");
   } else if (memcmp(config, "bridge.peer.host", 16) == 0) {
     sprintf(reply, "> %s", _prefs->bridge_peer_host);
   } else if (memcmp(config, "bridge.peer.port", 16) == 0) {
