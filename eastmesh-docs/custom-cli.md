@@ -320,11 +320,26 @@ Upstream MeshCore room servers no longer repeat. This firmware turns repeating b
 
 Repeating only affects other nodes' packets. The room always handles its own logins and posts over LoRa and the bridge, and room sync works whatever these are set to. The web panel's **Repeating** control sets both:
 
-| Panel option | `repeat` | `bridge.gateway` | Effect |
-| --- | --- | --- | --- |
-| Repeat all packets | `on` | `off` | repeats local LoRa traffic and bridged packets |
-| Repeat bridged packets only | `off` | `on` | puts bridged packets on LoRa, does not repeat local LoRa traffic |
-| Room traffic only | `off` | `off` | repeats nothing |
+| Panel option | `repeat` | `bridge.gateway` | Other nodes' LoRa traffic to the broker | Broker traffic onto LoRa | Room's own traffic and post sync over the bridge |
+| --- | --- | --- | --- | --- | --- |
+| Repeat all packets | `on` | `off` | yes | yes | yes |
+| Repeat bridged packets only | `off` | `on` | no | yes, all of it | yes |
+| Room traffic only | `off` | `off` | no | only packets addressed to the room | yes |
+
+This assumes the default `bridge.source logTx`, where the room sends the broker what it transmits on LoRa.
+
+#### MQTT-connected room only
+
+To run a room that syncs posts and accepts logins over MQTT, without bridging the rest of your mesh, choose **Room traffic only** in the web panel, or:
+
+```text
+set repeat off
+set bridge.gateway off
+```
+
+Local LoRa traffic such as companion adverts stays local, and traffic from other meshes on the broker is not put on your LoRa. Users can still log in and post on LoRa or over the bridge, and posts still sync with every room server on the same broker, room name and `bridge.secret`.
+
+To run the room on LoRa only, with no MQTT at all, use `set bridge.enabled off` instead. That also stops room sync, because sync uses the bridge's MQTT connection.
 
 ### Web Panel
 
