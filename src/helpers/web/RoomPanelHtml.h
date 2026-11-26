@@ -70,6 +70,16 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Room Server Config</title>
   <link rel="icon" type="image/png" href="/favicon.ico">
+  <script>
+    (function () {
+      var t = "";
+      try { t = localStorage.getItem("room-theme") || ""; } catch (_) {}
+      if (t !== "light" && t !== "dark") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
   <style>
     :root {
       color-scheme:light; --accent:#2f8f4e; --accent-hover:#3fae61; --background:#f4f6f9; --text:#1f2937; --text-muted:#4b5563;
@@ -252,7 +262,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
           <h3>Room Sync</h3>
           <div class="row">
             <div class="field" data-get="get bridge.topic" data-set="set bridge.topic " data-blank="-" data-clear="off">
-              <label class="label" for="f_topic">Topic</label>
+              <label class="label" for="f_topic">Room Name</label>
               <div class="inline"><input id="f_topic" maxlength="32" placeholder="e.g. EastMesh (blank = off)"><button class="iconbtn" data-act="load" title="Refresh">&#8635;</button><button data-act="save">Save</button></div>
             </div>
             <div class="field" data-get="get repeat" data-set="set repeat ">
@@ -260,7 +270,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
               <div class="inline"><select id="f_repeat"><option value="on">on</option><option value="off">off</option></select><button class="iconbtn" data-act="load" title="Refresh">&#8635;</button><button data-act="save">Save</button></div>
             </div>
           </div>
-          <p class="note">Posts made to this room are shared with every room server that uses the same broker, topic and bridge secret (set with <code>set bridge.secret</code> in the CLI).</p>
+          <p class="note">Posts made to this room are shared with every room server that uses the same broker, room name and bridge secret (set with <code>set bridge.secret</code> in the CLI).</p>
         </div>
       </div>
     </section>
@@ -475,7 +485,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
         const t = tokens(s.text);
         const st = t.sync || "--";
         setTile("sync", st, st === "online" ? "ok" : (st === "connecting" ? "warn" : "bad"),
-          "topic " + (t.topic || "-") + " / sent " + (t.tx || 0) + " / received " + (t.rx || 0));
+          "room " + (t.topic || "-") + " / sent " + (t.tx || 0) + " / received " + (t.rx || 0));
       }
     }
 
