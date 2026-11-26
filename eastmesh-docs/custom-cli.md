@@ -172,12 +172,15 @@ These commands are available on `*_repeater_observer_mqtt_bridge` firmware targe
 - `get bridge.peer.username`, `set bridge.peer.username <user>`
 - `get bridge.peer.password`, `set bridge.peer.password <password>`: `get` only reports `set` or `-`.
 - `get bridge.secret`, `set bridge.secret <secret>`: shared secret (up to 15 characters) that encrypts bridged packets. Every bridge node must use the same one.
+- `get bridge.gateway`, `set bridge.gateway on|off`: gateway mode, default `off`. With `repeat off`, the node still retransmits on LoRa the packets it receives from the bridge, but does not repeat local LoRa traffic. Has no effect while `repeat` is `on`.
 
 Notes:
 
 - every bridge node must use the same broker, credentials, and `bridge.secret`
 - packets are bridged on the fixed `meshcore/bridge/packets` topic over plain MQTT/TCP. TLS and WebSockets are not supported on the bridge connection
 - `*_room_server_mqtt_bridge` room servers use the same topic and join an existing observer MQTT bridge when they share the broker and secret
+- by default (`bridge.source logTx`) only packets the node retransmits are sent to the bridge, so a node with `repeat off` sends nothing to the broker. Use `set bridge.source rx` to bridge every packet the node hears
+- to run a node as a gateway that links its LoRa area to the bridge without acting as a local repeater: `set repeat off`, `set bridge.source rx`, `set bridge.gateway on`. Discovery replies still report the node as a disabled repeater, because they follow `repeat`
 - the README has a worked example of a [Mosquitto peer broker](https://github.com/xJARiD/MeshCore-EastMesh#peer-mosquitto-broker-lan)
 
 ### Web Panel Controls
