@@ -90,6 +90,30 @@ set bridge.gateway off
 
 To run the room on LoRa with no MQTT at all, use `set bridge.enabled off`. This also stops room sync, because sync uses the bridge's MQTT connection.
 
+## Logins And Access
+
+A room server has two passwords:
+
+- **Room password** (`set guest.password <password>`): what users log in with to read and post. Our builds default it to `hello`, so change it unless the room is meant to be open.
+- **Admin password** (`password <new-password>`): full admin access, including the CLI.
+
+**Allow Read-Only Logins** (`set allow.read.only on|off`, default `off`) decides what happens to someone with the wrong or a blank password:
+
+| Password sent | Read-only `off` | Read-only `on` |
+| --- | --- | --- |
+| Admin password | admin | admin |
+| Room password | read and post | read and post |
+| Wrong or blank | ignored; the app times out | logged in as a read-only guest |
+
+Read-only guests receive the room's posts, but anything they post is dropped and they only get basic telemetry. Turning read-only on makes the room readable by anyone who can reach it.
+
+### Removing Existing Users
+
+Someone who has logged in since the last restart can log in again with a blank password and keeps their previous access, even after you change the room password or turn read-only logins off. To remove them:
+
+- **Restart the room server.** Only admins are saved across restarts, so everyone else has to log in again with the current password.
+- Or remove one user with `setperm <public-key> 0`.
+
 ## Web Panel
 
 Open `https://<room-ip>/`, accept the certificate warning, and log in with the room server admin password. The IP address is on the home screen of boards with a display (`IP: -` until Wi-Fi connects), or in `get wifi.status`.
@@ -103,7 +127,7 @@ The panel has:
 - **Status line:** under the action buttons, the firmware version from `ver` and the EastMesh build version from `get mqtt.client_version` once settings have loaded.
 - **Actions:** `Advert`, `Start OTA`, `Refresh`, `Reboot`, the theme toggle, and `Logout`. `Start OTA` runs `start ota` and after 5 seconds opens the returned `http://<ip>/update` page for a firmware upload.
 - **Status tiles:** Wi-Fi, MQTT Bridge and Room Sync, refreshed every 30 seconds while the tab is visible.
-- **Room Settings:** room name, latitude and longitude, public key, clock with a `Sync from browser` button, room password, read-only logins, and the admin password.
+- **Room Settings:** room name, latitude and longitude, public key, clock with a `Sync from browser` button, room password (the guest password), read-only logins, and the admin password. See [Logins and access](#logins-and-access).
 - **Wi-Fi:** SSID and password. Saving drops the page until the room server rejoins the network, possibly with a new IP address.
 - **MQTT Bridge & Room Sync:** bridge on/off, broker `host:port`, username, password, room name, and [Repeating](#repeating). The bridge secret isn't shown; change it with `set bridge.secret <secret>` in the CLI.
 - **Radio:** current radio, community radio presets (the same list as the observer panel), the `Region (Australia)` state selector, and TX power. Preset changes apply after a reboot. The region selector runs `region def au <state>` then `region save`.

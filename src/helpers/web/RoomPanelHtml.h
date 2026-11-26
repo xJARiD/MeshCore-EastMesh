@@ -209,7 +209,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
           <h3>Access</h3>
           <div class="row">
             <div class="field" data-get="get guest.password" data-set="set guest.password ">
-              <label class="label" for="f_roompwd">Room Password</label>
+              <label class="label" for="f_roompwd">Room Password (Guest password)</label>
               <div class="inline"><input id="f_roompwd" maxlength="15" placeholder="password clients log in with"><button class="iconbtn" data-act="load" title="Refresh">&#8635;</button><button data-act="save">Save</button></div>
             </div>
             <div class="field" data-get="get allow.read.only" data-set="set allow.read.only ">

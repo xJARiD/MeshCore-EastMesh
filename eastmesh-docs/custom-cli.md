@@ -150,6 +150,15 @@ Wi-Fi is only brought up while the web panel or the bridge needs it.
 - `get bridge.sync`: `sync:<state> topic:<name> tx:<n> rx:<n> dup:<n> bad:<n> drop:<n>`. See [Troubleshooting](./room-server.md#troubleshooting).
 - `room.post <text>`: post to this room as admin. It syncs to every room server on the same room name.
 
+### Access
+
+These come from upstream MeshCore. See [Logins and access](./room-server.md#logins-and-access).
+
+- `get guest.password`, `set guest.password <password>`: the room password users log in with. Default `hello` on EastMesh builds.
+- `get allow.read.only`, `set allow.read.only on|off`: let people with a wrong or blank password in as read-only guests. Default `off`.
+- `password <new-password>`: change the admin password.
+- `setperm <public-key> <permissions>`: change or remove a user's access. `0` removes them.
+
 ### Repeating
 
 - `get repeat`, `set repeat on|off`: default `on` on this firmware.
