@@ -270,12 +270,13 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
               <label class="label" for="f_topic">Room Name</label>
               <div class="inline"><input id="f_topic" maxlength="32" placeholder="e.g. EastMesh (blank = off)"><button class="iconbtn" data-act="load" title="Refresh">&#8635;</button><button data-act="save">Save</button></div>
             </div>
-            <div class="field" data-get="get repeat" data-set="set repeat ">
-              <label class="label" for="f_repeat">Repeat packets (incl. bridged)</label>
-              <div class="inline"><select id="f_repeat"><option value="on">on</option><option value="off">off</option></select><button class="iconbtn" data-act="load" title="Refresh">&#8635;</button><button data-act="save">Save</button></div>
+            <div class="field">
+              <label class="label" for="f_forward">Repeating</label>
+              <div class="inline"><select id="f_forward"><option value="all">Repeat all packets</option><option value="bridged">Repeat bridged packets only</option><option value="off">Room traffic only</option></select><button id="loadForwardBtn" class="iconbtn" title="Refresh">&#8635;</button><button id="saveForwardBtn">Save</button></div>
             </div>
           </div>
           <p class="note">Posts made to this room are shared with every room server that uses the same broker, room name and bridge secret (set with <code>set bridge.secret</code> in the CLI).</p>
+          <p class="note">Repeating only affects other nodes' packets. The room always handles its own logins and posts over LoRa and the bridge. <b>Repeat all packets</b> repeats local LoRa traffic and bridged packets. <b>Repeat bridged packets only</b> puts packets from the bridge onto LoRa without repeating local traffic. <b>Room traffic only</b> repeats nothing.</p>
         </div>
       </div>
     </section>
@@ -441,6 +442,29 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       if (!h.ok || !p.ok) return;
       const host = valueOf(h.text);
       $("f_endpoint").value = host ? host + ":" + valueOf(p.text) : "";
+    }
+    async function loadForwarding(opts) {
+      const r = await run("get repeat", opts);
+      if (!r.ok) return;
+      let mode = valueOf(r.text) === "on" ? "all" : "off";
+      if (mode === "off") {
+        const g = await run("get bridge.gateway", opts);
+        if (g.ok && valueOf(g.text) === "on") mode = "bridged";
+      }
+      $("f_forward").value = mode;
+    }
+    async function saveForwarding() {
+      const mode = $("f_forward").value;
+      // order avoids a window where nothing is forwarded when switching between repeating modes
+      const cmds = mode === "all" ? ["set repeat on", "set bridge.gateway off"]
+                 : mode === "bridged" ? ["set bridge.gateway on", "set repeat off"]
+                 : ["set repeat off", "set bridge.gateway off"];
+      for (const cmd of cmds) {
+        const r = await run(cmd);
+        if (!r.ok) break;
+      }
+      await loadForwarding({ log:false });
+      refreshStatus();
     }
     async function saveEndpoint() {
       const raw = $("f_endpoint").value.trim().replace(/^(mqtts?|tcp):\/\//i, "");
@@ -745,6 +769,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
         await loadFieldEl(field, quiet);
       }
       await loadEndpoint(quiet);
+      await loadForwarding(quiet);
       await loadRadioConfig(quiet);
       await loadRegionSelection(quiet);
       await refreshStatus();
@@ -801,6 +826,8 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
     $("syncClockBtn").onclick = syncClock;
     $("loadEndpointBtn").onclick = () => loadEndpoint();
     $("saveEndpointBtn").onclick = saveEndpoint;
+    $("loadForwardBtn").onclick = () => loadForwarding();
+    $("saveForwardBtn").onclick = saveForwarding;
     $("refreshRadioBtn").onclick = () => loadRadioConfig();
     $("reloadRadioPresetsBtn").onclick = () => loadRadioPresets();
     $("radioPreset").addEventListener("change", (e) => {

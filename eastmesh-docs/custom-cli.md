@@ -314,8 +314,17 @@ How room sync works:
 ### Repeating
 
 - `get repeat`, `set repeat on|off`
+- `get bridge.gateway`, `set bridge.gateway on|off`: with `repeat off`, still transmit packets that arrive over the bridge on LoRa
 
 Upstream MeshCore room servers no longer repeat. This firmware turns repeating back on by default so packets arriving over the bridge are transmitted on LoRa. A board that already has saved settings from an upstream room server keeps its existing `repeat off` until you run `set repeat on`.
+
+Repeating only affects other nodes' packets. The room always handles its own logins and posts over LoRa and the bridge, and room sync works whatever these are set to. The web panel's **Repeating** control sets both:
+
+| Panel option | `repeat` | `bridge.gateway` | Effect |
+| --- | --- | --- | --- |
+| Repeat all packets | `on` | `off` | repeats local LoRa traffic and bridged packets |
+| Repeat bridged packets only | `off` | `on` | puts bridged packets on LoRa, does not repeat local LoRa traffic |
+| Room traffic only | `off` | `off` | repeats nothing |
 
 ### Web Panel
 
