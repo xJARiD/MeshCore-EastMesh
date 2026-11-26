@@ -82,6 +82,10 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       try { tok = sessionStorage.getItem("room-token") || ""; } catch (_) {}
       if (!tok) { window.location.replace("/"); }
       document.documentElement.classList.add("auth-pending");
+      try {
+        var cachedTitle = (localStorage.getItem("room-panel-title") || "").trim();
+        if (cachedTitle) document.title = cachedTitle;
+      } catch (_) {}
     })();
   </script>
   <style>
@@ -356,6 +360,15 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       token = "";
       window.location.replace("/");
     }
+    function updatePanelTitle(name) {
+      const trimmed = String(name == null ? "" : name).trim();
+      $("pageTitle").textContent = trimmed || "Room Server";
+      document.title = trimmed || "Room Server Config";
+      try {
+        if (trimmed) localStorage.setItem("room-panel-title", trimmed);
+        else localStorage.removeItem("room-panel-title");
+      } catch (_) {}
+    }
     function applyTheme(theme) {
       document.documentElement.dataset.theme = theme;
       $("themeToggle").innerHTML = theme === "dark" ? "&#9728;" : "&#9790;";
@@ -414,7 +427,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       let v = valueOf(r.text);
       if (field.dataset.blank && v === field.dataset.blank) v = "";
       fieldInput(field).value = v;
-      if (fieldInput(field).id === "f_name") $("pageTitle").textContent = v || "Room Server";
+      if (fieldInput(field).id === "f_name") updatePanelTitle(v);
     }
     async function saveFieldEl(field) {
       const input = fieldInput(field);

@@ -94,6 +94,8 @@ To run the room on LoRa with no MQTT at all, use `set bridge.enabled off`. This 
 
 Open `https://<room-ip>/`, accept the certificate warning, and log in with the room server admin password. The IP address is on the home screen of boards with a display (`IP: -` until Wi-Fi connects), or in `get wifi.status`.
 
+The browser tab and the page heading show the room's name, so several room servers are easy to tell apart.
+
 The panel stays hidden until your session is confirmed. With no session, or after the room server restarts, it goes straight to login.
 
 The panel has:
