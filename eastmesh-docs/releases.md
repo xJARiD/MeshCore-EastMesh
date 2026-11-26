@@ -36,7 +36,7 @@ EastMesh publishes these release tracks:
 
     ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example `Australia (Narrow)` and `Australia (Mid)`. They do not tunnel mesh traffic over the internet, WAN links, or VPNs.
 
-    MQTT bridge tracks relay encrypted mesh packets through a peer MQTT broker you configure with `bridge.peer.host`. This is separate from the MQTT uplink brokers (`eastmesh-au`, `meshmapper`) that observers publish telemetry to.
+    MQTT bridge tracks relay encrypted mesh packets through a peer MQTT broker you configure with `bridge.peer.host`. This is separate from the MQTT uplink brokers (`eastmesh-au`, `meshmapper`, `waev`) that observers publish telemetry to.
 
 ## Pick The Right Asset
 
@@ -172,7 +172,7 @@ Typical first steps after flashing:
 - set `mqtt.iata`
 - confirm `get mqtt.status`
 - optionally set `mqtt.owner` and `mqtt.email`
-- optionally enable a second broker such as `meshmapper`
+- optionally enable a second broker such as `meshmapper` or `waev`
 
 See the [Observer guide](./observer.md#setup).
 
