@@ -51,7 +51,7 @@ WebSensorSnapshot collectWebSensorSnapshot(mesh::MainBoard& board, SensorManager
   LocationProvider* location = sensors.getLocationProvider();
   if (location != nullptr) {
     snapshot.has_gps = true;
-    const bool provider_enabled = location->isEnabled();
+    const bool provider_enabled = location->isActive();
     const char* gps_setting = sensors.getSettingByKey("gps");
     const bool setting_active = (gps_setting == nullptr) || (strcmp(gps_setting, "1") == 0);
     snapshot.gps_enabled = provider_enabled && setting_active;
