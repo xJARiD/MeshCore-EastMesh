@@ -165,8 +165,8 @@ uv run --group docs zensical build
   - `eastmesh-au`
   - `meshmapper`
   - `waev`
-  - `letsmesh-eu` (retired)
-  - `letsmesh-us` (retired)
+  - `letsmesh-eu`
+  - `letsmesh-us`
 - WSS transport at `/mqtt`
 - JWT auth using the device identity
 - CLI controls for:

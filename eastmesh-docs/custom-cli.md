@@ -42,8 +42,8 @@ At most two brokers can be enabled at once. See [MQTT brokers](./observer.md#mqt
 - `get mqtt.eastmesh-au`, `set mqtt.eastmesh-au on|off`
 - `get mqtt.meshmapper`, `set mqtt.meshmapper on|off`
 - `get mqtt.waev`, `set mqtt.waev on|off`
-- `get mqtt.letsmesh-eu`, `set mqtt.letsmesh-eu on|off`: retired
-- `get mqtt.letsmesh-us`, `set mqtt.letsmesh-us on|off`: retired
+- `get mqtt.letsmesh-eu`, `set mqtt.letsmesh-eu on|off`
+- `get mqtt.letsmesh-us`, `set mqtt.letsmesh-us on|off`
 - `get mqtt.custom`, `set mqtt.custom on|off`
 - `get mqtt.custom.host`, `set mqtt.custom.host <host>`
 - `get mqtt.custom.port`, `set mqtt.custom.port <port>`
@@ -52,8 +52,6 @@ At most two brokers can be enabled at once. See [MQTT brokers](./observer.md#mqt
 - `get mqtt.custom.password`, `set mqtt.custom.password <password>`: `get` only reports `set` when a password is configured
 
 Legacy dotted aliases are also accepted: `mqtt.eastmesh.au`, `mqtt.letsmesh.eu`, `mqtt.letsmesh.us`.
-
-Retired LetsMesh selections are cleared once on upgrade.
 
 ### Wi-Fi Settings For Observers
 

@@ -50,7 +50,8 @@ An observer can publish to **at most two brokers at once**.
 | MeshMapper (global) | `set mqtt.meshmapper on` | `wss://mqtt.meshmapper.net:443/mqtt`, verified TLS, JWT auth |
 | WAEV | `set mqtt.waev on` | `wss://mqtt.waev.app:443/mqtt`, verified TLS, JWT auth with a 1-hour token lifetime (the firmware handles this) |
 | Custom | `set mqtt.custom on` | your own broker, TCP or WSS, username and password |
-| LetsMesh EU / US | `set mqtt.letsmesh-eu on` | retired and off by default; kept for legacy use only |
+| LetsMesh EU | `set mqtt.letsmesh-eu on` | `wss://mqtt-eu-v1.letsmesh.net:443/mqtt`, verified TLS, JWT auth |
+| LetsMesh US | `set mqtt.letsmesh-us on` | `wss://mqtt-us-v1.letsmesh.net:443/mqtt`, verified TLS, JWT auth |
 
 The curated brokers use JWT tokens signed with the observer's own identity, with the broker host as the token audience, so they need no passwords.
 

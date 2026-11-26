@@ -2788,8 +2788,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       { key:"meshmapper", input:"mqttMeshmapper", label:"MeshMapper", set:"set mqtt.meshmapper" },
       { key:"waev", input:"mqttWaev", label:"Waev", set:"set mqtt.waev" },
       { key:"custom", input:"mqttCustom", label:"Custom", set:"set mqtt.custom", custom:true },
-      { key:"letsmesh-eu", input:"mqttLetsmeshEu", label:"LetsMesh EU (retired)", set:"set mqtt.letsmesh-eu" },
-      { key:"letsmesh-us", input:"mqttLetsmeshUs", label:"LetsMesh US (retired)", set:"set mqtt.letsmesh-us" }
+      { key:"letsmesh-eu", input:"mqttLetsmeshEu", label:"LetsMesh EU", set:"set mqtt.letsmesh-eu" },
+      { key:"letsmesh-us", input:"mqttLetsmeshUs", label:"LetsMesh US", set:"set mqtt.letsmesh-us" }
     ];
     const MQTT_SLOT_IDS = ["mqttPrimaryBroker", "mqttSecondaryBroker"];
     function brokerByKey(key) {
