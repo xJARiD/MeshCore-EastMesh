@@ -100,6 +100,7 @@ The panel stays hidden until your session is confirmed. With no session, or afte
 
 The panel has:
 
+- **Status line:** under the action buttons, the firmware version from `ver` and the EastMesh build version from `get mqtt.client_version` once settings have loaded.
 - **Actions:** `Advert`, `Start OTA`, `Refresh`, `Reboot`, the theme toggle, and `Logout`. `Start OTA` runs `start ota` and after 5 seconds opens the returned `http://<ip>/update` page for a firmware upload.
 - **Status tiles:** Wi-Fi, MQTT Bridge and Room Sync, refreshed every 30 seconds while the tab is visible.
 - **Room Settings:** room name, latitude and longitude, public key, clock with a `Sync from browser` button, room password, read-only logins, and the admin password.

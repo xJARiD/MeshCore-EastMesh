@@ -772,6 +772,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       const quiet = { log:false };
       statusEl.textContent = "Loading...";
       const ver = await run("ver", quiet);
+      const cv = await run("get mqtt.client_version", quiet);
       const env = await run("get mqtt.client_env", quiet);
       buildEnv = env.ok && valueOf(env.text) !== "unknown" ? valueOf(env.text) : "";
       const pk = await run("get public.key", quiet);
@@ -786,7 +787,10 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       await loadRadioConfig(quiet);
       await loadRegionSelection(quiet);
       await refreshStatus();
-      statusEl.textContent = ver.ok ? "Ready - " + valueOf(ver.text) : "Ready";
+      const verParts = [];
+      if (ver.ok && valueOf(ver.text)) verParts.push(valueOf(ver.text));
+      if (cv.ok && valueOf(cv.text) && !valueOf(cv.text).startsWith("??")) verParts.push(valueOf(cv.text));
+      statusEl.textContent = verParts.length ? "Ready - " + verParts.join(" | ") : "Ready";
     }
 
     async function syncClock() {
