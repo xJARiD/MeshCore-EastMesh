@@ -10,6 +10,15 @@
         <loc>https://xjarid.github.io/MeshCore-EastMesh/releases/</loc>
       </url>
       <url>
+        <loc>https://xjarid.github.io/MeshCore-EastMesh/observer/</loc>
+      </url>
+      <url>
+        <loc>https://xjarid.github.io/MeshCore-EastMesh/observer-mqtt-bridge/</loc>
+      </url>
+      <url>
+        <loc>https://xjarid.github.io/MeshCore-EastMesh/room-server/</loc>
+      </url>
+      <url>
         <loc>https://xjarid.github.io/MeshCore-EastMesh/migration/</loc>
       </url>
       <url>
