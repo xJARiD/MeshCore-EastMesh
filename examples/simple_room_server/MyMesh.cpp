@@ -158,7 +158,7 @@ mesh::Packet *MyMesh::createSelfAdvert() {
 }
 
 File MyMesh::openAppend(const char *fname) {
-#if defined(NRF52_PLATFORM)
+#if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   return _fs->open(fname, FILE_O_WRITE);
 #elif defined(RP2040_PLATFORM)
   return _fs->open(fname, "a");
@@ -327,7 +327,12 @@ uint32_t MyMesh::getDirectRetransmitDelay(const mesh::Packet *packet) {
 }
 
 bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
+#ifdef WITH_MQTT_BRIDGE
+  // EastMesh gateway mode: with repeat off, still put packets received from the bridge onto LoRa
+  if (_prefs.disable_fwd && !(_prefs.bridge_gateway && bridge.wasBridgedIn(packet))) return false;
+#else
   if (_prefs.disable_fwd) return false;
+#endif
   if (packet->isRouteFlood()
       && mesh::isFloodHopLimitExceeded(packet, _prefs.flood_max, _prefs.flood_max_unscoped, _prefs.flood_max_advert)) {
     return false;
@@ -490,7 +495,8 @@ void MyMesh::onPeerDataRecv(mesh::Packet *packet, uint8_t type, int sender_idx, 
       mesh::Utils::sha256((uint8_t *)&ack_hash, 4, data, 5 + strlen((char *)&data[5]), client->id.pub_key,
                           PUB_KEY_SIZE);
 
-      uint8_t temp[166];
+      // 5-byte datagram header + 3-byte reflected CLI prefix + 160-byte reply text + NUL
+      uint8_t temp[169];
       bool send_ack;
       if (flags == TXT_TYPE_CLI_DATA || flags == TXT_TYPE_CLI_COMMAND) {
         if (client->isAdmin()) {
@@ -845,7 +851,7 @@ void MyMesh::applyTempRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, 
 }
 
 bool MyMesh::formatFileSystem() {
-#if defined(NRF52_PLATFORM)
+#if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   return InternalFS.format();
 #elif defined(RP2040_PLATFORM)
   return LittleFS.format();
@@ -1181,12 +1187,17 @@ void MyMesh::loop() {
 #ifndef CLIENT_ENV
   #define CLIENT_ENV "unknown"
 #endif
+#ifndef CLIENT_VERSION
+  #define CLIENT_VERSION "eastmesh-room-server"
+#endif
 
 bool MyMesh::handleEastMeshCommand(char *command, char *reply) {
   // Callers pass a 160-byte buffer, but a companion "xx|" prefix advances reply by 3.
   const size_t reply_size = 156;
   if (strcmp(command, "get mqtt.client_env") == 0) {   // same command as observer builds
     snprintf(reply, reply_size, "> %s", CLIENT_ENV);
+  } else if (strcmp(command, "get mqtt.client_version") == 0) {   // same command as observer builds
+    snprintf(reply, reply_size, "> %s", CLIENT_VERSION);
   } else if (strcmp(command, "get wifi.status") == 0) {
     network.formatWifiStatusReply(reply, reply_size);
   } else if (strcmp(command, "get wifi.ssid") == 0) {

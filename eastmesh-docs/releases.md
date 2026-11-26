@@ -36,7 +36,7 @@ EastMesh publishes these release tracks:
 
     ESP-NOW bridge tracks are for bridging two nearby repeaters that operate on different MeshCore radio configs, for example `Australia (Narrow)` and `Australia (Mid)`. They do not tunnel mesh traffic over the internet, WAN links, or VPNs.
 
-    MQTT bridge tracks relay encrypted mesh packets through a peer MQTT broker you configure with `bridge.peer.host`. This is separate from the MQTT uplink brokers (`eastmesh-au`, `meshmapper`) that observers publish telemetry to.
+    MQTT bridge tracks relay encrypted mesh packets through a peer MQTT broker you configure with `bridge.peer.host`. This is separate from the MQTT uplink brokers (`eastmesh-au`, `meshmapper`, `waev`) that observers publish telemetry to.
 
 ## Pick The Right Asset
 
@@ -172,7 +172,9 @@ Typical first steps after flashing:
 - set `mqtt.iata`
 - confirm `get mqtt.status`
 - optionally set `mqtt.owner` and `mqtt.email`
-- optionally enable a second broker such as `meshmapper`
+- optionally enable a second broker such as `meshmapper` or `waev`
+
+See the [Observer guide](./observer.md#setup).
 
 ### Observer ESP-NOW
 
@@ -188,6 +190,8 @@ Typical first steps after flashing:
 - set `bridge.channel` to match that Wi-Fi channel
 - set the same `bridge.secret` on every local ESP-NOW bridge node that should talk together
 
+See [Observer ESP-NOW builds](./observer.md#observer-esp-now-builds).
+
 ### Observer MQTT Bridge
 
 `repeater_observer_mqtt_bridge` builds combine the observer role with an MQTT packet bridge to a broker you run.
@@ -199,7 +203,7 @@ Typical first steps after flashing:
 - set the same `bridge.secret` on every bridge node that should share traffic
 - confirm traffic flows between the bridged nodes
 
-See [MQTT Bridge Settings](./custom-cli.md#mqtt-bridge-settings-for-observer-mqtt-bridge-builds).
+See the [Observer MQTT Bridge guide](./observer-mqtt-bridge.md#setup).
 
 ### Room Server MQTT Bridge
 
@@ -214,7 +218,7 @@ Typical first steps after flashing:
 - set the same `bridge.topic` and `bridge.secret` on every room server that should share posts
 - confirm `get bridge.status` and `get bridge.sync` both report `online`
 
-See [Room Server MQTT Bridge Commands](./custom-cli.md#room-server-mqtt-bridge-commands).
+See the [Room Server guide](./room-server.md#setup).
 
 ### Repeater ESP-NOW Bridge
 

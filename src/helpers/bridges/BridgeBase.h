@@ -30,6 +30,17 @@ public:
   bool isRunning() const override;
 
   /**
+   * @brief Checks whether a packet was injected into the mesh by this bridge.
+   *
+   * Used by the EastMesh MQTT bridge gateway mode to forward bridged packets
+   * onto LoRa while local repeating is disabled.
+   *
+   * @param packet The mesh packet to look up
+   * @return true if the packet was recently received from the bridge transport
+   */
+  bool wasBridgedIn(const mesh::Packet *packet) { return _bridged_in.wasSeen(packet); }
+
+  /**
    * @brief Common magic number used by all bridge implementations for packet identification
    *
    * This magic number is placed at the beginning of bridge packets to identify
@@ -64,6 +75,9 @@ protected:
 
   /** Tracks seen packets to prevent loops in broadcast communications */
   SimpleMeshTables _seen_packets;
+
+  /** Tracks packets received from the bridge transport (see wasBridgedIn()) */
+  SimpleMeshTables _bridged_in;
 
   /**
    * @brief Constructs a BridgeBase instance

@@ -39,8 +39,11 @@ nav:
   - Home: index.md
   - Boards: boards.md
   - Releases: releases.md
+  - Observer: observer.md
+  - Observer MQTT Bridge: observer-mqtt-bridge.md
+  - Room Server: room-server.md
   - Migration: migration.md
   - Web Panel: web-panel.md
   - Repeater API: api.md
   - Local Builds: local-builds.md
-  - Custom CLI: custom-cli.md
+  - CLI Reference: custom-cli.md

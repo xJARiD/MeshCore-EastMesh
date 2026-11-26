@@ -2,6 +2,7 @@
 
 #include "MeshCore.h"
 #include "esp_now.h"
+#include <esp_idf_version.h>
 #include "helpers/bridges/BridgeBase.h"
 
 #ifdef WITH_ESPNOW_BRIDGE
@@ -42,7 +43,12 @@
 class ESPNowBridge : public BridgeBase {
 private:
   static ESPNowBridge *_instance;
+#if ESP_IDF_VERSION_MAJOR >= 5
+  // ESP-IDF 5 passes recv info (incl. the sender MAC) instead of the bare MAC.
+  static void recv_cb(const esp_now_recv_info_t *info, const uint8_t *data, int len);
+#else
   static void recv_cb(const uint8_t *mac, const uint8_t *data, int32_t len);
+#endif
   static void send_cb(const uint8_t *mac, esp_now_send_status_t status);
 
   /**

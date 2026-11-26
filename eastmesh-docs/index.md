@@ -30,9 +30,10 @@ If you already know your board and just want the quickest path, skip the docs an
 - choose a board: start with [Compare Boards](./boards.md)
 - flash firmware with guidance: start with [Download and Flash Releases](./releases.md)
 - flash firmware now: open the [EastMesh Flasher](https://flasher.eastmesh.au)
-- set up a repeater after flashing: use [Download and Flash Releases](./releases.md) and [Use the Repeater Web Panel](./web-panel.md)
-- set up a synced room server: use [Room Server MQTT Bridge Commands](./custom-cli.md#room-server-mqtt-bridge-commands) and the [Room Server Web Panel](./web-panel.md#room-server-web-panel)
-- understand EastMesh CLI commands: use [Custom CLI Commands](./custom-cli.md)
+- set up an observer after flashing: use the [Observer guide](./observer.md) and [Use the Repeater Web Panel](./web-panel.md)
+- link meshes through an MQTT broker: use the [Observer MQTT Bridge guide](./observer-mqtt-bridge.md)
+- set up a synced room server: use the [Room Server guide](./room-server.md)
+- look up an EastMesh CLI command: use the [CLI Reference](./custom-cli.md)
 - automate or script against a repeater: use [Use the Repeater Web API](./api.md)
 - build firmware locally: use [Build Locally With uv](./local-builds.md)
 
@@ -40,10 +41,13 @@ If you already know your board and just want the quickest path, skip the docs an
 
 - [Compare Boards](./boards.md)
 - [Download and Flash Releases](./releases.md)
+- [Observer](./observer.md)
+- [Observer MQTT Bridge](./observer-mqtt-bridge.md)
+- [Room Server](./room-server.md)
 - [Migration From xJARiD/MeshCore](./migration.md)
 - [Use the Repeater Web Panel](./web-panel.md)
 - [Use the Repeater Web API](./api.md)
-- [Custom CLI Commands](./custom-cli.md)
+- [CLI Reference](./custom-cli.md)
 
 ## Developer Notes
 

@@ -31,8 +31,11 @@ Only modify code for clearly scoped EastMesh features:
 
 | Change                | File                 |
 | --------------------- | -------------------- |
-| CLI                   | `eastmesh-docs/custom-cli.md` |
-| Web panel UI/behavior | `eastmesh-docs/web-panel.md`  |
+| CLI                   | `eastmesh-docs/custom-cli.md` (reference) + the build's guide below |
+| Observer behaviour    | `eastmesh-docs/observer.md`   |
+| MQTT bridge behaviour | `eastmesh-docs/observer-mqtt-bridge.md` |
+| Room server behaviour, room panel | `eastmesh-docs/room-server.md` |
+| Web panel UI/behavior | `eastmesh-docs/web-panel.md` (observer panel)  |
 | Releases              | `release-notes.yml`  |
 | Flashing guidance     | `eastmesh-docs/releases.md`   |
 
@@ -130,10 +133,13 @@ If you change any of the following, update docs in the same PR when practical:
 
 - Web-panel commands:
   - update `eastmesh-docs/custom-cli.md`
-- Web-panel user-facing behavior, sections, controls, or troubleshooting:
+- Observer web-panel user-facing behavior, sections, controls, or troubleshooting:
   - update `eastmesh-docs/web-panel.md`
 - EastMesh CLI additions or changed semantics:
-  - update `eastmesh-docs/custom-cli.md`
+  - update `eastmesh-docs/custom-cli.md` (one-line reference entry)
+  - update the build's guide if behaviour or setup changes: `observer.md`, `observer-mqtt-bridge.md`, or `room-server.md`
+- Room server panel (`src/helpers/web/RoomPanelHtml.h`) behaviour or controls:
+  - update `eastmesh-docs/room-server.md`
 - Release/tag preparation:
   - update `release-notes.yml`
 - Flashing/release asset guidance:

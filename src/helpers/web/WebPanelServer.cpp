@@ -925,9 +925,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
                 <option value="ABX">ABX - Albury</option>
                 <option value="ARM">ARM - Armidale</option>
                 <option value="BHQ">BHQ - Broken Hill</option>
+                <option value="BHS">BHS - Bathurst</option>
                 <option value="BNK">BNK - Ballina</option>
                 <option value="CFS">CFS - Coffs Harbour</option>
                 <option value="DBO">DBO - Dubbo</option>
+                <option value="DNQ">DNQ - Deniliquin</option>
                 <option value="GFF">GFF - Griffith</option>
                 <option value="GFN">GFN - Grafton</option>
                 <option value="LDH">LDH - Lord Howe Island</option>
@@ -939,22 +941,29 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
                 <option value="OAG">OAG - Orange</option>
                 <option value="PQQ">PQQ - Port Macquarie</option>
                 <option value="SYD">SYD - Sydney</option>
+                <option value="TMW">TMW - Tamworth</option>
+                <option value="TRO">TRO - Taree</option>
                 <option value="WGA">WGA - Wagga Wagga</option>
+                <option value="WOL">WOL - Wollongong (Shellharbour)</option>
               </optgroup>
               <optgroup label="Queensland">
                 <option value="ABM">ABM - Bamaga</option>
+                <option value="BDB">BDB - Bundaberg</option>
                 <option value="BNE">BNE - Brisbane</option>
                 <option value="CNS">CNS - Cairns</option>
+                <option value="GYP">GYP - Gympie</option>
                 <option value="HTI">HTI - Hamilton Island</option>
                 <option value="HVB">HVB - Hervey Bay</option>
                 <option value="ISA">ISA - Mount Isa</option>
                 <option value="LRE">LRE - Longreach</option>
                 <option value="MCY">MCY - Sunshine Coast</option>
                 <option value="MKY">MKY - Mackay</option>
+                <option value="MNQ">MNQ - Monto</option>
                 <option value="OOL">OOL - Gold Coast</option>
                 <option value="PPP">PPP - Proserpine</option>
                 <option value="ROK">ROK - Rockhampton</option>
                 <option value="TSV">TSV - Townsville</option>
+                <option value="TWB">TWB - Toowoomba</option>
                 <option value="WEI">WEI - Weipa</option>
                 <option value="WTB">WTB - Toowoomba Wellcamp</option>
               </optgroup>
@@ -975,10 +984,12 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
               </optgroup>
               <optgroup label="Victoria">
                 <option value="AVV">AVV - Avalon</option>
+                <option value="BSJ">BSJ - Bairnsdale</option>
                 <option value="GEX">GEX - Geelong West</option>
                 <option value="MEB">MEB - Essendon Fields</option>
                 <option value="MEL">MEL - Melbourne</option>
                 <option value="MQL">MQL - Mildura</option>
+                <option value="TGN">TGN - Latrobe Valley (Traralgon)</option>
               </optgroup>
             </select>
             <button class="iconbtn" data-load-cmd="get mqtt.iata" data-load-input="mqttIata" title="Refresh MQTT IATA">&#8635;</button>
@@ -2777,8 +2788,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       { key:"meshmapper", input:"mqttMeshmapper", label:"MeshMapper", set:"set mqtt.meshmapper" },
       { key:"waev", input:"mqttWaev", label:"Waev", set:"set mqtt.waev" },
       { key:"custom", input:"mqttCustom", label:"Custom", set:"set mqtt.custom", custom:true },
-      { key:"letsmesh-eu", input:"mqttLetsmeshEu", label:"LetsMesh EU (retired)", set:"set mqtt.letsmesh-eu" },
-      { key:"letsmesh-us", input:"mqttLetsmeshUs", label:"LetsMesh US (retired)", set:"set mqtt.letsmesh-us" }
+      { key:"letsmesh-eu", input:"mqttLetsmeshEu", label:"LetsMesh EU", set:"set mqtt.letsmesh-eu" },
+      { key:"letsmesh-us", input:"mqttLetsmeshUs", label:"LetsMesh US", set:"set mqtt.letsmesh-us" }
     ];
     const MQTT_SLOT_IDS = ["mqttPrimaryBroker", "mqttSecondaryBroker"];
     function brokerByKey(key) {
