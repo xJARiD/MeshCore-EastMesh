@@ -943,14 +943,17 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
               </optgroup>
               <optgroup label="Queensland">
                 <option value="ABM">ABM - Bamaga</option>
+                <option value="BDB">BDB - Bundaberg</option>
                 <option value="BNE">BNE - Brisbane</option>
                 <option value="CNS">CNS - Cairns</option>
+                <option value="GYP">GYP - Gympie</option>
                 <option value="HTI">HTI - Hamilton Island</option>
                 <option value="HVB">HVB - Hervey Bay</option>
                 <option value="ISA">ISA - Mount Isa</option>
                 <option value="LRE">LRE - Longreach</option>
                 <option value="MCY">MCY - Sunshine Coast</option>
                 <option value="MKY">MKY - Mackay</option>
+                <option value="MNQ">MNQ - Monto</option>
                 <option value="OOL">OOL - Gold Coast</option>
                 <option value="PPP">PPP - Proserpine</option>
                 <option value="ROK">ROK - Rockhampton</option>
