@@ -442,6 +442,8 @@ The panel has:
 - **Firmware:** choose the non-merged `.bin` for this board and press `Upload`. The panel reads the board's env with `get mqtt.client_env` and refuses release files named for a different board (`<env>-<version>.bin`) and `-merged.bin` USB images. A locally built `firmware.bin` can't be matched by name, so it is allowed with a reminder. The panel also checks the image header and sends an MD5 with it, shows upload progress, and reloads after the room server reboots. It uses the authenticated `/api/firmware-update` endpoint, so OTA mode is not needed.
 - **CLI:** quick buttons for `wifi.status`, `bridge.status`, `bridge.sync`, `web.status`, and `ver`, plus a free-form command box. Try `room.post hello` to test room sync.
 
+The panel stays hidden until the stored session is confirmed, and goes straight back to login if there is no session or it has expired (for example after a restart).
+
 Password fields are write-only and clear after saving. Every control runs a CLI command. The commands are listed in [Room Server MQTT Bridge Commands](./custom-cli.md#room-server-mqtt-bridge-commands).
 
 The room server panel has no `/stats` page, firmware update banner, or MQTT observer settings.

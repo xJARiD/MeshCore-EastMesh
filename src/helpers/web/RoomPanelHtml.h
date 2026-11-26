@@ -78,9 +78,14 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
         t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       }
       document.documentElement.dataset.theme = t;
+      var tok = "";
+      try { tok = sessionStorage.getItem("room-token") || ""; } catch (_) {}
+      if (!tok) { window.location.replace("/"); }
+      document.documentElement.classList.add("auth-pending");
     })();
   </script>
   <style>
+    :root.auth-pending body { visibility:hidden; }
     :root {
       color-scheme:light; --accent:#2f8f4e; --accent-hover:#3fae61; --background:#f4f6f9; --text:#1f2937; --text-muted:#4b5563;
       --border:rgba(0,0,0,.08); --surface1:#ffffff; --surface2:#f0f3f7; --input-bg:#ffffff; --terminal-bg:#f0f3f7;
@@ -759,6 +764,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       if (!token) { toLogin(); return; }
       const res = await fetch("/api/session", { headers:{ "X-Auth-Token": token } }).catch(() => null);
       if (!res || res.status === 401) { toLogin(); return; }
+      document.documentElement.classList.remove("auth-pending");
       try {
         await loadAll();
         loadRadioPresets();
