@@ -172,7 +172,7 @@ These commands are available on `*_repeater_observer_mqtt_bridge` firmware targe
 - `get bridge.peer.username`, `set bridge.peer.username <user>`
 - `get bridge.peer.password`, `set bridge.peer.password <password>`: `get` only reports `set` or `-`.
 - `get bridge.secret`, `set bridge.secret <secret>`: shared secret (up to 15 characters) that encrypts bridged packets. Every bridge node must use the same one.
-- `get bridge.gateway`, `set bridge.gateway on|off`: gateway mode, default `off`. With `repeat off`, the node still retransmits on LoRa the packets it receives from the bridge, but does not repeat local LoRa traffic. Has no effect while `repeat` is `on`.
+- `get bridge.gateway`, `set bridge.gateway on|off`: gateway mode, default `off`, on `*_repeater_observer_mqtt_bridge` and `*_room_server_mqtt_bridge` builds. With `repeat off`, the node still retransmits on LoRa the packets it receives from the bridge, but does not repeat local LoRa traffic. Has no effect while `repeat` is `on`.
 
 Notes:
 

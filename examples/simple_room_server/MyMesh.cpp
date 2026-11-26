@@ -327,7 +327,12 @@ uint32_t MyMesh::getDirectRetransmitDelay(const mesh::Packet *packet) {
 }
 
 bool MyMesh::allowPacketForward(const mesh::Packet *packet) {
+#ifdef WITH_MQTT_BRIDGE
+  // EastMesh gateway mode: with repeat off, still put packets received from the bridge onto LoRa
+  if (_prefs.disable_fwd && !(_prefs.bridge_gateway && bridge.wasBridgedIn(packet))) return false;
+#else
   if (_prefs.disable_fwd) return false;
+#endif
   if (packet->isRouteFlood()
       && mesh::isFloodHopLimitExceeded(packet, _prefs.flood_max, _prefs.flood_max_unscoped, _prefs.flood_max_advert)) {
     return false;
