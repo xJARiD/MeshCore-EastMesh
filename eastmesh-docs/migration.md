@@ -113,7 +113,8 @@ If you flash without erase first, some old values may still remain in flash in t
 ## Related Docs
 
 - [Repeater Web Panel](./web-panel.md)
-- [Custom CLI Commands](./custom-cli.md)
+- [Observer](./observer.md)
+- [CLI Reference](./custom-cli.md)
 - [Download and Flash Releases](./releases.md)
 
 ## Last Resort

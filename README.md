@@ -40,7 +40,7 @@ Bridges aren't for everyone. Most repeaters should stay plain repeaters or obser
 - **Check your radio settings before you connect.** A bridge transmits traffic from elsewhere, so set the correct regional radio preset first. New installs start on the upstream default, which is not the Australian band.
 - **Room sync shares everything posted to the room.** Anyone with the same topic can read and post to every room on that topic. Posts made while a room server is offline are not delivered to it later.
 
-Setup and commands are in [Custom CLI](./eastmesh-docs/custom-cli.md#mqtt-bridge-settings-for-observer-mqtt-bridge-builds) and [Room Server MQTT Bridge Commands](./eastmesh-docs/custom-cli.md#room-server-mqtt-bridge-commands).
+Setup is in the [Observer MQTT Bridge](./eastmesh-docs/observer-mqtt-bridge.md) and [Room Server](./eastmesh-docs/room-server.md) guides.
 
 ## Releases
 
@@ -180,30 +180,14 @@ uv run --group docs zensical build
 
 ### MQTT Mesh Bridge (Observer)
 
-The `observer-eastmesh-bridge-mqtt` release track (`*_repeater_observer_mqtt_bridge`) bridges **raw mesh packets** between repeaters through a **peer MQTT broker you run** (for example Mosquitto on a LAN PC). This is **not** the same as MQTT uplink to EastMesh/MeshMapper:
+The `observer-eastmesh-bridge-mqtt` release track (`*_repeater_observer_mqtt_bridge`) bridges **raw mesh packets** between repeaters through a **peer MQTT broker you run**, on the fixed `meshcore/bridge/packets` topic. This is separate from the MQTT uplink to EastMesh/MeshMapper. Every observer board has one; list them with `bash eastmesh-build.sh list | grep _repeater_observer_mqtt_bridge`.
 
-|                          | MQTT uplink (observer)                     | MQTT mesh bridge                              |
-| ------------------------ | ------------------------------------------ | --------------------------------------------- |
-| Purpose                  | Publish JSON telemetry to curated brokers  | Forward encrypted mesh packets between radios |
-| Brokers                  | `eastmesh-au`, `meshmapper`, custom WSS    | Your peer broker (`host:port`, TCP)           |
-| Topic                    | `meshcore/<iata>/...` (per IATA)           | `meshcore/bridge/packets` (fixed)             |
-| Default on bridge builds | Off by default (enable in web panel / CLI) | On when `bridge.enabled` is on                |
+Room servers (`*_room_server_mqtt_bridge`) join the same bridge on the same broker and secret, and sync posts with each other.
 
-**Targets:** every observer board has a `*_repeater_observer_mqtt_bridge` build. List them with `bash eastmesh-build.sh list | grep _repeater_observer_mqtt_bridge`.
-
-**Room servers:** the `room-server-eastmesh-bridge-mqtt` track (`*_room_server_mqtt_bridge`) uses the same bridge topic, so room servers join an observer MQTT bridge on the same broker and secret. Room servers on the same `bridge.topic` also sync their posts with each other. See [Room Server MQTT Bridge Commands](./eastmesh-docs/custom-cli.md#room-server-mqtt-bridge-commands).
-
-**Related track:** `observer-eastmesh-bridge-espnow` (`*_repeater_observer_espnow`) uses ESP-NOW instead of MQTT for local bridging.
-
-Build example:
+Build and flash example:
 
 ```bash
 uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge
-```
-
-Flash (update):
-
-```bash
 uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge -t upload --upload-port COM10
 ```
 
@@ -214,86 +198,9 @@ uv run pio run -e Xiao_S3_WIO_repeater_observer_mqtt_bridge -t mergebin
 uv run pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port COM10 write_flash 0x0 .pio/build/Xiao_S3_WIO_repeater_observer_mqtt_bridge/firmware-merged.bin
 ```
 
-#### Peer Mosquitto broker (LAN)
+Packets use magic `0xC03E`, a Fletcher checksum, and XOR encryption with `bridge.secret`. Duplicate detection limits loops when several nodes see the same traffic.
 
-Each bridge node connects to the **same** peer broker with the **same** credentials and `bridge.secret`.
-
-1. Install [Mosquitto](https://mosquitto.org/download/) on a machine reachable from both repeaters (for example `192.168.1.145`).
-2. Edit `mosquitto.conf` (Windows service install: `C:\Program Files\Mosquitto\mosquitto.conf`) and add:
-
-```conf
-listener 1883 0.0.0.0
-allow_anonymous false
-password_file C:\Program Files\Mosquitto\passwd
-```
-
-For lab/testing only, `allow_anonymous true` works without a password file.
-
-3. Create a user (admin CMD):
-
-```cmd
-cd "C:\Program Files\Mosquitto"
-mosquitto_passwd -c passwd bridgeuser
-```
-
-4. Restart the **service** (do not run a second `mosquitto -v` while the service owns port 1883):
-
-```powershell
-Restart-Service mosquitto
-```
-
-5. Confirm LAN listen and open the firewall:
-
-```cmd
-netstat -ano | findstr ":1883"
-```
-
-Expect `0.0.0.0:1883`, not only `127.0.0.1:1883`.
-
-6. Test from another machine:
-
-```cmd
-mosquitto_pub -h 192.168.1.145 -p 1883 -u bridgeuser -P your-password -t test -m hello
-mosquitto_sub -h 192.168.1.145 -p 1883 -u bridgeuser -P your-password -t meshcore/bridge/packets -v
-```
-
-Binary garbage on `meshcore/bridge/packets` is normal — payloads are XOR-encrypted mesh frames, not text.
-
-#### Repeater configuration
-
-Configure **both** bridge nodes identically for broker access; use the same `bridge.secret` on every node in the bridge group.
-
-Serial or web panel CLI:
-
-```text
-set wifi.ssid YourNetwork
-set wifi.pwd YourWiFiPassword
-set bridge.peer.host 192.168.1.145
-set bridge.peer.port 1883
-set bridge.peer.username bridgeuser
-set bridge.peer.password your-password
-set bridge.secret your-shared-bridge-secret
-```
-
-Web panel: **MQTT Settings** → **Mesh bridge peer MQTT** (`host:port`, username, password). The section appears when `get bridge.type` returns `mqtt`.
-
-Useful checks:
-
-```text
-get bridge.type
-get bridge.peer.host
-get bridge.enabled
-```
-
-Default admin password on dev builds is usually `password` unless you changed it.
-
-Packets use magic `0xC03E`, a Fletcher checksum, XOR encryption with `bridge.secret`, then publish/subscribe on `meshcore/bridge/packets`. Duplicate detection limits loops when both nodes see the same traffic.
-
-More detail:
-
-- [Custom CLI — MQTT bridge settings](./eastmesh-docs/custom-cli.md)
-- [Web panel — MQTT settings and bridge peer fields](./eastmesh-docs/web-panel.md)
-- [Releases — track comparison](./eastmesh-docs/releases.md)
+Broker setup (including a Mosquitto example), node configuration, gateway mode and troubleshooting are in the [Observer MQTT Bridge guide](./eastmesh-docs/observer-mqtt-bridge.md). Room servers are covered in the [Room Server guide](./eastmesh-docs/room-server.md).
 
 ### Local Web Panel
 
@@ -362,5 +269,8 @@ Current docs pages:
 - [Home](./eastmesh-docs/index.md)
 - [Download and Flash Releases](./eastmesh-docs/releases.md)
 - [Build Locally With uv](./eastmesh-docs/local-builds.md)
-- [Custom CLI Commands](./eastmesh-docs/custom-cli.md)
+- [Observer](./eastmesh-docs/observer.md)
+- [Observer MQTT Bridge](./eastmesh-docs/observer-mqtt-bridge.md)
+- [Room Server](./eastmesh-docs/room-server.md)
+- [CLI Reference](./eastmesh-docs/custom-cli.md)
 - [Web Panel](./eastmesh-docs/web-panel.md)

@@ -165,4 +165,4 @@ List the available targets:
 bash eastmesh-build.sh list | grep '_repeater_observer_mqtt_bridge'
 ```
 
-MQTT bridge firmware relays mesh packets through a peer MQTT broker you run. Configure it with the `bridge.peer.*` and `bridge.secret` commands in [Custom CLI](./custom-cli.md#mqtt-bridge-settings-for-observer-mqtt-bridge-builds).
+MQTT bridge firmware relays mesh packets through a peer MQTT broker you run. See the [Observer MQTT Bridge guide](./observer-mqtt-bridge.md) for broker and node setup.
