@@ -160,6 +160,7 @@ See [Repeating](./room-server.md#repeating) for what each combination does, incl
 ### Web Panel
 
 - `get web`, `get web.status`, `set web on|off`
+- `get mqtt.client_version`: the EastMesh build version, for example `EastMesh/v2026.11.2-<commit>`. `ver` shows only the upstream base version.
 - `get mqtt.client_env`: the PlatformIO env the firmware was built for, for example `heltec_v4_room_server_mqtt_bridge`. The panel's firmware upload uses it to refuse `.bin` files for a different board.
 
 See [Room Server web panel](./room-server.md#web-panel).

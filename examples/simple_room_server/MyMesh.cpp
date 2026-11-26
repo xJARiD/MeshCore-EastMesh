@@ -1187,12 +1187,17 @@ void MyMesh::loop() {
 #ifndef CLIENT_ENV
   #define CLIENT_ENV "unknown"
 #endif
+#ifndef CLIENT_VERSION
+  #define CLIENT_VERSION "eastmesh-room-server"
+#endif
 
 bool MyMesh::handleEastMeshCommand(char *command, char *reply) {
   // Callers pass a 160-byte buffer, but a companion "xx|" prefix advances reply by 3.
   const size_t reply_size = 156;
   if (strcmp(command, "get mqtt.client_env") == 0) {   // same command as observer builds
     snprintf(reply, reply_size, "> %s", CLIENT_ENV);
+  } else if (strcmp(command, "get mqtt.client_version") == 0) {   // same command as observer builds
+    snprintf(reply, reply_size, "> %s", CLIENT_VERSION);
   } else if (strcmp(command, "get wifi.status") == 0) {
     network.formatWifiStatusReply(reply, reply_size);
   } else if (strcmp(command, "get wifi.ssid") == 0) {
