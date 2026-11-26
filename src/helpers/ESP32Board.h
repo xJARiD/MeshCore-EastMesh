@@ -71,9 +71,11 @@ public:
   virtual void powerOff() override;
   void enterDeepSleep(uint32_t secs);
 
+#ifdef P_LORA_DIO_1
   uint32_t getIRQGpio() override {
     return P_LORA_DIO_1; // default for SX1262
   }
+#endif
 
   void sleep(uint32_t secs) override {
     // Skip if not allow to sleep
@@ -83,7 +85,11 @@ public:
     }
 
     // Set GPIO wakeup
-    gpio_num_t wakeupPin = (gpio_num_t)getIRQGpio();
+    gpio_num_t wakeupPin = (gpio_num_t)getIRQGpio();    
+    if (wakeupPin == GPIO_NUM_NC) {  // no radio IRQ pin to wake on
+      delay(1);
+      return;
+    }
 
     // Configure timer wakeup
     if (secs > 0) {
