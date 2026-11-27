@@ -1264,6 +1264,10 @@
 <h3 id="wi-fi-and-ntp">Wi-Fi And NTP<a class="headerlink" href="#wi-fi-and-ntp" title="Permanent link">&para;</a></h3>
 <p>The same as on observers: <code>get wifi.status</code>, <code>get wifi.ssid</code>, <code>set wifi.ssid</code>, <code>set wifi.pwd</code>, <code>get|set wifi.powersaving</code>, <code>wifi reconnect</code>, and <code>get|set ntp.server1|2|3</code>. See <a href="#wi-fi-settings-for-observers">Wi-Fi Settings For Observers</a>.</p>
 <p>Wi-Fi is only brought up while the web panel or the bridge needs it.</p>
+<ul>
+<li><code>get wifi.ap</code>: the <a href=".././room-server/#setup-ap">setup AP</a>: <code>ap:auto|off state:up|down ssid:&lt;name&gt;</code>, plus <code>ip:&lt;ip&gt; clients:&lt;n&gt;</code> while it's up. While the setup AP is up and Wi-Fi isn't connected, <code>get wifi.status</code> also ends with <code>ap:&lt;ip&gt;</code>.</li>
+<li><code>set wifi.ap on|off</code>: allow the setup AP (<code>on</code>, the default) or never open it (<code>off</code>).</li>
+</ul>
 <h3 id="bridge-broker">Bridge Broker<a class="headerlink" href="#bridge-broker" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get bridge.status</code>: bridge state (<code>online</code>, <code>connecting</code>, <code>no-wifi</code>, <code>no-host</code> or <code>off</code>), the broker, and whether repeat is on.</li>

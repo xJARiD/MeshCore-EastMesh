@@ -523,6 +523,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#setup-ap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup AP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#web-panel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -530,6 +541,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Web Panel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#import-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Import / Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -839,6 +867,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#setup-ap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup AP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#web-panel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -846,6 +885,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Web Panel">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#import-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Import / Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -918,12 +974,18 @@
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <p>You need an MQTT broker that every room server can reach. Any broker works. <a href=".././observer-mqtt-bridge/#1-run-a-broker">Run a broker</a> shows a Mosquitto example.</p>
 <ol>
-<li><a href=".././releases/">Flash</a> the room server and connect to the serial console.</li>
+<li><a href=".././releases/">Flash</a> the room server.</li>
 <li>
-<p>Join Wi-Fi:</p>
+<p>Join Wi-Fi, either:</p>
+<ul>
+<li>from a phone or laptop: join the <code>EastMesh-Room-XXXX</code> <a href="#setup-ap">setup AP</a>, open <code>https://192.168.4.1/</code>, log in with the admin password, and save the SSID and password in the <strong>Wi-Fi</strong> section, or</li>
+<li>
+<p>from the serial console:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>set wifi.ssid &lt;your-ssid&gt;
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>set wifi.pwd &lt;your-password&gt;
 </span></code></pre></div>
+</li>
+</ul>
 </li>
 <li>
 <p>Open the <a href="#web-panel">web panel</a> at the IP address shown on the display or in <code>get wifi.status</code>.</p>
@@ -943,6 +1005,7 @@
 <p>Check that <code>get bridge.status</code> and <code>get bridge.sync</code> both report <code>online</code>.</p>
 </li>
 </ol>
+<p>To set up several room servers the same way, configure one, then use <a href="#import-export">Import / Export</a> in the web panel to copy its access, bridge and room sync settings to the others.</p>
 <p>Every room server that should share posts needs the <strong>same broker, <code>bridge.secret</code> and room name</strong> (<code>bridge.topic</code>).</p>
 <h2 id="room-sync">Room Sync<a class="headerlink" href="#room-sync" title="Permanent link">&para;</a></h2>
 <p>The room name (<code>bridge.topic</code>) decides which room servers share posts. Use 1 to 32 characters from <code>A-Z a-z 0-9 - _</code>. <code>set bridge.topic off</code> turns sync off.</p>
@@ -1049,8 +1112,17 @@
 <li><strong>Restart the room server.</strong> Only admins are saved across restarts, so everyone else has to log in again with the current password.</li>
 <li>Or remove one user with <code>setperm &lt;public-key&gt; 0</code>.</li>
 </ul>
+<h2 id="setup-ap">Setup AP<a class="headerlink" href="#setup-ap" title="Permanent link">&para;</a></h2>
+<p>While Wi-Fi isn't configured, or has been down for a minute, the room server opens an open Wi-Fi network named <code>EastMesh-Room-XXXX</code>, where <code>XXXX</code> is the first four hex digits of its public key. Join it and open <code>https://192.168.4.1/</code> to reach the <a href="#web-panel">web panel</a>. <code>http://192.168.4.1/</code> redirects there. Boards with a display show <code>AP: 192.168.4.1</code> in place of the IP address while it's open.</p>
+<ul>
+<li>The panel still needs the admin password, so change it from the default during setup.</li>
+<li>After you save Wi-Fi settings, the room server tries the new network and keeps the setup AP up. Once it joins, the <strong>Wi-Fi</strong> tile shows the new IP address. The setup AP closes when the last setup client leaves, or 5 minutes after the room server joined Wi-Fi.</li>
+<li>While a setup client is connected and Wi-Fi fails, the room server stops retrying so the setup AP stays on one channel. Saving Wi-Fi settings, or <code>wifi reconnect</code>, tries again.</li>
+<li>The setup AP only opens while the web panel is on (<code>set web on</code>, the default).</li>
+<li><code>set wifi.ap off</code> stops it ever opening; <code>set wifi.ap on</code> allows it again. <code>get wifi.ap</code> shows its state.</li>
+</ul>
 <h2 id="web-panel">Web Panel<a class="headerlink" href="#web-panel" title="Permanent link">&para;</a></h2>
-<p>Open <code>https://&lt;room-ip&gt;/</code>, accept the certificate warning, and log in with the room server admin password. The IP address is on the home screen of boards with a display (<code>IP: -</code> until Wi-Fi connects), or in <code>get wifi.status</code>.</p>
+<p>Open <code>https://&lt;room-ip&gt;/</code>, accept the certificate warning, and log in with the room server admin password. The IP address is on the home screen of boards with a display (<code>IP: -</code> until Wi-Fi connects), or in <code>get wifi.status</code>. Before Wi-Fi is set up, use the <a href="#setup-ap">setup AP</a> at <code>https://192.168.4.1/</code>.</p>
 <p>The browser tab and the page heading show the room's name, so several room servers are easy to tell apart.</p>
 <p>The panel stays hidden until your session is confirmed. With no session, or after the room server restarts, it goes straight to login.</p>
 <p>The panel has:</p>
@@ -1058,15 +1130,34 @@
 <li><strong>Status line:</strong> under the action buttons, the firmware version from <code>ver</code> and the EastMesh build version from <code>get mqtt.client_version</code> once settings have loaded.</li>
 <li><strong>Actions:</strong> <code>Advert</code>, <code>Start OTA</code>, <code>Refresh</code>, <code>Reboot</code>, the theme toggle, and <code>Logout</code>. <code>Start OTA</code> runs <code>start ota</code> and after 5 seconds opens the returned <code>http://&lt;ip&gt;/update</code> page for a firmware upload.</li>
 <li><strong>Status tiles:</strong> Wi-Fi, MQTT Bridge and Room Sync, refreshed every 30 seconds while the tab is visible.</li>
-<li><strong>Room Settings:</strong> room name, latitude and longitude, public key, clock with a <code>Sync from browser</code> button, room password (the guest password), read-only logins, and the admin password. See <a href="#logins-and-access">Logins and access</a>.</li>
-<li><strong>Wi-Fi:</strong> SSID and password. Saving drops the page until the room server rejoins the network, possibly with a new IP address.</li>
+<li><strong>Room Settings:</strong> room server name (the name advertised on the mesh, <code>set name</code>), latitude and longitude, public key, clock with a <code>Sync from browser</code> button, room password (the guest password), read-only logins, and the admin password. See <a href="#logins-and-access">Logins and access</a>.</li>
+<li><strong>Wi-Fi:</strong> SSID and password, and the <a href="#setup-ap">setup AP</a> setting (<code>auto</code> or <code>off</code>) with its current state. Saving Wi-Fi drops the page until the room server rejoins the network, possibly with a new IP address. Over the setup AP the page stays reachable at <code>192.168.4.1</code>.</li>
 <li><strong>MQTT Bridge &amp; Room Sync:</strong> bridge on/off, broker <code>host:port</code>, username, password, room name, and <a href="#repeating">Repeating</a>. The bridge secret isn't shown; change it with <code>set bridge.secret &lt;secret&gt;</code> in the CLI.</li>
+<li><strong>Import / Export:</strong> see <a href="#import-export">Import / Export</a>.</li>
 <li><strong>Radio:</strong> current radio, community radio presets (the same list as the observer panel), the <code>Region (Australia)</code> state selector, and TX power. Preset changes apply after a reboot. The region selector runs <code>region def au &lt;state&gt;</code> then <code>region save</code>.</li>
 <li><strong>Firmware:</strong> choose the non-merged <code>.bin</code> for this board and press <code>Upload</code>. The panel refuses release files named for a different board (<code>&lt;env&gt;-&lt;version&gt;.bin</code>) and <code>-merged.bin</code> USB images. A locally built <code>firmware.bin</code> can't be matched by name, so it's allowed with a reminder. The upload is checked, shows progress, and the page reloads after the room server reboots. OTA mode isn't needed.</li>
 <li><strong>CLI:</strong> quick buttons for <code>wifi.status</code>, <code>bridge.status</code>, <code>bridge.sync</code>, <code>web.status</code> and <code>ver</code>, plus a free-form command box.</li>
 </ul>
 <p>Password fields are write-only and clear after saving. Every control runs a CLI command.</p>
 <p>The room server panel has no <code>/stats</code> page, firmware update banner, or MQTT observer settings.</p>
+<h3 id="import-export">Import / Export<a class="headerlink" href="#import-export" title="Permanent link">&para;</a></h3>
+<p><code>Export settings</code> reads these settings from the room server and downloads them as a JSON file. <code>Import settings</code> applies a file to the room server you're logged in to:</p>
+<ul>
+<li><strong>Access:</strong> room password, allow read-only logins</li>
+<li><strong>MQTT Bridge:</strong> bridge on/off, server <code>host:port</code>, username, password</li>
+<li><strong>Room Sync:</strong> room name, repeating</li>
+</ul>
+<p>The room server can't read back the MQTT password, so the export leaves <code>"password": ""</code> blank unless you type it into the MQTT <strong>Password</strong> field before pressing <code>Export settings</code>. Fill it in by hand in the file if you need it. On import, a blank password is skipped and the room server keeps its current one. Passwords are stored in the file as plain text, so keep it private.</p>
+<p>On import, the panel lists the settings it found and asks before applying them. Settings missing from the file are left unchanged, so you can write a file by hand with only the settings you want to set. The bridge is switched on or off last. The bridge secret, Wi-Fi, admin password and radio settings aren't included; set them separately.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eastmesh-room-server-config&quot;</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">&quot;access&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;room_password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;allow_read_only&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;off&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">&quot;mqtt_bridge&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;bridge&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;on&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;server&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mqtt.example.com:1883&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;room&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;secret&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="nt">&quot;room_sync&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;room_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EastMesh&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;repeating&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;all&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>repeating</code> is <code>all</code> (repeat all packets), <code>bridged</code> (repeat bridged packets only) or <code>off</code> (room traffic only). See <a href="#repeating">Repeating</a>.</p>
 <h2 id="web-api">Web API<a class="headerlink" href="#web-api" title="Permanent link">&para;</a></h2>
 <p>Room servers serve the same <a href=".././api/#room-server-builds">Web API</a> as observers, logged in with the room server admin password. Stats history isn't available. Useful commands through <code>/api/command</code> include <code>get bridge.status</code>, <code>get bridge.sync</code>, <code>get mqtt.client_env</code> and <code>room.post &lt;text&gt;</code>.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
