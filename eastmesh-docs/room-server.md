@@ -15,13 +15,15 @@ Every command is listed in the [CLI Reference](./custom-cli.md#room-server-mqtt-
 
 You need an MQTT broker that every room server can reach. Any broker works. [Run a broker](./observer-mqtt-bridge.md#1-run-a-broker) shows a Mosquitto example.
 
-1. [Flash](./releases.md) the room server and connect to the serial console.
-2. Join Wi-Fi:
+1. [Flash](./releases.md) the room server.
+2. Join Wi-Fi, either:
+    - from a phone or laptop: join the `EastMesh-Room-XXXX` [setup AP](#setup-ap), open `https://192.168.4.1/`, log in with the admin password, and save the SSID and password in the **Wi-Fi** section, or
+    - from the serial console:
 
-    ```text
-    set wifi.ssid <your-ssid>
-    set wifi.pwd <your-password>
-    ```
+        ```text
+        set wifi.ssid <your-ssid>
+        set wifi.pwd <your-password>
+        ```
 
 3. Open the [web panel](#web-panel) at the IP address shown on the display or in `get wifi.status`.
 4. Pick the radio preset and the AU region, then reboot.
@@ -37,6 +39,8 @@ You need an MQTT broker that every room server can reach. Any broker works. [Run
     ```
 
 6. Check that `get bridge.status` and `get bridge.sync` both report `online`.
+
+To set up several room servers the same way, configure one, then use [Import / Export](#import-export) in the web panel to copy its access, bridge and room sync settings to the others.
 
 Every room server that should share posts needs the **same broker, `bridge.secret` and room name** (`bridge.topic`).
 
@@ -114,9 +118,19 @@ Someone who has logged in since the last restart can log in again with a blank p
 - **Restart the room server.** Only admins are saved across restarts, so everyone else has to log in again with the current password.
 - Or remove one user with `setperm <public-key> 0`.
 
+## Setup AP
+
+While Wi-Fi isn't configured, or has been down for a minute, the room server opens an open Wi-Fi network named `EastMesh-Room-XXXX`, where `XXXX` is the first four hex digits of its public key. Join it and open `https://192.168.4.1/` to reach the [web panel](#web-panel). `http://192.168.4.1/` redirects there. Boards with a display show `AP: 192.168.4.1` in place of the IP address while it's open.
+
+- The panel still needs the admin password, so change it from the default during setup.
+- After you save Wi-Fi settings, the room server tries the new network and keeps the setup AP up. Once it joins, the **Wi-Fi** tile shows the new IP address. The setup AP closes when the last setup client leaves, or 5 minutes after the room server joined Wi-Fi.
+- While a setup client is connected and Wi-Fi fails, the room server stops retrying so the setup AP stays on one channel. Saving Wi-Fi settings, or `wifi reconnect`, tries again.
+- The setup AP only opens while the web panel is on (`set web on`, the default).
+- `set wifi.ap off` stops it ever opening; `set wifi.ap on` allows it again. `get wifi.ap` shows its state.
+
 ## Web Panel
 
-Open `https://<room-ip>/`, accept the certificate warning, and log in with the room server admin password. The IP address is on the home screen of boards with a display (`IP: -` until Wi-Fi connects), or in `get wifi.status`.
+Open `https://<room-ip>/`, accept the certificate warning, and log in with the room server admin password. The IP address is on the home screen of boards with a display (`IP: -` until Wi-Fi connects), or in `get wifi.status`. Before Wi-Fi is set up, use the [setup AP](#setup-ap) at `https://192.168.4.1/`.
 
 The browser tab and the page heading show the room's name, so several room servers are easy to tell apart.
 
@@ -127,9 +141,10 @@ The panel has:
 - **Status line:** under the action buttons, the firmware version from `ver` and the EastMesh build version from `get mqtt.client_version` once settings have loaded.
 - **Actions:** `Advert`, `Start OTA`, `Refresh`, `Reboot`, the theme toggle, and `Logout`. `Start OTA` runs `start ota` and after 5 seconds opens the returned `http://<ip>/update` page for a firmware upload.
 - **Status tiles:** Wi-Fi, MQTT Bridge and Room Sync, refreshed every 30 seconds while the tab is visible.
-- **Room Settings:** room name, latitude and longitude, public key, clock with a `Sync from browser` button, room password (the guest password), read-only logins, and the admin password. See [Logins and access](#logins-and-access).
-- **Wi-Fi:** SSID and password. Saving drops the page until the room server rejoins the network, possibly with a new IP address.
+- **Room Settings:** room server name (the name advertised on the mesh, `set name`), latitude and longitude, public key, clock with a `Sync from browser` button, room password (the guest password), read-only logins, and the admin password. See [Logins and access](#logins-and-access).
+- **Wi-Fi:** SSID and password, and the [setup AP](#setup-ap) setting (`auto` or `off`) with its current state. Saving Wi-Fi drops the page until the room server rejoins the network, possibly with a new IP address. Over the setup AP the page stays reachable at `192.168.4.1`.
 - **MQTT Bridge & Room Sync:** bridge on/off, broker `host:port`, username, password, room name, and [Repeating](#repeating). The bridge secret isn't shown; change it with `set bridge.secret <secret>` in the CLI.
+- **Import / Export:** see [Import / Export](#import-export).
 - **Radio:** current radio, community radio presets (the same list as the observer panel), the `Region (Australia)` state selector, and TX power. Preset changes apply after a reboot. The region selector runs `region def au <state>` then `region save`.
 - **Firmware:** choose the non-merged `.bin` for this board and press `Upload`. The panel refuses release files named for a different board (`<env>-<version>.bin`) and `-merged.bin` USB images. A locally built `firmware.bin` can't be matched by name, so it's allowed with a reminder. The upload is checked, shows progress, and the page reloads after the room server reboots. OTA mode isn't needed.
 - **CLI:** quick buttons for `wifi.status`, `bridge.status`, `bridge.sync`, `web.status` and `ver`, plus a free-form command box.
@@ -137,6 +152,30 @@ The panel has:
 Password fields are write-only and clear after saving. Every control runs a CLI command.
 
 The room server panel has no `/stats` page, firmware update banner, or MQTT observer settings.
+
+### Import / Export
+
+`Export settings` reads these settings from the room server and downloads them as a JSON file. `Import settings` applies a file to the room server you're logged in to:
+
+- **Access:** room password, allow read-only logins
+- **MQTT Bridge:** bridge on/off, server `host:port`, username, password
+- **Room Sync:** room name, repeating
+
+The room server can't read back the MQTT password, so the export leaves `"password": ""` blank unless you type it into the MQTT **Password** field before pressing `Export settings`. Fill it in by hand in the file if you need it. On import, a blank password is skipped and the room server keeps its current one. Passwords are stored in the file as plain text, so keep it private.
+
+On import, the panel lists the settings it found and asks before applying them. Settings missing from the file are left unchanged, so you can write a file by hand with only the settings you want to set. The bridge is switched on or off last. The bridge secret, Wi-Fi, admin password and radio settings aren't included; set them separately.
+
+```json
+{
+  "kind": "eastmesh-room-server-config",
+  "version": 1,
+  "access": { "room_password": "hello", "allow_read_only": "off" },
+  "mqtt_bridge": { "bridge": "on", "server": "mqtt.example.com:1883", "username": "room", "password": "secret" },
+  "room_sync": { "room_name": "EastMesh", "repeating": "all" }
+}
+```
+
+`repeating` is `all` (repeat all packets), `bridged` (repeat bridged packets only) or `off` (room traffic only). See [Repeating](#repeating).
 
 ## Web API
 

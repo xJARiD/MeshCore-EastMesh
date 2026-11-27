@@ -800,6 +800,11 @@ void MyMesh::begin(FILESYSTEM *fs) {
 #ifdef EASTMESH_ROOM_NET
   board.setInhibitSleep(true);
   network.begin(_fs);
+  {
+    char ap_ssid[24];
+    snprintf(ap_ssid, sizeof(ap_ssid), "EastMesh-Room-%02X%02X", self_id.pub_key[0], self_id.pub_key[1]);
+    network.setSetupApSsid(ap_ssid);
+  }
 #if WITH_WEB_PANEL
   web.setCommandRunner(this);
   web.setNetworkStateProvider(&network);
@@ -1163,13 +1168,15 @@ void MyMesh::loop() {
 
 #ifdef EASTMESH_ROOM_NET
   bool network_required = false;
+  bool setup_ap_allowed = false;
 #if WITH_WEB_PANEL
   network_required = web.isWebEnabled();
+  setup_ap_allowed = network_required;  // the setup AP only exists to reach the web panel
 #endif
 #ifdef WITH_MQTT_BRIDGE
   network_required = network_required || bridge.isRunning();
 #endif
-  network.loop(network_required);
+  network.loop(network_required, setup_ap_allowed);
 #if WITH_WEB_PANEL
   web.loop();
 #endif
@@ -1216,6 +1223,14 @@ bool MyMesh::handleEastMeshCommand(char *command, char *reply) {
     strcpy(reply, network.setWifiPassword(&command[13]) ? "OK" : "Err - bad wifi.pwd");
   } else if (memcmp(command, "set wifi.powersaving ", 21) == 0) {
     strcpy(reply, network.setWifiPowerSave(&command[21]) ? "OK" : "Err - use none|min|max");
+  } else if (strcmp(command, "get wifi.ap") == 0) {
+    network.formatSetupApReply(reply, reply_size);
+  } else if (memcmp(command, "set wifi.ap ", 12) == 0) {
+    if (strcmp(&command[12], "on") == 0 || strcmp(&command[12], "off") == 0) {
+      strcpy(reply, network.setSetupApEnabled(command[13] == 'n') ? "OK" : "Err - save failed");
+    } else {
+      strcpy(reply, "Err - use on|off");
+    }
   } else if (strcmp(command, "wifi reconnect") == 0) {
     network.forceReconnect();
     strcpy(reply, "OK - wifi reconnecting");

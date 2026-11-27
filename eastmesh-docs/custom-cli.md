@@ -137,6 +137,9 @@ The same as on observers: `get wifi.status`, `get wifi.ssid`, `set wifi.ssid`, `
 
 Wi-Fi is only brought up while the web panel or the bridge needs it.
 
+- `get wifi.ap`: the [setup AP](./room-server.md#setup-ap): `ap:auto|off state:up|down ssid:<name>`, plus `ip:<ip> clients:<n>` while it's up. While the setup AP is up and Wi-Fi isn't connected, `get wifi.status` also ends with `ap:<ip>`.
+- `set wifi.ap on|off`: allow the setup AP (`on`, the default) or never open it (`off`).
+
 ### Bridge Broker
 
 - `get bridge.status`: bridge state (`online`, `connecting`, `no-wifi`, `no-host` or `off`), the broker, and whether repeat is on.

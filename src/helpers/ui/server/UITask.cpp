@@ -118,6 +118,9 @@ long UITask::renderCurrScreen() {
     if (WiFi.status() == WL_CONNECTED) {
       IPAddress ip = WiFi.localIP();
       snprintf(tmp, sizeof(tmp), "IP: %u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    } else if (WiFi.getMode() & WIFI_AP) {  // room server setup AP
+      IPAddress ip = WiFi.softAPIP();
+      snprintf(tmp, sizeof(tmp), "AP: %u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
     } else {
       snprintf(tmp, sizeof(tmp), "IP: -");
     }

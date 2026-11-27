@@ -1050,3 +1050,33 @@ releases:
         area: docs
         text: "Added a dedicated Room Server guide, including an MQTT-connected room only recipe for running a synced room without bridging the rest of the mesh. Custom CLI is now a shorter CLI Reference that links to it."
     breaking_changes: []
+
+  - track: room-server-eastmesh-bridge-mqtt
+    version: "2026.11.3"
+    tag: "room-server-eastmesh-bridge-mqtt-v2026.11.3"
+    date: "2026-11-28"
+    previous_version: "2026.11.2"
+    summary: "A setup Wi-Fi network for first-time configuration at 192.168.4.1, and settings import/export in the web panel."
+    changes:
+      - type: added
+        area: wifi
+        text: "Added a setup AP. While Wi-Fi isn't configured, or has been down for a minute, the room server opens an open network named `EastMesh-Room-XXXX` (the first four hex digits of its public key). Join it and open `https://192.168.4.1/` to reach the web panel and set Wi-Fi. The setup AP stays up while the room server tries the new network, and closes once it has joined and the last setup client leaves (or after 5 minutes). While a setup client is connected and Wi-Fi fails, the room server pauses its retries so the setup AP stays on one channel. It only opens while the web panel is on."
+      - type: added
+        area: cli
+        text: "Added `get wifi.ap` and `set wifi.ap on|off` to show the setup AP state or stop it ever opening. While the setup AP is up and Wi-Fi isn't connected, `get wifi.status` ends with `ap:<ip>`."
+      - type: added
+        area: web
+        text: "Added Import / Export to the web panel. `Export settings` downloads the Access (room password, read-only logins), MQTT Bridge (bridge, server `host:port`, username, password) and Room Sync (room name, repeating) settings as a JSON file. `Import settings` lists what a file contains, asks first, then applies it, switching the bridge on or off last. Settings missing from the file are left unchanged. The MQTT password can't be read back from the room server, so it's exported blank unless typed into the panel first, and a blank password is skipped on import."
+      - type: added
+        area: web
+        text: "Added a Setup AP control and status to the web panel's Wi-Fi section, and the setup AP address to the Wi-Fi tile while it's open."
+      - type: changed
+        area: web
+        text: "Renamed the Identity `Room Name` field to `Room Server Name` so it isn't confused with the Room Sync `Room Name`. The CLI command is still `set name`."
+      - type: changed
+        area: web
+        text: "`http://` requests now redirect to `https://` on the address the browser used, so the redirect works over the setup AP as well as Wi-Fi."
+      - type: added
+        area: ui
+        text: "Room servers with a display show `AP: 192.168.4.1` in place of the IP address while the setup AP is open."
+    breaking_changes: []

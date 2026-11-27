@@ -25,6 +25,12 @@ constexpr unsigned long kWatchdogTimeoutMillis = 180000;
 constexpr uint8_t kWatchdogMaxBackoffShift = 4;  // 180s .. 48min between forced reconnects
 constexpr time_t kMinSaneEpoch = 1735689600;  // 2025-01-01T00:00:00Z
 constexpr size_t kNtpServerMaxLen = 64;
+// Fallback setup AP: offered once Wi-Fi has been down this long (immediately when no
+// SSID is configured), and kept for at most this long after Wi-Fi rejoins while a
+// client is still attached, so the person who just set Wi-Fi can read the new IP.
+constexpr unsigned long kSetupApFallbackMillis = 60000;
+constexpr unsigned long kSetupApLingerMillis = 5UL * 60UL * 1000UL;
+constexpr unsigned long kSetupApRetryMillis = 30000;
 
 bool isValidWifiChannel(uint8_t channel) {
   return channel >= 1 && channel <= 14;
@@ -57,8 +63,13 @@ const char* getWifiQualityLabel(int rssi_dbm) {
 }  // namespace
 
 NetworkService::NetworkService()
-    : _fs(nullptr), _prefs{}, _wifi_started(false), _sntp_started(false), _have_time_sync(false), _last_wifi_status(-1), _last_wifi_attempt(0) {
+    : _fs(nullptr), _prefs{}, _wifi_started(false), _sntp_started(false), _have_time_sync(false), _last_wifi_status(-1), _last_wifi_attempt(0),
+      _setup_ap_ssid{0}, _setup_ap_active(false) {
 #if defined(ESP_PLATFORM)
+  _sta_paused_for_ap = false;
+  _sta_down_since = 0;
+  _sta_up_since = 0;
+  _setup_ap_last_attempt = 0;
   _wd_gateway_seen = false;
   _wd_probe_pending = false;
   _wd_gateway_ip = 0;
@@ -87,10 +98,12 @@ void NetworkService::begin(FILESYSTEM* fs,
 
 void NetworkService::end() {
 #if defined(ESP_PLATFORM)
-  if (_wifi_started) {
+  if (_wifi_started || _setup_ap_active) {
     WiFi.disconnect(true, true);
     WiFi.mode(WIFI_OFF);
   }
+  _setup_ap_active = false;
+  _sta_paused_for_ap = false;
 #endif
   _wifi_started = false;
   _sntp_started = false;
@@ -99,13 +112,38 @@ void NetworkService::end() {
   _last_wifi_attempt = 0;
 }
 
-void NetworkService::loop(bool network_required) {
+void NetworkService::loop(bool network_required, bool setup_ap_allowed) {
 #if defined(ESP_PLATFORM)
   ensureWifi(network_required);
+  updateSetupAp(network_required && setup_ap_allowed);
   updateTimeSync();
   updateConnectivityWatchdog();
 #else
   (void)network_required;
+  (void)setup_ap_allowed;
+#endif
+}
+
+void NetworkService::setSetupApSsid(const char* ssid) {
+  StrHelper::strncpy(_setup_ap_ssid, ssid != nullptr ? ssid : "", sizeof(_setup_ap_ssid));
+}
+
+bool NetworkService::setSetupApEnabled(bool enabled) {
+  _prefs.setup_ap_off = enabled ? 0 : 1;
+  return savePrefs();  // an active AP is taken down on the next loop()
+}
+
+void NetworkService::formatSetupApReply(char* reply, size_t reply_size) const {
+#if defined(ESP_PLATFORM)
+  if (_setup_ap_active) {
+    snprintf(reply, reply_size, "> ap:%s state:up ssid:%s ip:%s clients:%u", isSetupApEnabled() ? "auto" : "off",
+             _setup_ap_ssid, WiFi.softAPIP().toString().c_str(), static_cast<unsigned>(WiFi.softAPgetStationNum()));
+  } else {
+    snprintf(reply, reply_size, "> ap:%s state:down ssid:%s", isSetupApEnabled() ? "auto" : "off",
+             _setup_ap_ssid[0] ? _setup_ap_ssid : "-");
+  }
+#else
+  snprintf(reply, reply_size, "> ap:unsupported");
 #endif
 }
 
@@ -305,8 +343,11 @@ void NetworkService::formatWifiStatusReply(char* reply, size_t reply_size) const
              WiFi.channel(), rssi_dbm, getWifiQualityPercent(rssi_dbm), getWifiQualityLabel(rssi_dbm),
              isGatewayReachable() ? "ok" : "lost", _wd_reconnect_count);
   } else {
-    snprintf(reply, reply_size, "> ssid:%s status:%s code:%d state:%s", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-",
-             status, static_cast<int>(wifi_status), state);
+    int len = snprintf(reply, reply_size, "> ssid:%s status:%s code:%d state:%s", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-",
+                       status, static_cast<int>(wifi_status), state);
+    if (_setup_ap_active && len > 0 && static_cast<size_t>(len) < reply_size) {
+      snprintf(reply + len, reply_size - len, " ap:%s", WiFi.softAPIP().toString().c_str());
+    }
   }
 #else
   snprintf(reply, reply_size, "> wifi:unsupported");
@@ -317,9 +358,12 @@ void NetworkService::reconnectWifi() {
 #if defined(ESP_PLATFORM)
   if (_wifi_started) {
     WiFi.disconnect(true, true);
-    WiFi.mode(WIFI_OFF);
+    if (!_setup_ap_active) {  // with the setup AP up, drop only the station so its client stays attached
+      WiFi.mode(WIFI_OFF);
+    }
   }
   _wd_was_connected = false;
+  _sta_paused_for_ap = false;  // new credentials or an explicit reconnect always get a try
 #endif
   _wifi_started = false;
   _sntp_started = false;
@@ -390,9 +434,11 @@ const char* NetworkService::getPowerSaveLabel(uint8_t mode) {
 
 void NetworkService::ensureWifi(bool network_required) {
   if (!network_required) {
-    if (_wifi_started) {
+    if (_wifi_started || _setup_ap_active) {
       WiFi.disconnect(true, true);
       WiFi.mode(WIFI_OFF);
+      _setup_ap_active = false;
+      _sta_paused_for_ap = false;
       _wifi_started = false;
       _sntp_started = false;
       _have_time_sync = false;
@@ -449,8 +495,15 @@ void NetworkService::ensureWifi(bool network_required) {
       Serial.printf("[BOOT] wifi timeout t=%lu code=%d retry\n",
                     static_cast<unsigned long>(millis()),
                     static_cast<int>(status));
-      WiFi.disconnect(false, false);
-      WiFi.mode(WIFI_OFF);
+      if (_setup_ap_active) {
+        WiFi.disconnect(true, false);  // station off only; keeps the setup AP up
+        // A setup client is attached: stop the scan/retry cycle (it hops the AP's
+        // channel and drops the client) until they leave or change the Wi-Fi settings.
+        _sta_paused_for_ap = setupApHasClients();
+      } else {
+        WiFi.disconnect(false, false);
+        WiFi.mode(WIFI_OFF);
+      }
       delay(100);
       _wifi_started = false;
       _sntp_started = false;
@@ -462,8 +515,15 @@ void NetworkService::ensureWifi(bool network_required) {
     }
   }
 
+  if (_sta_paused_for_ap) {
+    if (setupApHasClients()) {
+      return;
+    }
+    _sta_paused_for_ap = false;
+  }
+
   if (!_wifi_started) {
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(_setup_ap_active ? WIFI_AP_STA : WIFI_STA);
     WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
     _wifi_started = true;
     Serial.printf("[BOOT] wifi start t=%lu\n", static_cast<unsigned long>(millis()));
@@ -476,6 +536,64 @@ void NetworkService::ensureWifi(bool network_required) {
   } else {
     WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd);
     Serial.printf("[BOOT] wifi begin t=%lu channel=scan\n", static_cast<unsigned long>(millis()));
+  }
+}
+
+bool NetworkService::setupApHasClients() const {
+  return _setup_ap_active && WiFi.softAPgetStationNum() > 0;
+}
+
+void NetworkService::updateSetupAp(bool allowed) {
+  const unsigned long now_ms = millis();
+  const bool sta_up = _wifi_started && WiFi.status() == WL_CONNECTED;
+  if (sta_up) {
+    _sta_down_since = 0;
+    if (_sta_up_since == 0) {
+      _sta_up_since = now_ms != 0 ? now_ms : 1;
+    }
+  } else {
+    _sta_up_since = 0;
+    if (_sta_down_since == 0) {
+      _sta_down_since = now_ms != 0 ? now_ms : 1;
+    }
+  }
+
+  bool want = false;
+  if (allowed && isSetupApEnabled() && _setup_ap_ssid[0] != 0) {
+    if (_prefs.wifi_ssid[0] == 0) {
+      want = true;
+    } else if (!sta_up) {
+      want = _setup_ap_active || now_ms - _sta_down_since >= kSetupApFallbackMillis;
+    } else {
+      want = _setup_ap_active && setupApHasClients() && now_ms - _sta_up_since < kSetupApLingerMillis;
+    }
+  }
+
+  if (want && !_setup_ap_active) {
+    if (_setup_ap_last_attempt != 0 && now_ms - _setup_ap_last_attempt < kSetupApRetryMillis) {
+      return;
+    }
+    _setup_ap_last_attempt = now_ms != 0 ? now_ms : 1;
+    WiFi.mode(_wifi_started ? WIFI_AP_STA : WIFI_AP);
+    if (WiFi.softAP(_setup_ap_ssid)) {
+      _setup_ap_active = true;
+      Serial.printf("[BOOT] setup ap up t=%lu ssid=%s ip=%s\n", static_cast<unsigned long>(millis()), _setup_ap_ssid,
+                    WiFi.softAPIP().toString().c_str());
+    } else {
+      Serial.printf("[BOOT] setup ap start failed t=%lu\n", static_cast<unsigned long>(millis()));
+      if (!_wifi_started) {
+        WiFi.mode(WIFI_OFF);
+      }
+    }
+  } else if (!want && _setup_ap_active) {
+    WiFi.softAPdisconnect(true);
+    if (!_wifi_started) {
+      WiFi.mode(WIFI_OFF);
+    }
+    _setup_ap_active = false;
+    _sta_paused_for_ap = false;
+    _setup_ap_last_attempt = 0;
+    Serial.printf("[BOOT] setup ap down t=%lu\n", static_cast<unsigned long>(millis()));
   }
 }
 

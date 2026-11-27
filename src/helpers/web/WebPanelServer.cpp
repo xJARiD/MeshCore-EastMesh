@@ -3543,7 +3543,28 @@ esp_err_t WebPanelServer::handleHttpRedirect(httpd_req_t* req) {
 
   char location[160];
   const char* path = (req->uri != nullptr && req->uri[0] != 0) ? req->uri : "/";
-  snprintf(location, sizeof(location), "https://%s%s", WiFi.localIP().toString().c_str(), path);
+  // Redirect to the address the client actually used (STA IP or the room server's
+  // setup AP at 192.168.4.1), falling back to whichever interface is up.
+  char host[64] = {0};
+  if (httpd_req_get_hdr_value_str(req, "Host", host, sizeof(host)) != ESP_OK) {
+    host[0] = 0;  // missing or truncated
+  } else {
+    char* colon = strchr(host, ':');
+    if (colon != nullptr) {
+      *colon = 0;  // drop ":80"; the HTTPS listener is on the default port
+    }
+    for (const char* c = host; *c != 0; c++) {
+      if (!isalnum(static_cast<unsigned char>(*c)) && *c != '.' && *c != '-') {
+        host[0] = 0;
+        break;
+      }
+    }
+  }
+  if (host[0] == 0) {
+    const IPAddress ip = WiFi.isConnected() ? WiFi.localIP() : WiFi.softAPIP();
+    snprintf(host, sizeof(host), "%s", ip.toString().c_str());
+  }
+  snprintf(location, sizeof(location), "https://%s%s", host, path);
   httpd_resp_set_status(req, "302 Found");
   httpd_resp_set_hdr(req, "Location", location);
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
