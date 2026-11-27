@@ -18,6 +18,8 @@ struct NetworkPrefs {
   char ntp_server1[64];
   char ntp_server2[64];
   char ntp_server3[64];
+  // Room-server fallback setup AP: 0 = auto (default, also what older saves load as), 1 = off.
+  uint8_t setup_ap_off;
 };
 
 class NetworkPrefsStore {

@@ -99,13 +99,15 @@ void WebService::formatWebStatusReply(char* reply, size_t reply_size) const {
     return;
   }
 
-  if (!_panel.isRunning() || _network == nullptr || !_network->isWifiConnected()) {
+  const bool sta_up = _network != nullptr && _network->isWifiConnected();
+  const bool ap_up = _network != nullptr && _network->isSetupApActive();
+  if (!_panel.isRunning() || (!sta_up && !ap_up)) {
     snprintf(reply, reply_size, "> web:down heals:%u deferred:%u", _panel.restartCount(), _panel.startDeferredCount());
     return;
   }
 
   snprintf(reply, reply_size, "> web:up url:https://%s/ auth:%s heals:%u deferred:%u",
-           WiFi.localIP().toString().c_str(), _panel.hasSessionToken() ? "unlocked" : "locked",
+           (sta_up ? WiFi.localIP() : WiFi.softAPIP()).toString().c_str(), _panel.hasSessionToken() ? "unlocked" : "locked",
            _panel.restartCount(), _panel.startDeferredCount());
 #else
   snprintf(reply, reply_size, "> web:unsupported");
@@ -124,7 +126,7 @@ void WebService::ensureWebServer() {
     _panel.stop();
     return;
   }
-  if (_network == nullptr || !_network->isWifiConnected()) {
+  if (_network == nullptr || (!_network->isWifiConnected() && !_network->isSetupApActive())) {
     _panel.stop(false);
     return;
   }

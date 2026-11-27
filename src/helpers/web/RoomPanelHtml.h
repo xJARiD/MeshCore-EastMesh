@@ -183,7 +183,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
         <div class="group">
           <h3>Identity</h3>
           <div class="field" data-get="get name" data-set="set name ">
-            <label class="label" for="f_name">Room Name</label>
+            <label class="label" for="f_name">Room Server Name</label>
             <div class="inline"><input id="f_name" maxlength="31"><button class="iconbtn" data-act="load" title="Refresh">&#8635;</button><button data-act="save">Save</button></div>
           </div>
           <div class="row">
@@ -237,7 +237,18 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
           <div class="inline one"><input id="f_wifipwd" type="password" maxlength="64" placeholder="new Wi-Fi password"><button data-act="save">Save</button></div>
         </div>
       </div>
+      <div class="row" style="margin-top:12px">
+        <div class="field">
+          <label class="label" for="f_setupap">Setup AP</label>
+          <div class="inline"><select id="f_setupap"><option value="on">auto (when Wi-Fi is down)</option><option value="off">off</option></select><button id="loadSetupApBtn" class="iconbtn" title="Refresh">&#8635;</button><button id="saveSetupApBtn">Save</button></div>
+        </div>
+        <div class="field">
+          <label class="label" for="f_setupap_state">Setup AP Status</label>
+          <input id="f_setupap_state" readonly>
+        </div>
+      </div>
       <p class="note" style="margin-top:10px">Changing Wi-Fi drops this page until the room server rejoins the network, possibly with a new IP address.</p>
+      <p class="note" style="margin-top:6px">While Wi-Fi is not configured, or has been down for a minute, the room server opens an open setup network named <b>EastMesh-Room-XXXX</b>. Join it and browse to <code>https://192.168.4.1</code>. It closes once the room server rejoins Wi-Fi and the last setup client leaves.</p>
     </section>
 
     <section class="card">
@@ -283,6 +294,19 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
           <p class="note">Repeating only affects other nodes' packets. The room always handles its own logins and posts over LoRa and the bridge. <b>Repeat all packets</b> repeats local LoRa traffic and bridged packets. <b>Repeat bridged packets only</b> puts packets from the bridge onto LoRa without repeating local traffic. <b>Room traffic only</b> repeats nothing.</p>
         </div>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Import / Export</h2>
+      <div class="actions">
+        <div>
+          <button id="exportCfgBtn" class="themebtn">Export settings</button>
+          <button id="importCfgBtn" class="themebtn">Import settings</button>
+          <input id="cfgFile" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+      <div id="cfgStatus" class="note" style="margin-top:10px"></div>
+      <p class="note" style="margin-top:10px">Saves or applies the Access (room password, read-only logins), MQTT Bridge (bridge, server, username, password) and Room Sync (room name, repeating) settings as a JSON file. Use it to back up a room server or to set up new ones the same way. The room server can't read back the MQTT password, so the file's MQTT password is blank unless you type it into the Password field first. You can also add it to the file by hand; a blank password is skipped on import. Passwords are stored in the file as plain text.</p>
     </section>
 
     <section class="card">
@@ -429,19 +453,20 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       fieldInput(field).value = v;
       if (fieldInput(field).id === "f_name") updatePanelTitle(v);
     }
-    async function saveFieldEl(field) {
+    async function saveFieldEl(field, opts = {}) {
       const input = fieldInput(field);
       let v = input.value.trim();
       if (field.dataset.clear && v === "") v = field.dataset.clear;
       const secret = field.dataset.secret === "1";
       const r = await run(field.dataset.set + v, { label: secret ? field.dataset.set + "********" : null });
-      if (!r.ok) return;
+      if (!r.ok) return false;
       if (secret) {
         input.value = "";
       } else if (field.dataset.get) {
         await loadFieldEl(field, { log:false });
       }
-      refreshStatus();
+      if (opts.refresh !== false) refreshStatus();
+      return true;
     }
     document.querySelectorAll(".field[data-set]").forEach((field) => {
       field.querySelectorAll("[data-act]").forEach((btn) => {
@@ -466,28 +491,134 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       }
       $("f_forward").value = mode;
     }
-    async function saveForwarding() {
+    async function saveForwarding(opts = {}) {
       const mode = $("f_forward").value;
       // order avoids a window where nothing is forwarded when switching between repeating modes
       const cmds = mode === "all" ? ["set repeat on", "set bridge.gateway off"]
                  : mode === "bridged" ? ["set bridge.gateway on", "set repeat off"]
                  : ["set repeat off", "set bridge.gateway off"];
+      let ok = true;
       for (const cmd of cmds) {
         const r = await run(cmd);
-        if (!r.ok) break;
+        if (!r.ok) { ok = false; break; }
       }
       await loadForwarding({ log:false });
-      refreshStatus();
+      if (opts.refresh !== false) refreshStatus();
+      return ok;
     }
-    async function saveEndpoint() {
+    async function saveEndpoint(opts = {}) {
       const raw = $("f_endpoint").value.trim().replace(/^(mqtts?|tcp):\/\//i, "");
       const m = raw.match(/^([^:\s\/]+)(?::(\d{1,5}))?$/);
-      if (!m) { statusEl.textContent = "Enter host or host:port"; return; }
+      if (!m) { statusEl.textContent = "Enter host or host:port"; return false; }
       const r = await run("set bridge.peer.host " + m[1]);
-      if (!r.ok) return;
-      await run("set bridge.peer.port " + (m[2] || "1883"));
+      if (!r.ok) return false;
+      const p = await run("set bridge.peer.port " + (m[2] || "1883"));
       await loadEndpoint({ log:false });
-      refreshStatus();
+      if (opts.refresh !== false) refreshStatus();
+      return p.ok;
+    }
+
+    async function loadSetupAp(opts) {
+      const r = await run("get wifi.ap", opts);
+      if (!r.ok) return;
+      const t = tokens(r.text);
+      $("f_setupap").value = t.ap === "off" ? "off" : "on";
+      $("f_setupap_state").value = t.state === "up"
+        ? "up / " + (t.ssid || "-") + " / " + (t.ip || "-") + " / " + (t.clients || 0) + " client(s)"
+        : "down" + (t.ssid && t.ssid !== "-" ? " / " + t.ssid : "");
+    }
+    async function saveSetupAp() {
+      const r = await run("set wifi.ap " + $("f_setupap").value);
+      if (r.ok) await loadSetupAp({ log:false });
+    }
+
+    // Settings import/export: Access, MQTT Bridge and Room Sync as a JSON file.
+    const CONFIG_KIND = "eastmesh-room-server-config";
+    const fieldOf = (id) => $(id).closest(".field");
+    function cfgStatus(message, isError) { setNote("cfgStatus", message, isError); }
+    async function exportConfig() {
+      const quiet = { log:false };
+      cfgStatus("Reading settings from the room server...");
+      for (const id of ["f_roompwd", "f_readonly", "f_bridge_en", "f_user", "f_topic"]) {
+        await loadFieldEl(fieldOf(id), quiet);
+      }
+      await loadEndpoint(quiet);
+      await loadForwarding(quiet);
+      const cfg = {
+        kind: CONFIG_KIND,
+        version: 1,
+        exported: new Date().toISOString(),
+        access: { room_password: $("f_roompwd").value, allow_read_only: $("f_readonly").value },
+        // the room server can't read the MQTT password back: export what's typed, or "" to fill in by hand
+        mqtt_bridge: { bridge: $("f_bridge_en").value, server: $("f_endpoint").value.trim(), username: $("f_user").value, password: $("f_pass").value },
+        room_sync: { room_name: $("f_topic").value, repeating: $("f_forward").value }
+      };
+      const mqttPwd = cfg.mqtt_bridge.password;
+      const slug = ($("f_name").value || "room-server").trim().replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "room-server";
+      const blob = new Blob([JSON.stringify(cfg, null, 2) + "\n"], { type:"application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "room-config-" + slug + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      cfgStatus("Exported " + a.download + (mqttPwd ? "." : " (MQTT password left blank - add it to the file by hand)."));
+    }
+    async function importConfig(file) {
+      let cfg;
+      try { cfg = JSON.parse(await file.text()); } catch (_) { cfgStatus(file.name + " is not a valid JSON file.", true); return; }
+      if (!cfg || typeof cfg !== "object" || cfg.kind !== CONFIG_KIND) {
+        cfgStatus(file.name + " is not a room server settings export.", true);
+        return;
+      }
+      const access = cfg.access || {}, bridge = cfg.mqtt_bridge || {}, sync = cfg.room_sync || {};
+      const text = (v) => (typeof v === "string" ? v : typeof v === "number" ? String(v) : null);
+      const pick = (v, allowed) => {
+        if (v === true) v = "on";
+        if (v === false) v = "off";
+        return allowed.includes(v) ? v : null;
+      };
+      const steps = [];
+      const bad = [];
+      const field = (label, id, value) => {
+        if (value === null) return;
+        steps.push({ label, apply: () => { $(id).value = value; return saveFieldEl(fieldOf(id), { refresh:false }); } });
+      };
+      const choice = (label, id, raw, allowed) => {
+        if (raw === undefined) return;
+        const v = pick(raw, allowed);
+        if (v === null) { bad.push(label); return; }
+        field(label, id, v);
+      };
+      field("Room password", "f_roompwd", text(access.room_password));
+      choice("Allow read-only logins", "f_readonly", access.allow_read_only, ["on", "off"]);
+      const server = text(bridge.server);
+      if (server !== null && server.trim()) {
+        steps.push({ label:"Server host:port", apply: () => { $("f_endpoint").value = server.trim(); return saveEndpoint({ refresh:false }); } });
+      }
+      field("MQTT username", "f_user", text(bridge.username));
+      const pwd = text(bridge.password);
+      if (pwd) field("MQTT password", "f_pass", pwd);
+      field("Room name", "f_topic", text(sync.room_name));
+      if (sync.repeating !== undefined) {
+        const v = pick(sync.repeating, ["all", "bridged", "off"]);
+        if (v === null) bad.push("Repeating");
+        else steps.push({ label:"Repeating", apply: () => { $("f_forward").value = v; return saveForwarding({ refresh:false }); } });
+      }
+      // bridge on/off last, so it starts with the new server and credentials
+      choice("Bridge", "f_bridge_en", bridge.bridge, ["on", "off"]);
+      if (bad.length) { cfgStatus("Invalid value for: " + bad.join(", ") + ". Nothing was applied.", true); return; }
+      if (!steps.length) { cfgStatus(file.name + " has no settings to apply.", true); return; }
+      if (!confirm("Apply " + steps.length + " settings from " + file.name + "?\n\n" + steps.map((s) => "- " + s.label).join("\n"))) return;
+      const failed = [];
+      for (let i = 0; i < steps.length; i++) {
+        cfgStatus("Applying " + (i + 1) + "/" + steps.length + ": " + steps[i].label + "...");
+        if (!(await steps[i].apply())) failed.push(steps[i].label);
+      }
+      await refreshStatus();
+      if (failed.length) cfgStatus("Imported with errors. Not applied: " + failed.join(", ") + ". See the CLI log below.", true);
+      else cfgStatus("Imported " + steps.length + " settings from " + file.name + ".");
     }
 
     function tokens(text) {
@@ -513,7 +644,8 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
         const detail = st === "connected"
           ? (t.ssid || "-") + " / " + (t.ip || "-") + " / " + (t.rssi || "-") + " dBm"
           : (t.ssid || "-") + " / " + (t.state || "-");
-        setTile("wifi", st, st === "connected" ? "ok" : (st === "connecting" ? "warn" : "bad"), detail);
+        setTile("wifi", st, st === "connected" ? "ok" : (st === "connecting" ? "warn" : "bad"),
+          detail + (t.ap ? " / setup AP " + t.ap : ""));
       }
       const b = await run("get bridge.status", quiet);
       if (b.ok) {
@@ -784,6 +916,7 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
       }
       await loadEndpoint(quiet);
       await loadForwarding(quiet);
+      await loadSetupAp(quiet);
       await loadRadioConfig(quiet);
       await loadRegionSelection(quiet);
       await refreshStatus();
@@ -842,9 +975,18 @@ static const char kRoomPanelAppHtml[] PROGMEM = R"HTML(
     $("rebootBtn").onclick = () => { if (confirm("Reboot the room server now?")) run("reboot"); };
     $("syncClockBtn").onclick = syncClock;
     $("loadEndpointBtn").onclick = () => loadEndpoint();
-    $("saveEndpointBtn").onclick = saveEndpoint;
     $("loadForwardBtn").onclick = () => loadForwarding();
-    $("saveForwardBtn").onclick = saveForwarding;
+    $("saveForwardBtn").onclick = () => saveForwarding();
+    $("saveEndpointBtn").onclick = () => saveEndpoint();
+    $("loadSetupApBtn").onclick = () => loadSetupAp();
+    $("saveSetupApBtn").onclick = saveSetupAp;
+    $("exportCfgBtn").onclick = () => exportConfig().catch((e) => cfgStatus(e && e.message ? e.message : "Export failed.", true));
+    $("importCfgBtn").onclick = () => $("cfgFile").click();
+    $("cfgFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (file) importConfig(file).catch((err) => cfgStatus(err && err.message ? err.message : "Import failed.", true));
+    });
     $("refreshRadioBtn").onclick = () => loadRadioConfig();
     $("reloadRadioPresetsBtn").onclick = () => loadRadioPresets();
     $("radioPreset").addEventListener("change", (e) => {
